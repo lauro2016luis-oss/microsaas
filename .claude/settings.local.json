@@ -14,7 +14,8 @@
       "mcp__6e2a353a-6861-407a-8da6-fdb034188deb__apply_migration",
       "Bash(npm run:*)",
       "Bash(gh auth:*)",
-      "Bash(export PATH=\"/opt/homebrew/bin:$PATH\")"
+      "Bash(export PATH=\"/opt/homebrew/bin:$PATH\")",
+      "Bash(/opt/homebrew/bin/gh repo:*)"
     ]
   }
 }
