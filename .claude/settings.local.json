@@ -1,0 +1,20 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm install:*)",
+      "Bash(brew install:*)",
+      "Read(//opt/homebrew/bin/**)",
+      "Read(//usr/local/bin/**)",
+      "Bash(/opt/homebrew/bin/brew --version)",
+      "Bash(/usr/local/bin/brew --version)",
+      "mcp__6e2a353a-6861-407a-8da6-fdb034188deb__list_projects",
+      "mcp__6e2a353a-6861-407a-8da6-fdb034188deb__get_project_url",
+      "mcp__6e2a353a-6861-407a-8da6-fdb034188deb__get_publishable_keys",
+      "mcp__6e2a353a-6861-407a-8da6-fdb034188deb__list_tables",
+      "mcp__6e2a353a-6861-407a-8da6-fdb034188deb__apply_migration",
+      "Bash(npm run:*)",
+      "Bash(gh auth:*)",
+      "Bash(export PATH=\"/opt/homebrew/bin:$PATH\")"
+    ]
+  }
+}

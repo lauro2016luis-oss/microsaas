@@ -2,8 +2,8 @@ import { useState, useRef, useEffect } from "react";
 import { createClient } from "@supabase/supabase-js";
 
 // ─── SUPABASE ─────────────────────────────────────────────────────────────────
-const SUPA_URL = "https://giygshpurktetyebydea.supabase.co";
-const SUPA_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdpeWdzaHB1cmt0ZXR5ZWJ5ZGVhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ4MzgyOTMsImV4cCI6MjA5MDQxNDI5M30.MzJteWdAF8QlVvDpmHsrU6etCsKca_A1Yt6KDNT9RP0";
+const SUPA_URL = "https://vvdhnwknluxsaxcqvlyh.supabase.co";
+const SUPA_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ2ZGhud2tubHV4c2F4Y3F2bHloIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU1MjYwNzEsImV4cCI6MjA5MTEwMjA3MX0.8d_CdiLGv_2QwzRtIPoyyAiDUzLKfYgofacpmF4C6Jw";
 
 const supabaseClient = createClient(SUPA_URL, SUPA_KEY);
 
@@ -125,8 +125,116 @@ const useToast=()=>{
   return {show,El};
 };
 
+// ─── LOGIN ────────────────────────────────────────────────────────────────────
+const LoginPage=({sb})=>{
+  const [mode,setMode]=useState("login"); // "login" | "signup" | "reset"
+  const [email,setEmail]=useState("");
+  const [password,setPassword]=useState("");
+  const [showPw,setShowPw]=useState(false);
+  const [loading,setLoading]=useState(false);
+  const [msg,setMsg]=useState(null); // {text, type}
+  const {show,El}=useToast();
+
+  const handle=async()=>{
+    if(!email.trim()){setMsg({text:"Informe o e-mail.",type:"error"});return;}
+    setLoading(true);setMsg(null);
+    if(mode==="reset"){
+      const{error}=await sb.auth.resetPasswordForEmail(email,{redirectTo:window.location.origin});
+      if(error){setMsg({text:error.message,type:"error"});}
+      else{setMsg({text:"Enviamos um link de redefinição para o seu e-mail.",type:"success"});}
+      setLoading(false);return;
+    }
+    if(!password){setMsg({text:"Informe a senha.",type:"error"});setLoading(false);return;}
+    const fn=mode==="signup"
+      ?sb.auth.signUp({email:email.trim(),password})
+      :sb.auth.signInWithPassword({email:email.trim(),password});
+    const{error}=await fn;
+    if(error){setMsg({text:error.message,type:"error"});}
+    else if(mode==="signup"){setMsg({text:"Conta criada! Verifique seu e-mail para confirmar.",type:"success"});}
+    setLoading(false);
+  };
+
+  const titles={login:"Entrar",signup:"Criar conta",reset:"Redefinir senha"};
+  const btnLabels={login:"Entrar",signup:"Criar conta",reset:"Enviar link"};
+
+  return (
+    <div style={{minHeight:"100vh",display:"flex",alignItems:"center",justifyContent:"center",background:C.bg,padding:24}}>
+      {El}
+      <style>{css}</style>
+      <div className="fade-in" style={{width:"100%",maxWidth:380}}>
+        {/* Logo */}
+        <div style={{textAlign:"center",marginBottom:32}}>
+          <div style={{width:44,height:44,borderRadius:12,background:C.accentDim,border:`0.5px solid ${C.accentBorder}`,display:"flex",alignItems:"center",justifyContent:"center",margin:"0 auto 14px",color:C.accent}}>
+            <Icon name="zap" size={20}/>
+          </div>
+          <h1 style={{fontSize:22,fontWeight:600,color:C.text,letterSpacing:"-0.03em"}}>Workspace</h1>
+          <p style={{fontSize:13,color:C.textMuted,marginTop:4}}>{titles[mode]}</p>
+        </div>
+
+        {/* Card */}
+        <div style={{background:C.surface,border:`0.5px solid ${C.border}`,borderRadius:16,padding:28}}>
+          {msg&&(
+            <div style={{marginBottom:16,padding:"10px 14px",borderRadius:9,background:msg.type==="error"?C.redDim:C.greenDim,color:msg.type==="error"?C.red:C.green,border:`0.5px solid ${msg.type==="error"?"rgba(239,68,68,0.3)":"rgba(34,197,94,0.3)"}`,fontSize:13}}>
+              {msg.text}
+            </div>
+          )}
+
+          <div style={{display:"flex",flexDirection:"column",gap:14}}>
+            <div>
+              <label style={{fontSize:12,color:C.textMuted,display:"block",marginBottom:6}}>E-mail</label>
+              <Input value={email} onChange={setEmail} placeholder="seu@email.com" type="email" onKeyDown={e=>e.key==="Enter"&&handle()}/>
+            </div>
+
+            {mode!=="reset"&&(
+              <div>
+                <label style={{fontSize:12,color:C.textMuted,display:"block",marginBottom:6}}>Senha</label>
+                <div style={{position:"relative"}}>
+                  <Input value={password} onChange={setPassword} placeholder={mode==="signup"?"Mínimo 6 caracteres":"Sua senha"} type={showPw?"text":"password"} onKeyDown={e=>e.key==="Enter"&&handle()}/>
+                  <button onClick={()=>setShowPw(p=>!p)} style={{position:"absolute",right:10,top:"50%",transform:"translateY(-50%)",background:"none",border:"none",color:C.textMuted,cursor:"pointer",padding:4}}>
+                    <Icon name={showPw?"eyeOff":"eye"} size={14}/>
+                  </button>
+                </div>
+              </div>
+            )}
+
+            <button onClick={handle} disabled={loading} style={{width:"100%",padding:"10px",borderRadius:9,background:loading?"#333":C.accent,color:"#fff",border:"none",fontSize:14,fontWeight:500,cursor:loading?"not-allowed":"pointer",fontFamily:"'Geist',sans-serif",display:"flex",alignItems:"center",justifyContent:"center",gap:8,transition:"background 0.15s"}}
+              onMouseEnter={e=>{if(!loading)e.currentTarget.style.background="#6c5ce7";}}
+              onMouseLeave={e=>{if(!loading)e.currentTarget.style.background=C.accent;}}>
+              {loading?<Spinner size={14}/>:null}{btnLabels[mode]}
+            </button>
+          </div>
+        </div>
+
+        {/* Links */}
+        <div style={{textAlign:"center",marginTop:18,display:"flex",flexDirection:"column",gap:8}}>
+          {mode==="login"&&(
+            <>
+              <button onClick={()=>{setMode("signup");setMsg(null);}} style={{background:"none",border:"none",color:C.textMuted,cursor:"pointer",fontSize:13,fontFamily:"'Geist',sans-serif"}}>
+                Não tem conta? <span style={{color:C.accent}}>Criar conta</span>
+              </button>
+              <button onClick={()=>{setMode("reset");setMsg(null);}} style={{background:"none",border:"none",color:C.textDim,cursor:"pointer",fontSize:12,fontFamily:"'Geist',sans-serif"}}>
+                Esqueci minha senha
+              </button>
+            </>
+          )}
+          {mode==="signup"&&(
+            <button onClick={()=>{setMode("login");setMsg(null);}} style={{background:"none",border:"none",color:C.textMuted,cursor:"pointer",fontSize:13,fontFamily:"'Geist',sans-serif"}}>
+              Já tem conta? <span style={{color:C.accent}}>Entrar</span>
+            </button>
+          )}
+          {mode==="reset"&&(
+            <button onClick={()=>{setMode("login");setMsg(null);}} style={{background:"none",border:"none",color:C.textMuted,cursor:"pointer",fontSize:13,fontFamily:"'Geist',sans-serif"}}>
+              ← Voltar para o login
+            </button>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};
+
 // ─── SIDEBAR ──────────────────────────────────────────────────────────────────
-const Sidebar=({page,setPage,storeName,setStoreName})=>{
+const Sidebar=({page,setPage,storeName,setStoreName,sb,user})=>{
   const [editing,setEditing]=useState(false);
   const [inp,setInp]=useState(storeName);
   const nav=[
@@ -177,7 +285,8 @@ const Sidebar=({page,setPage,storeName,setStoreName})=>{
       </div>
       <div style={{marginTop:"auto",padding:"10px 12px",borderRadius:10,background:"#0d0d0d",border:`0.5px solid ${C.border}`,display:"flex",alignItems:"center",gap:8}}>
         <div style={{width:8,height:8,borderRadius:"50%",background:C.green,flexShrink:0}}/>
-        <div style={{fontSize:11,color:C.textMuted}}>supabase conectado</div>
+        <div style={{flex:1,fontSize:11,color:C.textMuted,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{user?.email||"conectado"}</div>
+        <button onClick={()=>sb.auth.signOut()} title="Sair" style={{background:"none",border:"none",color:C.textDim,cursor:"pointer",padding:2,display:"flex",alignItems:"center"}}><Icon name="logout" size={14}/></button>
       </div>
     </div>
   );
@@ -1274,20 +1383,20 @@ const LojasPage=({sb,user})=>{
 };
 
 // ─── APP ──────────────────────────────────────────────────────────────────────
-// ID anônimo fixo — salvo no localStorage para persistir entre sessões
-const getAnonId=()=>{
-  let id=localStorage.getItem("ws_anon_id");
-  if(!id){id=crypto.randomUUID();localStorage.setItem("ws_anon_id",id);}
-  return id;
-};
-const ANON_USER={id:getAnonId(),email:"local"};
-
 export default function App() {
   const sb=supabaseClient;
+  const [user,setUser]=useState(undefined); // undefined=carregando, null=sem sessão
   const [page,setPage]=useState("dashboard");
   const [storeName,setStoreName]=useState("Minha Loja");
 
-  if(!sb) return(
+  useEffect(()=>{
+    sb.auth.getSession().then(({data:{session}})=>setUser(session?.user??null));
+    const{data:{subscription}}=sb.auth.onAuthStateChange((_,session)=>setUser(session?.user??null));
+    return ()=>subscription.unsubscribe();
+  },[]);
+
+  // Carregando sessão
+  if(user===undefined) return(
     <>
       <style>{css}</style>
       <div style={{minHeight:"100vh",display:"flex",alignItems:"center",justifyContent:"center",background:C.bg,flexDirection:"column",gap:12,color:C.textMuted}}>
@@ -1296,7 +1405,8 @@ export default function App() {
     </>
   );
 
-  const user=ANON_USER;
+  // Não autenticado
+  if(!user) return <LoginPage sb={sb}/>;
 
   const pages={
     dashboard:<PainelPage sb={sb} user={user} setPage={setPage}/>,
@@ -1312,7 +1422,7 @@ export default function App() {
     <>
       <style>{css}</style>
       <div style={{display:"flex",height:"100vh",overflow:"hidden",background:C.bg}}>
-        <Sidebar page={page} setPage={setPage} storeName={storeName} setStoreName={setStoreName}/>
+        <Sidebar page={page} setPage={setPage} storeName={storeName} setStoreName={setStoreName} sb={sb} user={user}/>
         <main style={{flex:1,display:"flex",flexDirection:"column",overflow:"hidden"}}>
           <div style={{borderBottom:`0.5px solid ${C.border}`,padding:"11px 36px",display:"flex",alignItems:"center",justifyContent:"space-between",background:C.bg,flexShrink:0}}>
             <div style={{fontSize:12,color:C.textMuted,fontFamily:"'Geist Mono',monospace"}}>{new Date().toLocaleDateString("pt-BR",{weekday:"long",year:"numeric",month:"long",day:"numeric"})}</div>
