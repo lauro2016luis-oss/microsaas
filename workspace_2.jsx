@@ -33,6 +33,29 @@ input[type=date]::-webkit-calendar-picker-indicator{filter:invert(0.5);}
 @keyframes spin{to{transform:rotate(360deg)}}
 @keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
 .fade-in{animation:fadeIn 0.2s ease}
+.sidebar{display:flex;}
+.bottom-nav{display:none;}
+.page-pad{padding:32px 36px;}
+.grid-kpi-4{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px;}
+.grid-pay-4{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:28px;}
+.grid-chart{display:grid;grid-template-columns:1fr 300px;gap:16px;margin-bottom:20px;}
+.grid-tasks-4{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;align-items:start;}
+.topbar-date{display:block;}
+@media(max-width:768px){
+  .sidebar{display:none!important;}
+  .bottom-nav{display:flex!important;position:fixed;bottom:0;left:0;right:0;background:#111;border-top:0.5px solid #1e1e1e;z-index:100;padding:8px 4px 12px;justify-content:space-around;align-items:center;}
+  .page-pad{padding:20px 16px 90px!important;}
+  .grid-kpi-4{grid-template-columns:repeat(2,1fr)!important;}
+  .grid-pay-4{grid-template-columns:repeat(2,1fr)!important;}
+  .grid-chart{grid-template-columns:1fr!important;}
+  .grid-tasks-4{grid-template-columns:repeat(2,1fr)!important;}
+  .topbar-date{display:none!important;}
+  .main-topbar{padding:10px 16px!important;}
+}
+@media(max-width:480px){
+  .grid-tasks-4{grid-template-columns:1fr!important;}
+  .grid-kpi-4{grid-template-columns:repeat(2,1fr)!important;}
+}
 `;
 
 // ─── ICONS ────────────────────────────────────────────────────────────────────
@@ -123,6 +146,47 @@ const useToast=()=>{
   const show=(msg,type="success")=>setT({msg,type,id:Date.now()});
   const El=t?<Toast key={t.id} msg={t.msg} type={t.type} onDone={()=>setT(null)}/>:null;
   return {show,El};
+};
+
+// ─── HOOKS ────────────────────────────────────────────────────────────────────
+const useIsMobile=()=>{
+  const [mobile,setMobile]=useState(()=>window.innerWidth<=768);
+  useEffect(()=>{
+    const fn=()=>setMobile(window.innerWidth<=768);
+    window.addEventListener("resize",fn);
+    return()=>window.removeEventListener("resize",fn);
+  },[]);
+  return mobile;
+};
+
+// ─── BOTTOM NAV (mobile) ──────────────────────────────────────────────────────
+const BottomNav=({page,setPage,sb})=>{
+  const nav=[
+    {id:"dashboard",icon:"dashboard",label:"Painel"},
+    {id:"tarefas",icon:"task",label:"Tarefas"},
+    {id:"links",icon:"link",label:"Links"},
+    {id:"payments",icon:"payment",label:"Payments"},
+    {id:"lojas",icon:"store",label:"Lojas"},
+    {id:"videos",icon:"video",label:"Vídeos"},
+    {id:"arquivos",icon:"file",label:"Arquivos"},
+  ];
+  return(
+    <div className="bottom-nav">
+      {nav.map(n=>{
+        const active=page===n.id;
+        return(
+          <button key={n.id} onClick={()=>setPage(n.id)} style={{display:"flex",flexDirection:"column",alignItems:"center",gap:3,background:"none",border:"none",cursor:"pointer",padding:"4px 8px",borderRadius:8,color:active?C.accent:C.textMuted,transition:"color 0.15s",minWidth:40}}>
+            <Icon name={n.icon} size={20}/>
+            <span style={{fontSize:9,fontFamily:"'Geist',sans-serif",fontWeight:active?600:400}}>{n.label}</span>
+          </button>
+        );
+      })}
+      <button onClick={()=>sb.auth.signOut()} style={{display:"flex",flexDirection:"column",alignItems:"center",gap:3,background:"none",border:"none",cursor:"pointer",padding:"4px 8px",borderRadius:8,color:C.textDim,minWidth:40}}>
+        <Icon name="logout" size={20}/>
+        <span style={{fontSize:9,fontFamily:"'Geist',sans-serif"}}>Sair</span>
+      </button>
+    </div>
+  );
 };
 
 // ─── LOGIN ────────────────────────────────────────────────────────────────────
@@ -587,7 +651,7 @@ const PainelPage=({sb,user,setPage})=>{
   const moedas=["BRL","USD","EUR","GBP"];
 
   return (
-    <div style={{padding:"32px 36px",overflowY:"auto",flex:1}}>
+    <div className="page-pad" style={{overflowY:"auto",flex:1}}>
       {El}
 
       {/* HEADER */}
@@ -595,12 +659,12 @@ const PainelPage=({sb,user,setPage})=>{
         <div><h1 style={{fontSize:24,fontWeight:600,color:C.text,letterSpacing:"-0.03em"}}>Bom dia 👋</h1><p style={{fontSize:14,color:C.textMuted,marginTop:4}}>Seu espaço de trabalho.</p></div>
         <button onClick={()=>setModalResultado(true)} style={{display:"flex",alignItems:"center",gap:7,padding:"9px 16px",borderRadius:9,background:C.accent,color:"#fff",border:"none",fontSize:13,fontWeight:500,cursor:"pointer",fontFamily:"'Geist',sans-serif"}}
           onMouseEnter={e=>e.currentTarget.style.background="#6c5ce7"} onMouseLeave={e=>e.currentTarget.style.background=C.accent}>
-          <Icon name="plus" size={14}/> Registrar Resultado
+          <Icon name="plus" size={14}/> Registrar
         </button>
       </div>
 
       {/* KPI CARDS */}
-      <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:12,marginBottom:20}}>
+      <div className="grid-kpi-4">
         {[
           {l:"💰 Lucro Hoje",v:lucroHoje,c:lucroHoje>=0?C.green:C.red},
           {l:"🧾 Faturamento Hoje",v:fatHoje,c:C.accent},
@@ -636,7 +700,7 @@ const PainelPage=({sb,user,setPage})=>{
       </div>
 
       {/* GRÁFICO + LUCRO POR LOJA */}
-      <div style={{display:"grid",gridTemplateColumns:"1fr 300px",gap:16,marginBottom:20}}>
+      <div className="grid-chart">
         <div style={{background:C.surface,border:`0.5px solid ${C.border}`,borderRadius:12,padding:20}}>
           <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:20}}>
             <h2 style={{fontSize:14,fontWeight:500,color:C.text}}>Performance das Lojas</h2>
@@ -722,7 +786,7 @@ const PainelPage=({sb,user,setPage})=>{
       </div>
 
       {/* TAREFAS + LINKS */}
-      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:16}}>
+      <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(280px,1fr))",gap:16}}>
         <div style={{background:C.surface,border:`0.5px solid ${C.border}`,borderRadius:12,padding:20}}>
           <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14}}><h2 style={{fontSize:14,fontWeight:500,color:C.text}}>Tarefas de hoje</h2><Btn small onClick={()=>setPage("tarefas")}>Ver todas</Btn></div>
           {hojeList.length===0?<div style={{fontSize:13,color:C.textMuted}}>Nenhuma tarefa para hoje 🎉</div>:hojeList.map(t=>(
@@ -827,7 +891,7 @@ const LinksPage=({sb,user})=>{
   const statuses=["Todos","Novo","Revisando","Aprovado","Rejeitado"];
   const filtered=links.filter(l=>(fs==="Todos"||l.status===fs)&&((l.title||"").toLowerCase().includes(search.toLowerCase())||(l.url||"").toLowerCase().includes(search.toLowerCase())));
   return (
-    <div style={{padding:"32px 36px",overflowY:"auto",flex:1}}>
+    <div className="page-pad" style={{overflowY:"auto",flex:1}}>
       {El}
       <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:24}}>
         <div><h1 style={{fontSize:22,fontWeight:600,color:C.text,letterSpacing:"-0.03em"}}>Links</h1><p style={{fontSize:13,color:C.textMuted,marginTop:2}}>{links.length} links salvos</p></div>
@@ -900,14 +964,14 @@ const TarefasPage=({sb,user})=>{
   const fmt=d=>{if(!d)return null;const[y,m,dd]=d.slice(0,10).split("-");return`${dd}/${m}/${y}`;};
   const late=t=>t.due_date&&t.status!=="Concluído"&&new Date(t.due_date)<new Date(new Date().toDateString());
   return (
-    <div style={{padding:"32px 36px",overflowY:"auto",flex:1}}>
+    <div className="page-pad" style={{overflowY:"auto",flex:1}}>
       {El}
       <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:24}}>
         <div><h1 style={{fontSize:22,fontWeight:600,color:C.text,letterSpacing:"-0.03em"}}>Tarefas</h1><p style={{fontSize:13,color:C.textMuted,marginTop:2}}>{tasks.filter(t=>t.status!=="Concluído").length} ativas · arraste para mover</p></div>
         <Btn variant="primary" icon="plus" onClick={()=>setModal(true)}>Nova Tarefa</Btn>
       </div>
       {loading?<div style={{textAlign:"center",padding:40}}><Spinner size={24}/></div>:(
-        <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:16,alignItems:"start"}}>
+        <div className="grid-tasks-4">
           {cols.map(col=>{
             const ct=tasks.filter(t=>t.status===col.id);
             return (
@@ -973,7 +1037,7 @@ const VideosPage=({sb,user})=>{
   };
   const del=async(id)=>{await sb.from("videos").delete().eq("id",id);setVideos(p=>p.filter(v=>v.id!==id));show("Removido");};
   return (
-    <div style={{padding:"32px 36px",overflowY:"auto",flex:1}}>
+    <div className="page-pad" style={{overflowY:"auto",flex:1}}>
       {El}
       <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:24}}>
         <div><h1 style={{fontSize:22,fontWeight:600,color:C.text,letterSpacing:"-0.03em"}}>Vídeos</h1><p style={{fontSize:13,color:C.textMuted,marginTop:2}}>{videos.length} vídeos</p></div>
@@ -1044,7 +1108,7 @@ const ArquivosPage=({sb,user})=>{
   const fColorDim=t=>({pdf:C.redDim,image:C.blueDim,video:C.accentDim}[t]||"#1a1a1a");
   const fLabel=t=>({pdf:"PDF",image:"Imagem",video:"Vídeo",outro:"Arquivo"}[t]||"Arquivo");
   return (
-    <div style={{padding:"32px 36px",overflowY:"auto",flex:1}}>
+    <div className="page-pad" style={{overflowY:"auto",flex:1}}>
       {El}
       <input ref={fileRef} type="file" multiple style={{display:"none"}} onChange={e=>upload(e.target.files)}/>
       <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:24}}>
@@ -1183,14 +1247,14 @@ const PaymentsPage=({sb,user})=>{
   );
 
   return (
-    <div style={{padding:"32px 36px",overflowY:"auto",flex:1}}>
+    <div className="page-pad" style={{overflowY:"auto",flex:1}}>
       {El}
       <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:24}}>
         <div><h1 style={{fontSize:22,fontWeight:600,color:C.text,letterSpacing:"-0.03em"}}>Payments</h1><p style={{fontSize:13,color:C.textMuted,marginTop:2}}>{payments.length} payments cadastradas</p></div>
         <Btn variant="primary" icon="plus" onClick={openNew}>Nova Payment</Btn>
       </div>
 
-      <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:12,marginBottom:28}}>
+      <div className="grid-pay-4">
         {[
           {l:"Total",v:payments.length,c:C.accent},
           {l:"Aquecimento",v:payments.filter(p=>p.status==="Aquecimento").length,c:C.amber},
@@ -1294,7 +1358,7 @@ const LojasPage=({sb,user})=>{
   };
 
   return (
-    <div style={{padding:"32px 36px",overflowY:"auto",flex:1}}>
+    <div className="page-pad" style={{overflowY:"auto",flex:1}}>
       {El}
       <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:28}}>
         <div>
@@ -1422,15 +1486,18 @@ export default function App() {
     <>
       <style>{css}</style>
       <div style={{display:"flex",height:"100vh",overflow:"hidden",background:C.bg}}>
-        <Sidebar page={page} setPage={setPage} storeName={storeName} setStoreName={setStoreName} sb={sb} user={user}/>
+        <div className="sidebar" style={{flexDirection:"column"}}>
+          <Sidebar page={page} setPage={setPage} storeName={storeName} setStoreName={setStoreName} sb={sb} user={user}/>
+        </div>
         <main style={{flex:1,display:"flex",flexDirection:"column",overflow:"hidden"}}>
-          <div style={{borderBottom:`0.5px solid ${C.border}`,padding:"11px 36px",display:"flex",alignItems:"center",justifyContent:"space-between",background:C.bg,flexShrink:0}}>
-            <div style={{fontSize:12,color:C.textMuted,fontFamily:"'Geist Mono',monospace"}}>{new Date().toLocaleDateString("pt-BR",{weekday:"long",year:"numeric",month:"long",day:"numeric"})}</div>
-            <div style={{fontSize:11,padding:"3px 10px",borderRadius:6,background:C.greenDim,color:C.green,border:"0.5px solid rgba(34,197,94,0.3)",fontFamily:"'Geist Mono',monospace"}}>● supabase conectado</div>
+          <div className="main-topbar" style={{borderBottom:`0.5px solid ${C.border}`,padding:"11px 36px",display:"flex",alignItems:"center",justifyContent:"space-between",background:C.bg,flexShrink:0}}>
+            <div className="topbar-date" style={{fontSize:12,color:C.textMuted,fontFamily:"'Geist Mono',monospace"}}>{new Date().toLocaleDateString("pt-BR",{weekday:"long",year:"numeric",month:"long",day:"numeric"})}</div>
+            <div style={{fontSize:11,padding:"3px 10px",borderRadius:6,background:C.greenDim,color:C.green,border:"0.5px solid rgba(34,197,94,0.3)",fontFamily:"'Geist Mono',monospace"}}>● online</div>
           </div>
           {pages[page]}
         </main>
       </div>
+      <BottomNav page={page} setPage={setPage} sb={sb}/>
     </>
   );
 }
