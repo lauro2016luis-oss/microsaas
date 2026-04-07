@@ -167,7 +167,6 @@ const BottomNav=({page,setPage,sb})=>{
     {id:"links",icon:"link",label:"Links"},
     {id:"payments",icon:"payment",label:"Payments"},
     {id:"lojas",icon:"store",label:"Lojas"},
-    {id:"videos",icon:"video",label:"Vídeos"},
     {id:"arquivos",icon:"file",label:"Arquivos"},
   ];
   return(
@@ -305,7 +304,6 @@ const Sidebar=({page,setPage,storeName,setStoreName,sb,user})=>{
     {id:"dashboard",label:"Painel",icon:"dashboard"},
     {id:"links",label:"Links",icon:"link"},
     {id:"tarefas",label:"Tarefas",icon:"task"},
-    {id:"videos",label:"Vídeos",icon:"video"},
     {id:"arquivos",label:"Arquivos",icon:"file"},
     {id:"payments",label:"Payments",icon:"payment"},
     {id:"lojas",label:"Lojas",icon:"store"},
@@ -872,62 +870,167 @@ const LinksPage=({sb,user})=>{
   const [links,setLinks]=useState([]);
   const [loading,setLoading]=useState(true);
   const [search,setSearch]=useState("");
-  const [fs,setFs]=useState("Todos");
   const [modal,setModal]=useState(false);
   const [saving,setSaving]=useState(false);
-  const [form,setForm]=useState({url:"",title:"",notes:"",tags:"",status:"Novo"});
+  const [form,setForm]=useState({url:"",title:"",notes:"",tags:"",status:"Novo",categoria:"Produtos"});
+  const dragging=useRef(null);
+  const colRefs=useRef({});
   const {show,El}=useToast();
-  useEffect(()=>{sb.from("links").select("*").eq("user_id",user.id).order("created_at",{ascending:false}).then(({data})=>{setLinks(data||[]);setLoading(false);});},[]);
+
+  useEffect(()=>{
+    sb.from("links").select("*").eq("user_id",user.id).order("created_at",{ascending:false})
+      .then(({data})=>{setLinks(data||[]);setLoading(false);});
+  },[]);
+
   const add=async()=>{
     if(!form.url){show("URL é obrigatória","error");return;}
     setSaving(true);
     const tags=form.tags.split(",").map(t=>t.trim()).filter(Boolean);
     const{data,error}=await sb.from("links").insert({user_id:user.id,...form,tags,title:form.title||form.url}).select().single();
-    if(error){show("Erro: "+error.message,"error");}else{setLinks(p=>[data,...p]);show("Link salvo!");setModal(false);setForm({url:"",title:"",notes:"",tags:"",status:"Novo"});}
+    if(error){show("Erro: "+error.message,"error");}
+    else{setLinks(p=>[data,...p]);show("Link salvo!");setModal(false);setForm({url:"",title:"",notes:"",tags:"",status:"Novo",categoria:"Produtos"});}
     setSaving(false);
   };
-  const del=async(id)=>{await sb.from("links").delete().eq("id",id);setLinks(p=>p.filter(l=>l.id!==id));show("Removido");};
-  const updStatus=async(id,status)=>{await sb.from("links").update({status}).eq("id",id);setLinks(p=>p.map(l=>l.id===id?{...l,status}:l));};
-  const statuses=["Todos","Novo","Revisando","Aprovado","Rejeitado"];
-  const filtered=links.filter(l=>(fs==="Todos"||l.status===fs)&&((l.title||"").toLowerCase().includes(search.toLowerCase())||(l.url||"").toLowerCase().includes(search.toLowerCase())));
+
+  const del=async(id)=>{
+    await sb.from("links").delete().eq("id",id);
+    setLinks(p=>p.filter(l=>l.id!==id));
+    show("Removido");
+  };
+
+  const moveCategoria=async(id,categoria)=>{
+    await sb.from("links").update({categoria}).eq("id",id);
+    setLinks(p=>p.map(l=>l.id===id?{...l,categoria}:l));
+  };
+
+  const onDS=(e,l)=>{dragging.current=l;setTimeout(()=>e.target.closest("[data-card]")?.classList.add("dragging-card"),0);e.dataTransfer.effectAllowed="move";};
+  const onDE=(e)=>{e.target.closest("[data-card]")?.classList.remove("dragging-card");document.querySelectorAll(".drag-over-col").forEach(el=>el.classList.remove("drag-over-col"));};
+  const onDO=(e,el)=>{e.preventDefault();document.querySelectorAll(".drag-over-col").forEach(x=>x.classList.remove("drag-over-col"));el?.classList.add("drag-over-col");};
+  const onDrop=(e,cat,el)=>{e.preventDefault();el?.classList.remove("drag-over-col");if(dragging.current){moveCategoria(dragging.current.id,cat);dragging.current=null;}};
+
+  const cols=[
+    {id:"Produtos",label:"Produtos",icon:"store",color:C.blue,colorDim:C.blueDim},
+    {id:"Vídeos",label:"Vídeos",icon:"video",color:C.accent,colorDim:C.accentDim},
+  ];
+
+  const filtered=links.filter(l=>(l.title||"").toLowerCase().includes(search.toLowerCase())||(l.url||"").toLowerCase().includes(search.toLowerCase()));
+
+  const CardLink=({l})=>{
+    const [hov,setHov]=useState(false);
+    const col=cols.find(c=>c.id===l.categoria)||cols[0];
+    return(
+      <div data-card draggable onDragStart={e=>onDS(e,l)} onDragEnd={onDE}
+        style={{background:"#0d0d0d",border:`0.5px solid ${hov?C.borderHover:C.border}`,borderRadius:12,padding:"14px",cursor:"grab",userSelect:"none",transition:"all 0.15s"}}
+        onMouseEnter={()=>setHov(true)} onMouseLeave={()=>setHov(false)}>
+        {/* Ícone + título */}
+        <div style={{display:"flex",alignItems:"flex-start",gap:10,marginBottom:10}}>
+          <div style={{width:32,height:32,borderRadius:8,background:col.colorDim,display:"flex",alignItems:"center",justifyContent:"center",color:col.color,flexShrink:0}}>
+            <Icon name={col.icon} size={14}/>
+          </div>
+          <div style={{flex:1,minWidth:0}}>
+            <div style={{fontSize:13,fontWeight:500,color:C.text,lineHeight:1.4,wordBreak:"break-word"}}>{l.title||l.url}</div>
+            <div style={{fontSize:10,color:C.textMuted,marginTop:2,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{l.url}</div>
+          </div>
+        </div>
+        {/* Notas */}
+        {l.notes&&<div style={{fontSize:11,color:C.textMuted,marginBottom:10,lineHeight:1.5,background:"#111",borderRadius:6,padding:"6px 8px"}}>{l.notes}</div>}
+        {/* Tags */}
+        {(l.tags||[]).length>0&&(
+          <div style={{display:"flex",gap:4,flexWrap:"wrap",marginBottom:10}}>
+            {l.tags.map(t=><Badge key={t} label={t}/>)}
+          </div>
+        )}
+        {/* Footer */}
+        <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginTop:4}}>
+          <Badge label={l.status} color={statusColor(l.status)}/>
+          <div style={{display:"flex",gap:4,alignItems:"center"}}>
+            <a href={l.url} target="_blank" rel="noreferrer" style={{color:C.textDim,display:"flex",padding:4}}><Icon name="externalLink" size={12}/></a>
+            <button onClick={()=>del(l.id)} style={{background:"none",border:"none",color:C.textDim,cursor:"pointer",padding:4,display:"flex"}}><Icon name="trash" size={12}/></button>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   return (
     <div className="page-pad" style={{overflowY:"auto",flex:1}}>
       {El}
+      {/* HEADER */}
       <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:24}}>
-        <div><h1 style={{fontSize:22,fontWeight:600,color:C.text,letterSpacing:"-0.03em"}}>Links</h1><p style={{fontSize:13,color:C.textMuted,marginTop:2}}>{links.length} links salvos</p></div>
-        <Btn variant="primary" icon="plus" onClick={()=>setModal(true)}>Adicionar Link</Btn>
+        <div>
+          <h1 style={{fontSize:22,fontWeight:600,color:C.text,letterSpacing:"-0.03em"}}>Links</h1>
+          <p style={{fontSize:13,color:C.textMuted,marginTop:2}}>Lojas concorrentes · {links.length} links salvos</p>
+        </div>
+        <Btn variant="primary" icon="plus" onClick={()=>setModal(true)}>Adicionar</Btn>
       </div>
-      <div style={{display:"flex",gap:10,marginBottom:20,flexWrap:"wrap"}}>
-        <div style={{position:"relative",flex:1,maxWidth:340}}><span style={{position:"absolute",left:10,top:"50%",transform:"translateY(-50%)",color:C.textMuted}}><Icon name="search" size={14}/></span><input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Buscar..." style={{width:"100%",background:C.surface,border:`0.5px solid ${C.border}`,color:C.text,fontFamily:"'Geist',sans-serif",fontSize:13,padding:"8px 12px 8px 32px",borderRadius:8,outline:"none"}}/></div>
-        <div style={{display:"flex",gap:4,flexWrap:"wrap"}}>{statuses.map(s=><button key={s} onClick={()=>setFs(s)} style={{padding:"6px 12px",borderRadius:7,fontSize:12,fontFamily:"'Geist',sans-serif",fontWeight:500,cursor:"pointer",background:fs===s?C.accentDim:"transparent",color:fs===s?C.accent:C.textMuted,border:`0.5px solid ${fs===s?C.accentBorder:C.border}`,transition:"all 0.15s"}}>{s}</button>)}</div>
+
+      {/* BUSCA */}
+      <div style={{position:"relative",maxWidth:360,marginBottom:24}}>
+        <span style={{position:"absolute",left:10,top:"50%",transform:"translateY(-50%)",color:C.textMuted}}><Icon name="search" size={14}/></span>
+        <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Buscar link..." style={{width:"100%",background:C.surface,border:`0.5px solid ${C.border}`,color:C.text,fontFamily:"'Geist',sans-serif",fontSize:13,padding:"8px 12px 8px 32px",borderRadius:8,outline:"none"}}/>
       </div>
+
+      {/* KANBAN */}
       {loading?<div style={{textAlign:"center",padding:40}}><Spinner size={24}/></div>:(
-        <div style={{display:"flex",flexDirection:"column",gap:8}}>
-          {filtered.length===0&&<div style={{textAlign:"center",padding:40,color:C.textMuted,fontSize:13}}>Nenhum link encontrado</div>}
-          {filtered.map(l=>(
-            <div key={l.id} style={{background:C.surface,border:`0.5px solid ${C.border}`,borderRadius:12,padding:"14px 16px",display:"flex",alignItems:"center",gap:12,transition:"border-color 0.15s"}} onMouseEnter={e=>e.currentTarget.style.borderColor=C.borderHover} onMouseLeave={e=>e.currentTarget.style.borderColor=C.border}>
-              <div style={{width:34,height:34,borderRadius:8,background:C.blueDim,display:"flex",alignItems:"center",justifyContent:"center",color:C.blue,flexShrink:0}}><Icon name="link" size={15}/></div>
-              <div style={{flex:1,minWidth:0}}><div style={{fontSize:13,fontWeight:500,color:C.text,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",marginBottom:2}}>{l.title||l.url}</div><div style={{fontSize:11,color:C.textMuted,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{l.url}</div></div>
-              <div style={{display:"flex",alignItems:"center",gap:8,flexShrink:0}}>
-                {(l.tags||[]).slice(0,2).map(t=><Badge key={t} label={t}/>)}
-                <select value={l.status} onChange={e=>updStatus(l.id,e.target.value)} style={{background:"#1a1a1a",border:`0.5px solid ${C.border}`,color:C.textMuted,fontFamily:"'Geist',sans-serif",fontSize:11,padding:"4px 6px",borderRadius:6,cursor:"pointer",outline:"none"}}>{["Novo","Revisando","Aprovado","Rejeitado"].map(s=><option key={s}>{s}</option>)}</select>
-                <Badge label={l.status} color={statusColor(l.status)}/>
-                <a href={l.url} target="_blank" rel="noreferrer" style={{color:C.textMuted,display:"flex"}}><Icon name="externalLink" size={14}/></a>
-                <button onClick={()=>del(l.id)} style={{background:"none",border:"none",color:C.textDim,cursor:"pointer",padding:4}}><Icon name="trash" size={13}/></button>
+        <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(300px,1fr))",gap:16,alignItems:"start"}}>
+          {cols.map(col=>{
+            const items=filtered.filter(l=>l.categoria===col.id);
+            return(
+              <div key={col.id}>
+                {/* Cabeçalho da coluna */}
+                <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:12,padding:"10px 14px",background:col.colorDim,borderRadius:10,border:`0.5px solid ${col.color}33`}}>
+                  <Icon name={col.icon} size={15}/>
+                  <span style={{fontSize:13,fontWeight:600,color:col.color}}>{col.label}</span>
+                  <span style={{fontSize:11,color:col.color,opacity:0.6,marginLeft:"auto",fontFamily:"'Geist Mono',monospace"}}>{items.length}</span>
+                </div>
+                {/* Área de drop */}
+                <div
+                  ref={el=>{if(el)colRefs.current[col.id]=el;}}
+                  onDragOver={e=>onDO(e,colRefs.current[col.id])}
+                  onDrop={e=>onDrop(e,col.id,colRefs.current[col.id])}
+                  style={{display:"flex",flexDirection:"column",gap:10,minHeight:120,borderRadius:10,padding:6,border:"1px solid transparent",transition:"all 0.15s"}}>
+                  {items.map(l=><CardLink key={l.id} l={l}/>)}
+                  {items.length===0&&(
+                    <div style={{padding:"28px 0",textAlign:"center",color:C.textDim,fontSize:12,border:`0.5px dashed ${C.border}`,borderRadius:10}}>
+                      Solte um card aqui
+                    </div>
+                  )}
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
+
+      {/* MODAL */}
       {modal&&(
-        <Modal title="Adicionar Novo Link" onClose={()=>setModal(false)}>
+        <Modal title="Adicionar Link" onClose={()=>setModal(false)}>
           <div style={{display:"flex",flexDirection:"column",gap:12}}>
+            <div>
+              <label style={{fontSize:12,color:C.textMuted,display:"block",marginBottom:6}}>Categoria</label>
+              <div style={{display:"flex",gap:8}}>
+                {cols.map(c=>(
+                  <button key={c.id} onClick={()=>setForm(p=>({...p,categoria:c.id}))}
+                    style={{flex:1,padding:"8px",borderRadius:8,fontSize:13,fontFamily:"'Geist',sans-serif",fontWeight:500,cursor:"pointer",background:form.categoria===c.id?c.colorDim:"transparent",color:form.categoria===c.id?c.color:C.textMuted,border:`0.5px solid ${form.categoria===c.id?c.color+"55":C.border}`,transition:"all 0.15s",display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>
+                    <Icon name={c.icon} size={13}/>{c.label}
+                  </button>
+                ))}
+              </div>
+            </div>
             <Input value={form.url} onChange={v=>setForm(p=>({...p,url:v}))} placeholder="https://..." onKeyDown={e=>e.key==="Enter"&&add()}/>
             <Input value={form.title} onChange={v=>setForm(p=>({...p,title:v}))} placeholder="Título (opcional)"/>
             <Input value={form.tags} onChange={v=>setForm(p=>({...p,tags:v}))} placeholder="Etiquetas (vírgula)"/>
             <textarea value={form.notes} onChange={e=>setForm(p=>({...p,notes:e.target.value}))} placeholder="Observações..." rows={3} style={{background:"#0d0d0d",border:`0.5px solid ${C.border}`,color:C.text,fontFamily:"'Geist',sans-serif",fontSize:13,padding:"8px 12px",borderRadius:8,outline:"none",resize:"none"}}/>
-            <select value={form.status} onChange={e=>setForm(p=>({...p,status:e.target.value}))} style={{background:"#0d0d0d",border:`0.5px solid ${C.border}`,color:C.text,fontFamily:"'Geist',sans-serif",fontSize:13,padding:"8px 12px",borderRadius:8,outline:"none"}}>{["Novo","Revisando","Aprovado","Rejeitado"].map(s=><option key={s}>{s}</option>)}</select>
-            <div style={{display:"flex",gap:8,justifyContent:"flex-end"}}><Btn variant="outline" onClick={()=>setModal(false)}>Cancelar</Btn><Btn variant="primary" onClick={add} loading={saving}>Salvar Link</Btn></div>
+            <div>
+              <label style={{fontSize:12,color:C.textMuted,display:"block",marginBottom:6}}>Status</label>
+              <select value={form.status} onChange={e=>setForm(p=>({...p,status:e.target.value}))} style={{background:"#0d0d0d",border:`0.5px solid ${C.border}`,color:C.text,fontFamily:"'Geist',sans-serif",fontSize:13,padding:"8px 12px",borderRadius:8,outline:"none",width:"100%"}}>
+                {["Novo","Revisando","Aprovado","Rejeitado"].map(s=><option key={s}>{s}</option>)}
+              </select>
+            </div>
+            <div style={{display:"flex",gap:8,justifyContent:"flex-end"}}>
+              <Btn variant="outline" onClick={()=>setModal(false)}>Cancelar</Btn>
+              <Btn variant="primary" onClick={add} loading={saving}>Salvar Link</Btn>
+            </div>
           </div>
         </Modal>
       )}
@@ -1476,7 +1579,6 @@ export default function App() {
     dashboard:<PainelPage sb={sb} user={user} setPage={setPage}/>,
     links:<LinksPage sb={sb} user={user}/>,
     tarefas:<TarefasPage sb={sb} user={user}/>,
-    videos:<VideosPage sb={sb} user={user}/>,
     arquivos:<ArquivosPage sb={sb} user={user}/>,
     payments:<PaymentsPage sb={sb} user={user}/>,
     lojas:<LojasPage sb={sb} user={user}/>,
