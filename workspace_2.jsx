@@ -798,52 +798,68 @@ const PainelPage=({sb,user,setPage})=>{
       </div>
 
       {/* INTEGRAÇÕES */}
-      <div style={{marginBottom:20,background:C.surface,border:`0.5px solid ${C.border}`,borderRadius:12,overflow:"hidden"}}>
-        {/* Header */}
-        <div style={{padding:"12px 18px",borderBottom:`0.5px solid ${C.border}`,display:"flex",justifyContent:"space-between",alignItems:"center",flexWrap:"wrap",gap:8}}>
-          <span style={{fontSize:13,fontWeight:500,color:C.text}}>Integrações</span>
-          <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
-            {(shopifyConfigs.length>0||googleAdsConfigs.length>0)&&(
-              <Btn variant="outline" small onClick={()=>{syncShopify(null);if(googleAdsConfigs.length>0)syncGoogleAds();}} loading={syncingId==="all"} icon="zap">Sincronizar tudo</Btn>
-            )}
-            <Btn variant="primary" small onClick={()=>{setManualDomain("");setManualToken("");setShowShopifySettings(true);}} icon="plus">+ Shopify</Btn>
-            <Btn variant="outline" small onClick={()=>{setGadsForm({clientId:"",clientSecret:"",developerToken:"",customerId:"",accountName:""});setShowGadsSettings(true);}} icon="plus">+ Google Ads</Btn>
-          </div>
-        </div>
+      <div style={{marginBottom:20}}>
+        <div style={{fontSize:12,color:C.textMuted,marginBottom:10,textTransform:"uppercase",letterSpacing:"0.06em"}}>Integrações</div>
+        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12}}>
 
-        {/* Lista Shopify */}
-        {shopifyConfigs.map(cfg=>(
-          <div key={cfg.id} style={{padding:"12px 18px",borderBottom:`0.5px solid ${C.border}`,display:"flex",alignItems:"center",gap:12,flexWrap:"wrap"}}>
-            <div style={{width:32,height:32,borderRadius:8,background:"rgba(34,197,94,0.12)",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M15.5 3.5C15.5 3.5 15 3 13.5 3C12 3 11 4.5 10.5 5.5L6 6.5L4 20H18L20 6.5L16.5 5.5C16.5 5.5 16.5 3.5 15.5 3.5Z" stroke={C.green} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/><path d="M10.5 5.5C10.5 5.5 11 9 14 9C17 9 16.5 5.5 16.5 5.5" stroke={C.green} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+          {/* ── COLUNA SHOPIFY ── */}
+          <div style={{background:C.surface,border:`0.5px solid ${C.border}`,borderRadius:12,overflow:"hidden"}}>
+            <div style={{padding:"12px 16px",borderBottom:`0.5px solid ${C.border}`,display:"flex",alignItems:"center",gap:8}}>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M15.5 3.5C15.5 3.5 15 3 13.5 3C12 3 11 4.5 10.5 5.5L6 6.5L4 20H18L20 6.5L16.5 5.5C16.5 5.5 16.5 3.5 15.5 3.5Z" stroke={C.green} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/><path d="M10.5 5.5C10.5 5.5 11 9 14 9C17 9 16.5 5.5 16.5 5.5" stroke={C.green} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+              <span style={{fontSize:13,fontWeight:500,color:C.text}}>Shopify</span>
+              <span style={{fontSize:11,color:C.textMuted,marginLeft:"auto"}}>{shopifyConfigs.length} loja{shopifyConfigs.length!==1?"s":""}</span>
             </div>
-            <div style={{flex:1,minWidth:0}}>
-              <div style={{fontSize:12,fontWeight:500,color:C.text}}>Shopify · <span style={{color:C.green}}>● {cfg.shop_domain}</span></div>
-              <div style={{fontSize:11,color:C.textMuted,marginTop:1}}>última sync: {cfg.last_sync_at?new Date(cfg.last_sync_at).toLocaleString("pt-BR",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"}):"nunca"}</div>
-            </div>
-            <Btn variant="outline" small onClick={()=>syncShopify(cfg.shop_domain)} loading={syncingId===cfg.shop_domain} icon="zap">Sync</Btn>
-            <Btn variant="ghost" small onClick={()=>{setManualDomain(cfg.shop_domain);setManualToken("");setShowShopifySettings(true);}} icon="edit"/>
-            <Btn variant="ghost" small onClick={()=>disconnectShopify(cfg.id)} icon="x"/>
-          </div>
-        ))}
 
-        {/* Lista Google Ads */}
-        {googleAdsConfigs.map(cfg=>(
-          <div key={cfg.id} style={{padding:"12px 18px",borderBottom:`0.5px solid ${C.border}`,display:"flex",alignItems:"center",gap:12,flexWrap:"wrap"}}>
-            <div style={{width:32,height:32,borderRadius:8,background:"rgba(59,130,246,0.12)",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,fontSize:12,fontWeight:700,color:C.blue}}>G</div>
-            <div style={{flex:1,minWidth:0}}>
-              <div style={{fontSize:12,fontWeight:500,color:C.text}}>Google Ads · <span style={{color:C.blue}}>● {cfg.account_name||cfg.customer_id}</span></div>
-              <div style={{fontSize:11,color:C.textMuted,marginTop:1}}>ID: {cfg.customer_id} · última sync: {cfg.last_sync_at?new Date(cfg.last_sync_at).toLocaleString("pt-BR",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"}):"nunca"}</div>
-            </div>
-            <Btn variant="outline" small onClick={syncGoogleAds} loading={gadsSyncing} icon="zap">Sync</Btn>
-            <Btn variant="ghost" small onClick={()=>disconnectGoogleAds(cfg.id)} icon="x"/>
-          </div>
-        ))}
+            {shopifyConfigs.map(cfg=>(
+              <div key={cfg.id} style={{padding:"10px 16px",borderBottom:`0.5px solid ${C.border}`,display:"flex",alignItems:"center",gap:8}}>
+                <div style={{flex:1,minWidth:0}}>
+                  <div style={{fontSize:12,fontWeight:500,color:C.green,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>● {cfg.shop_domain}</div>
+                  <div style={{fontSize:10,color:C.textMuted}}>sync: {cfg.last_sync_at?new Date(cfg.last_sync_at).toLocaleString("pt-BR",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"}):"nunca"}</div>
+                </div>
+                <Btn variant="outline" small onClick={()=>syncShopify(cfg.shop_domain)} loading={syncingId===cfg.shop_domain} icon="zap">Sync</Btn>
+                <Btn variant="ghost" small onClick={()=>disconnectShopify(cfg.id)} icon="x"/>
+              </div>
+            ))}
 
-        {/* Adicionar */}
-        <div style={{padding:"10px 18px",display:"flex",gap:8,flexWrap:"wrap"}}>
-          <Btn variant="ghost" small onClick={()=>{setManualDomain("");setManualToken("");setShowShopifySettings(true);}} icon="plus">Adicionar Shopify</Btn>
-          <Btn variant="ghost" small onClick={()=>{setGadsForm({clientId:"",clientSecret:"",developerToken:"",customerId:"",accountName:""});setShowGadsSettings(true);}} icon="plus">Adicionar Google Ads</Btn>
+            {/* Botão adicionar Shopify — GRANDE e óbvio */}
+            <button onClick={()=>{setManualDomain("");setManualToken("");setShowShopifySettings(true);}}
+              style={{width:"100%",padding:"14px 16px",background:"transparent",border:"none",color:C.accent,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:8,fontSize:13,fontWeight:500,fontFamily:"'Geist',sans-serif",borderTop:shopifyConfigs.length>0?`0.5px solid ${C.border}`:"none",transition:"background 0.15s"}}
+              onMouseEnter={e=>e.currentTarget.style.background=C.accentDim}
+              onMouseLeave={e=>e.currentTarget.style.background="transparent"}>
+              <Icon name="plus" size={16}/>
+              {shopifyConfigs.length===0?"Conectar loja Shopify":"Adicionar outra loja"}
+            </button>
+          </div>
+
+          {/* ── COLUNA GOOGLE ADS ── */}
+          <div style={{background:C.surface,border:`0.5px solid ${C.border}`,borderRadius:12,overflow:"hidden"}}>
+            <div style={{padding:"12px 16px",borderBottom:`0.5px solid ${C.border}`,display:"flex",alignItems:"center",gap:8}}>
+              <span style={{width:14,height:14,borderRadius:"50%",background:C.blue,display:"inline-flex",alignItems:"center",justifyContent:"center",fontSize:9,fontWeight:700,color:"#fff",flexShrink:0}}>G</span>
+              <span style={{fontSize:13,fontWeight:500,color:C.text}}>Google Ads</span>
+              <span style={{fontSize:11,color:C.textMuted,marginLeft:"auto"}}>{googleAdsConfigs.length} conta{googleAdsConfigs.length!==1?"s":""}</span>
+            </div>
+
+            {googleAdsConfigs.map(cfg=>(
+              <div key={cfg.id} style={{padding:"10px 16px",borderBottom:`0.5px solid ${C.border}`,display:"flex",alignItems:"center",gap:8}}>
+                <div style={{flex:1,minWidth:0}}>
+                  <div style={{fontSize:12,fontWeight:500,color:C.blue,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>● {cfg.account_name||cfg.customer_id}</div>
+                  <div style={{fontSize:10,color:C.textMuted}}>sync: {cfg.last_sync_at?new Date(cfg.last_sync_at).toLocaleString("pt-BR",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"}):"nunca"}</div>
+                </div>
+                <Btn variant="outline" small onClick={syncGoogleAds} loading={gadsSyncing} icon="zap">Sync</Btn>
+                <Btn variant="ghost" small onClick={()=>disconnectGoogleAds(cfg.id)} icon="x"/>
+              </div>
+            ))}
+
+            {/* Botão adicionar Google Ads — GRANDE e óbvio */}
+            <button onClick={()=>{setGadsForm({clientId:"",clientSecret:"",developerToken:"",customerId:"",accountName:""});setShowGadsSettings(true);}}
+              style={{width:"100%",padding:"14px 16px",background:"transparent",border:"none",color:C.blue,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:8,fontSize:13,fontWeight:500,fontFamily:"'Geist',sans-serif",borderTop:googleAdsConfigs.length>0?`0.5px solid ${C.border}`:"none",transition:"background 0.15s"}}
+              onMouseEnter={e=>e.currentTarget.style.background=C.blueDim}
+              onMouseLeave={e=>e.currentTarget.style.background="transparent"}>
+              <Icon name="plus" size={16}/>
+              {googleAdsConfigs.length===0?"Conectar Google Ads":"Adicionar outra conta"}
+            </button>
+          </div>
+
         </div>
       </div>
 
