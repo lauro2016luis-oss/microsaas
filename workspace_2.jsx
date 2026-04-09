@@ -488,6 +488,10 @@ const PainelPage=({sb,user,setPage})=>{
   const [generatingKey,setGeneratingKey]=useState(false);
   const [keyCopied,setKeyCopied]=useState(false);
   const [scriptCopied,setScriptCopied]=useState(false);
+  // System settings
+  const [showSysSettings,setShowSysSettings]=useState(false);
+  const [sysForm,setSysForm]=useState({shopify_client_id:"",shopify_client_secret:""});
+  const [sysSaving,setSysSaving]=useState(false);
   const {show,El}=useToast();
 
   // Detecta retorno de OAuth
@@ -581,6 +585,29 @@ const PainelPage=({sb,user,setPage})=>{
       if(data.url){window.location.href=data.url;}
       else{show("Erro ao iniciar OAuth: "+(data.error||"desconhecido"),"error");}
     }catch(e){show("Erro: "+String(e),"error");}
+  };
+
+  const loadSysSettings=async()=>{
+    const{data}=await sb.from("system_settings").select("key,value").in("key",["shopify_client_id","shopify_client_secret"]);
+    if(data){
+      const obj={shopify_client_id:"",shopify_client_secret:""};
+      data.forEach(r=>{obj[r.key]=r.value;});
+      setSysForm(obj);
+    }
+  };
+
+  const saveSysSettings=async()=>{
+    if(!sysForm.shopify_client_id.trim()||!sysForm.shopify_client_secret.trim()){show("Preencha Client ID e Client Secret","error");return;}
+    setSysSaving(true);
+    try{
+      await sb.from("system_settings").upsert([
+        {key:"shopify_client_id",value:sysForm.shopify_client_id.trim(),updated_at:new Date().toISOString()},
+        {key:"shopify_client_secret",value:sysForm.shopify_client_secret.trim(),updated_at:new Date().toISOString()},
+      ],{onConflict:"key"});
+      show("Credenciais salvas com sucesso!");
+      setShowSysSettings(false);
+    }catch(e){show("Erro: "+String(e),"error");}
+    setSysSaving(false);
   };
 
   const disconnectShopify=async(id)=>{
@@ -972,6 +999,22 @@ function main() {
           </div>
 
         </div>
+
+        {/* ── CONFIGURACOES DO SISTEMA ── */}
+        <div style={{background:C.surface,border:`0.5px solid ${C.border}`,borderRadius:12,overflow:"hidden",gridColumn:"1/-1"}}>
+          <div style={{padding:"12px 16px",borderBottom:`0.5px solid ${C.border}`,display:"flex",alignItems:"center",gap:8}}>
+            <Icon name="settings" size={13} color={C.textMuted}/>
+            <span style={{fontSize:13,fontWeight:500,color:C.text}}>Configuracoes do Sistema</span>
+          </div>
+          <button onClick={()=>{loadSysSettings();setShowSysSettings(true);}}
+            style={{width:"100%",padding:"13px 16px",background:"transparent",border:"none",color:C.textMuted,cursor:"pointer",display:"flex",alignItems:"center",gap:8,fontSize:12,fontFamily:"'Geist',sans-serif",transition:"background 0.15s",textAlign:"left"}}
+            onMouseEnter={e=>e.currentTarget.style.background=C.hover}
+            onMouseLeave={e=>e.currentTarget.style.background="transparent"}>
+            <Icon name="zap" size={13}/>
+            Atualizar credenciais Shopify Partners (Client ID + Secret)
+          </button>
+        </div>
+
       </div>
 
       {/* MODAL SHOPIFY */}
@@ -1028,6 +1071,29 @@ function main() {
             <div style={{display:"flex",gap:8,justifyContent:"flex-end",marginTop:4}}>
               <Btn variant="outline" onClick={()=>setShowGadsSettings(false)}>Cancelar</Btn>
               <Btn variant="primary" onClick={connectGoogleAds} loading={gadsSaving} icon="zap">Conectar com Google</Btn>
+            </div>
+          </div>
+        </Modal>
+      )}
+
+      {/* MODAL SYSTEM SETTINGS */}
+      {showSysSettings&&(
+        <Modal title="Credenciais Shopify Partners" onClose={()=>setShowSysSettings(false)}>
+          <div style={{display:"flex",flexDirection:"column",gap:16}}>
+            <div style={{padding:"12px 14px",background:"rgba(124,107,255,0.07)",borderRadius:10,border:`0.5px solid ${C.accentBorder}`,fontSize:12,color:C.textMuted,lineHeight:"1.6"}}>
+              Estas credenciais ficam salvas no banco de dados e sao usadas automaticamente para conectar qualquer loja Shopify. Voce so precisa atualizar quando criar um novo app no Shopify Partners.
+            </div>
+            <div>
+              <label style={{fontSize:12,color:C.textMuted,display:"block",marginBottom:6}}>Client ID <span style={{color:C.red}}>*</span></label>
+              <Input value={sysForm.shopify_client_id} onChange={v=>setSysForm(p=>({...p,shopify_client_id:v}))} placeholder="832a5784e398b5f742406692a715105a"/>
+            </div>
+            <div>
+              <label style={{fontSize:12,color:C.textMuted,display:"block",marginBottom:6}}>Client Secret <span style={{color:C.red}}>*</span></label>
+              <Input value={sysForm.shopify_client_secret} onChange={v=>setSysForm(p=>({...p,shopify_client_secret:v}))} placeholder="shpss_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx" type="password"/>
+            </div>
+            <div style={{display:"flex",gap:8,justifyContent:"flex-end"}}>
+              <Btn variant="outline" onClick={()=>setShowSysSettings(false)}>Cancelar</Btn>
+              <Btn variant="primary" onClick={saveSysSettings} loading={sysSaving} icon="zap">Salvar</Btn>
             </div>
           </div>
         </Modal>
