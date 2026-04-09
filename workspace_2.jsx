@@ -800,12 +800,14 @@ const PainelPage=({sb,user,setPage})=>{
       {/* INTEGRAÇÕES */}
       <div style={{marginBottom:20,background:C.surface,border:`0.5px solid ${C.border}`,borderRadius:12,overflow:"hidden"}}>
         {/* Header */}
-        <div style={{padding:"12px 18px",borderBottom:`0.5px solid ${C.border}`,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+        <div style={{padding:"12px 18px",borderBottom:`0.5px solid ${C.border}`,display:"flex",justifyContent:"space-between",alignItems:"center",flexWrap:"wrap",gap:8}}>
           <span style={{fontSize:13,fontWeight:500,color:C.text}}>Integrações</span>
-          <div style={{display:"flex",gap:6}}>
+          <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
             {(shopifyConfigs.length>0||googleAdsConfigs.length>0)&&(
               <Btn variant="outline" small onClick={()=>{syncShopify(null);if(googleAdsConfigs.length>0)syncGoogleAds();}} loading={syncingId==="all"} icon="zap">Sincronizar tudo</Btn>
             )}
+            <Btn variant="primary" small onClick={()=>{setManualDomain("");setManualToken("");setShowShopifySettings(true);}} icon="plus">+ Shopify</Btn>
+            <Btn variant="outline" small onClick={()=>{setGadsForm({clientId:"",clientSecret:"",developerToken:"",customerId:"",accountName:""});setShowGadsSettings(true);}} icon="plus">+ Google Ads</Btn>
           </div>
         </div>
 
@@ -928,17 +930,35 @@ const PainelPage=({sb,user,setPage})=>{
         <span style={{fontSize:11,color:taxaInfo.carregando?C.amber:taxaInfo.atualizado==="offline"?C.red:C.green,fontFamily:"'Geist Mono',monospace",display:"flex",alignItems:"center",gap:4}}>
           {taxaInfo.carregando?"⏳ buscando câmbio...":taxaInfo.atualizado==="offline"?"⚠ câmbio offline":`● câmbio ${taxaInfo.atualizado}`}
         </span>
-        <div style={{display:"flex",gap:4,flexWrap:"wrap"}}>
+        <div style={{display:"flex",gap:4,flexWrap:"wrap",position:"relative"}}>
           {periodos.map(p=>(
             <button key={p.id} onClick={()=>setFiltroPeriodo(p.id)} style={{padding:"5px 12px",borderRadius:7,fontSize:12,fontFamily:"'Geist',sans-serif",fontWeight:500,cursor:"pointer",background:filtroPeriodo===p.id?C.accentDim:"transparent",color:filtroPeriodo===p.id?C.accent:C.textMuted,border:`0.5px solid ${filtroPeriodo===p.id?C.accentBorder:C.border}`,transition:"all 0.15s"}}>{p.label}</button>
           ))}
+          {/* Popover de período personalizado */}
           {filtroPeriodo==="custom"&&(
-            <div style={{display:"flex",alignItems:"center",gap:6,flexWrap:"wrap"}}>
-              <input type="date" value={filtroDataInicio} onChange={e=>setFiltroDataInicio(e.target.value)}
-                style={{background:"#1a1a1a",border:`0.5px solid ${C.border}`,color:C.text,fontFamily:"'Geist Mono',monospace",fontSize:12,padding:"5px 10px",borderRadius:7,outline:"none"}}/>
-              <span style={{fontSize:11,color:C.textMuted}}>até</span>
-              <input type="date" value={filtroDataFim} onChange={e=>setFiltroDataFim(e.target.value)}
-                style={{background:"#1a1a1a",border:`0.5px solid ${C.border}`,color:C.text,fontFamily:"'Geist Mono',monospace",fontSize:12,padding:"5px 10px",borderRadius:7,outline:"none"}}/>
+            <div className="fade-in" style={{position:"absolute",top:"calc(100% + 8px)",left:0,zIndex:200,background:"#161616",border:`0.5px solid ${C.accentBorder}`,borderRadius:12,padding:16,minWidth:280,boxShadow:"0 8px 32px rgba(0,0,0,0.5)"}}>
+              <div style={{fontSize:12,fontWeight:500,color:C.text,marginBottom:12}}>Selecionar período</div>
+              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:12}}>
+                <div>
+                  <label style={{fontSize:11,color:C.textMuted,display:"block",marginBottom:5}}>Data início</label>
+                  <input type="date" value={filtroDataInicio} onChange={e=>setFiltroDataInicio(e.target.value)}
+                    style={{background:"#0d0d0d",border:`0.5px solid ${C.border}`,color:C.text,fontFamily:"'Geist Mono',monospace",fontSize:12,padding:"7px 10px",borderRadius:7,outline:"none",width:"100%"}}/>
+                </div>
+                <div>
+                  <label style={{fontSize:11,color:C.textMuted,display:"block",marginBottom:5}}>Data fim</label>
+                  <input type="date" value={filtroDataFim} onChange={e=>setFiltroDataFim(e.target.value)}
+                    style={{background:"#0d0d0d",border:`0.5px solid ${C.border}`,color:C.text,fontFamily:"'Geist Mono',monospace",fontSize:12,padding:"7px 10px",borderRadius:7,outline:"none",width:"100%"}}/>
+                </div>
+              </div>
+              {filtroDataInicio&&filtroDataFim&&(
+                <div style={{fontSize:11,color:C.green,background:C.greenDim,padding:"6px 10px",borderRadius:6,border:"0.5px solid rgba(34,197,94,0.2)",marginBottom:8}}>
+                  ✅ {filtroDataInicio.split("-").reverse().join("/")} → {filtroDataFim.split("-").reverse().join("/")}
+                </div>
+              )}
+              <div style={{display:"flex",gap:6,justifyContent:"flex-end"}}>
+                <button onClick={()=>{setFiltroDataInicio("");setFiltroDataFim("");}} style={{fontSize:11,padding:"5px 10px",borderRadius:6,background:"transparent",border:`0.5px solid ${C.border}`,color:C.textMuted,cursor:"pointer",fontFamily:"'Geist',sans-serif"}}>Limpar</button>
+                <button onClick={()=>setFiltroPeriodo("total")} style={{fontSize:11,padding:"5px 10px",borderRadius:6,background:"transparent",border:`0.5px solid ${C.border}`,color:C.textMuted,cursor:"pointer",fontFamily:"'Geist',sans-serif"}}>Fechar</button>
+              </div>
             </div>
           )}
         </div>
