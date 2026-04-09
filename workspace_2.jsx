@@ -962,19 +962,38 @@ function main() {
 
       {/* MODAL SHOPIFY */}
       {showShopifySettings&&(
-        <Modal title={manualDomain?"Editar Loja Shopify":"Adicionar Loja Shopify"} onClose={()=>setShowShopifySettings(false)}>
+        <Modal title="Conectar Loja Shopify" onClose={()=>setShowShopifySettings(false)}>
           <div style={{display:"flex",flexDirection:"column",gap:16}}>
-            <div style={{padding:"10px 14px",background:"rgba(124,107,255,0.08)",borderRadius:9,border:`0.5px solid ${C.accentBorder}`,fontSize:12,color:C.textMuted,lineHeight:"1.6"}}>
-              Precisa do <strong style={{color:C.text}}>Admin API Access Token</strong> da sua loja.<br/>
-              Shopify Admin → <strong style={{color:C.accent}}>Configurações → Apps → Desenvolver apps</strong> → crie um app → instale → copie o token.
+            {/* Passo a passo */}
+            <div style={{background:"rgba(124,107,255,0.07)",border:`0.5px solid ${C.accentBorder}`,borderRadius:10,padding:"14px 16px"}}>
+              <div style={{fontSize:12,fontWeight:600,color:C.text,marginBottom:10}}>Como obter seu token (App Privado):</div>
+              {[
+                ["1","Acesse","Shopify Admin → Configurações → Apps e canais de vendas"],
+                ["2","Clique em","Desenvolver apps → Criar um app"],
+                ["3","Dê um nome","ex: Workspace Sync → clique em Criar app"],
+                ["4","Clique em","Configurar escopos da API de administrador"],
+                ["5","Marque as permissões","read_orders, write_orders, read_products, write_products → Salvar"],
+                ["6","Clique em","Instalar app → Instalar"],
+                ["7","Copie o token","Admin API access token (começa com shpat_)"],
+              ].map(([n,label,val])=>(
+                <div key={n} style={{display:"flex",gap:10,alignItems:"flex-start",marginBottom:7}}>
+                  <span style={{minWidth:20,height:20,borderRadius:"50%",background:C.accentDim,border:`0.5px solid ${C.accentBorder}`,display:"inline-flex",alignItems:"center",justifyContent:"center",fontSize:10,fontWeight:700,color:C.accent,flexShrink:0}}>{n}</span>
+                  <div style={{fontSize:12,color:C.textMuted,lineHeight:"1.5"}}>
+                    <span style={{color:C.textMuted}}>{label} </span>
+                    <span style={{color:C.text,fontWeight:500}}>{val}</span>
+                  </div>
+                </div>
+              ))}
             </div>
             <div>
-              <label style={{fontSize:12,color:C.textMuted,display:"block",marginBottom:6}}>Domínio da loja</label>
+              <label style={{fontSize:12,color:C.textMuted,display:"block",marginBottom:6}}>Domínio da loja <span style={{color:C.red}}>*</span></label>
               <Input value={manualDomain} onChange={setManualDomain} placeholder="minhaloja.myshopify.com"/>
+              <div style={{fontSize:11,color:C.textMuted,marginTop:4}}>Só o domínio, sem https://</div>
             </div>
             <div>
-              <label style={{fontSize:12,color:C.textMuted,display:"block",marginBottom:6}}>Admin API Access Token</label>
+              <label style={{fontSize:12,color:C.textMuted,display:"block",marginBottom:6}}>Admin API Access Token <span style={{color:C.red}}>*</span></label>
               <Input value={manualToken} onChange={setManualToken} placeholder="shpat_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx" type="password"/>
+              <div style={{fontSize:11,color:C.textMuted,marginTop:4}}>Token gerado no passo 7 acima</div>
             </div>
             <div style={{display:"flex",gap:8,justifyContent:"flex-end"}}>
               <Btn variant="outline" onClick={()=>setShowShopifySettings(false)}>Cancelar</Btn>
