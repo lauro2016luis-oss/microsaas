@@ -479,6 +479,12 @@ const PainelPage=({sb,user,setPage})=>{
   const [gadsSaving,setGadsSaving]=useState(false);
   const [gadsSyncing,setGadsSyncing]=useState(false);
   const [gadsForm,setGadsForm]=useState({clientId:"",clientSecret:"",developerToken:"",customerId:"",accountName:""});
+  // API Key (Google Ads Script)
+  const [apiKey,setApiKey]=useState(null);
+  const [showScriptModal,setShowScriptModal]=useState(false);
+  const [generatingKey,setGeneratingKey]=useState(false);
+  const [keyCopied,setKeyCopied]=useState(false);
+  const [scriptCopied,setScriptCopied]=useState(false);
   const {show,El}=useToast();
 
   // Detecta retorno de OAuth
@@ -590,6 +596,94 @@ const PainelPage=({sb,user,setPage})=>{
     show("Conta removida");
   };
 
+  const loadApiKey=async()=>{
+    const{data}=await sb.from("user_api_keys").select("key").eq("user_id",user.id).single();
+    setApiKey(data?.key||null);
+  };
+
+  const generateApiKey=async()=>{
+    setGeneratingKey(true);
+    const arr=new Uint8Array(32);
+    crypto.getRandomValues(arr);
+    const key=Array.from(arr).map(b=>b.toString(16).padStart(2,"0")).join("");
+    const{error}=await sb.from("user_api_keys").upsert({user_id:user.id,key},{onConflict:"user_id"});
+    if(error){show("Erro ao gerar chave: "+error.message,"error");}
+    else{setApiKey(key);}
+    setGeneratingKey(false);
+  };
+
+  const copyText=async(text,setCopied)=>{
+    await navigator.clipboard.writeText(text);
+    setCopied(true);
+    setTimeout(()=>setCopied(false),2000);
+  };
+
+  const getGadsScript=(key)=>`// ============================================================
+// WORKSPACE - Google Ads Script
+// Cole em: Google Ads -> Ferramentas -> Scripts em massa -> Scripts
+// Agende para rodar: Todo dia as 06:00
+// ============================================================
+
+var CONFIG = {
+  API_KEY: '${key}',
+  ENDPOINT: 'https://vvdhnwknluxsaxcqvlyh.supabase.co/functions/v1/gads-script-sync',
+  ACCOUNT_NAME: 'Google Ads',  // Nome que aparecera no painel
+  CURRENCY: 'BRL',             // Moeda: BRL, USD, EUR...
+  DAYS: 180                    // Dias de historico a importar
+};
+
+function main() {
+  var tz = AdsApp.currentAccount().getTimeZone();
+  var endDate = new Date();
+  var startDate = new Date();
+  startDate.setDate(startDate.getDate() - CONFIG.DAYS);
+
+  var start = Utilities.formatDate(startDate, tz, 'yyyyMMdd');
+  var end   = Utilities.formatDate(endDate,   tz, 'yyyyMMdd');
+
+  var report = AdsApp.report(
+    'SELECT Date, Cost FROM ACCOUNT_PERFORMANCE_REPORT ' +
+    'WHERE Date BETWEEN ' + start + ' AND ' + end
+  );
+
+  var data = [];
+  var rows = report.rows();
+  while (rows.hasNext()) {
+    var row = rows.next();
+    var cost = parseFloat(String(row['Cost']).replace(',', '.')) || 0;
+    if (cost > 0) {
+      var d = String(row['Date']);
+      data.push({
+        date: d.length === 8
+          ? d.substr(0,4)+'-'+d.substr(4,2)+'-'+d.substr(6,2)
+          : d,
+        cost: cost,
+        currency: CONFIG.CURRENCY
+      });
+    }
+  }
+
+  Logger.log('Enviando ' + data.length + ' dias...');
+  if (data.length === 0) { Logger.log('Sem dados com custo > 0.'); return; }
+
+  var resp = UrlFetchApp.fetch(CONFIG.ENDPOINT, {
+    method: 'post',
+    contentType: 'application/json',
+    payload: JSON.stringify({
+      api_key: CONFIG.API_KEY,
+      account_name: CONFIG.ACCOUNT_NAME,
+      data: data
+    }),
+    muteHttpExceptions: true
+  });
+
+  var result = JSON.parse(resp.getContentText());
+  Logger.log(result.success
+    ? 'OK! ' + result.days_synced + ' dias sincronizados.'
+    : 'ERRO: ' + result.error
+  );
+}`;
+
   // Carrega Chart.js uma vez
   useEffect(()=>{
     if(window.Chart){setChartReady(true);return;}
@@ -599,7 +693,7 @@ const PainelPage=({sb,user,setPage})=>{
     document.head.appendChild(s);
   },[]);
 
-  useEffect(()=>{loadAll();loadShopifyConfigs();loadGoogleAdsConfigs();},[]);
+  useEffect(()=>{loadAll();loadShopifyConfigs();loadGoogleAdsConfigs();loadApiKey();},[]);
 
   const loadAll=async()=>{
     const[l,t,p,pr,lj]=await Promise.all([
@@ -850,13 +944,13 @@ const PainelPage=({sb,user,setPage})=>{
               </div>
             ))}
 
-            {/* Botão adicionar Google Ads — GRANDE e óbvio */}
-            <button onClick={()=>{setGadsForm({clientId:"",clientSecret:"",developerToken:"",customerId:"",accountName:""});setShowGadsSettings(true);}}
-              style={{width:"100%",padding:"14px 16px",background:"transparent",border:"none",color:C.blue,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:8,fontSize:13,fontWeight:500,fontFamily:"'Geist',sans-serif",borderTop:googleAdsConfigs.length>0?`0.5px solid ${C.border}`:"none",transition:"background 0.15s"}}
-              onMouseEnter={e=>e.currentTarget.style.background=C.blueDim}
-              onMouseLeave={e=>e.currentTarget.style.background="transparent"}>
-              <Icon name="plus" size={16}/>
-              {googleAdsConfigs.length===0?"Conectar Google Ads":"Adicionar outra conta"}
+            {/* Botão principal — Script (conta normal) */}
+            <button onClick={()=>{if(!apiKey)generateApiKey();setShowScriptModal(true);}}
+              style={{width:"100%",padding:"14px 16px",background:C.blueDim,border:"none",borderTop:`0.5px solid rgba(59,130,246,0.2)`,color:C.blue,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:8,fontSize:13,fontWeight:600,fontFamily:"'Geist',sans-serif",transition:"opacity 0.15s"}}
+              onMouseEnter={e=>e.currentTarget.style.opacity="0.8"}
+              onMouseLeave={e=>e.currentTarget.style.opacity="1"}>
+              <Icon name="zap" size={16}/>
+              Configurar via Script (conta normal)
             </button>
           </div>
 
@@ -913,6 +1007,72 @@ const PainelPage=({sb,user,setPage})=>{
             <div style={{display:"flex",gap:8,justifyContent:"flex-end",marginTop:4}}>
               <Btn variant="outline" onClick={()=>setShowGadsSettings(false)}>Cancelar</Btn>
               <Btn variant="primary" onClick={connectGoogleAds} loading={gadsSaving} icon="zap">Conectar com Google</Btn>
+            </div>
+          </div>
+        </Modal>
+      )}
+
+      {/* MODAL SCRIPT GOOGLE ADS */}
+      {showScriptModal&&(
+        <Modal title="Google Ads Script — Configurar" onClose={()=>setShowScriptModal(false)}>
+          <div style={{display:"flex",flexDirection:"column",gap:16}}>
+
+            {/* Passo 1 — Chave */}
+            <div style={{background:"#0d0d0d",borderRadius:10,padding:16,border:`0.5px solid ${C.border}`}}>
+              <div style={{fontSize:12,fontWeight:600,color:C.text,marginBottom:10}}>PASSO 1 — Sua chave de API</div>
+              {apiKey?(
+                <div style={{display:"flex",gap:8,alignItems:"center"}}>
+                  <code style={{flex:1,fontSize:11,fontFamily:"'Geist Mono',monospace",color:C.green,background:"#111",padding:"8px 12px",borderRadius:7,border:`0.5px solid ${C.border}`,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{apiKey}</code>
+                  <button onClick={()=>copyText(apiKey,setKeyCopied)} style={{padding:"7px 14px",borderRadius:7,background:keyCopied?C.greenDim:C.accentDim,border:`0.5px solid ${keyCopied?"rgba(34,197,94,0.3)":C.accentBorder}`,color:keyCopied?C.green:C.accent,cursor:"pointer",fontSize:12,fontFamily:"'Geist',sans-serif",whiteSpace:"nowrap"}}>
+                    {keyCopied?"Copiado!":"Copiar"}
+                  </button>
+                </div>
+              ):(
+                <button onClick={generateApiKey} disabled={generatingKey} style={{padding:"9px 16px",borderRadius:8,background:C.accentDim,border:`0.5px solid ${C.accentBorder}`,color:C.accent,cursor:"pointer",fontSize:13,fontFamily:"'Geist',sans-serif",display:"flex",alignItems:"center",gap:6}}>
+                  {generatingKey?<Spinner size={13}/>:<Icon name="zap" size={14}/>}
+                  Gerar minha chave
+                </button>
+              )}
+            </div>
+
+            {/* Passo 2 — Script */}
+            {apiKey&&(
+              <div style={{background:"#0d0d0d",borderRadius:10,padding:16,border:`0.5px solid ${C.border}`}}>
+                <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
+                  <div style={{fontSize:12,fontWeight:600,color:C.text}}>PASSO 2 — Script para colar no Google Ads</div>
+                  <button onClick={()=>copyText(getGadsScript(apiKey),setScriptCopied)} style={{padding:"5px 12px",borderRadius:7,background:scriptCopied?C.greenDim:C.accentDim,border:`0.5px solid ${scriptCopied?"rgba(34,197,94,0.3)":C.accentBorder}`,color:scriptCopied?C.green:C.accent,cursor:"pointer",fontSize:11,fontFamily:"'Geist',sans-serif",whiteSpace:"nowrap"}}>
+                    {scriptCopied?"Copiado!":"Copiar script"}
+                  </button>
+                </div>
+                <pre style={{fontSize:10,fontFamily:"'Geist Mono',monospace",color:"#888",background:"#080808",padding:12,borderRadius:8,overflowX:"auto",maxHeight:180,overflowY:"auto",border:`0.5px solid ${C.border}`,margin:0,lineHeight:"1.6"}}>
+                  {getGadsScript(apiKey).slice(0,400)+"..."}
+                </pre>
+              </div>
+            )}
+
+            {/* Passo 3 — Instruções */}
+            {apiKey&&(
+              <div style={{background:"rgba(59,130,246,0.06)",borderRadius:10,padding:14,border:"0.5px solid rgba(59,130,246,0.2)"}}>
+                <div style={{fontSize:12,fontWeight:600,color:C.blue,marginBottom:10}}>PASSO 3 — Colar no Google Ads</div>
+                {[
+                  "Abra ads.google.com e faça login",
+                  "Clique em Ferramentas (chave inglesa no topo)",
+                  "Vá em Scripts em massa → Scripts",
+                  "Clique em + (botão azul) para criar novo script",
+                  "Apague o conteudo que aparecer e cole o script copiado",
+                  "Clique em Salvar → depois em Executar para testar",
+                  "Se der OK nos logs, clique em Programar → Todo dia as 06:00",
+                ].map((step,i)=>(
+                  <div key={i} style={{display:"flex",gap:10,marginBottom:7,alignItems:"flex-start"}}>
+                    <span style={{width:20,height:20,borderRadius:"50%",background:"rgba(59,130,246,0.15)",color:C.blue,fontSize:10,fontWeight:700,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,marginTop:1}}>{i+1}</span>
+                    <span style={{fontSize:12,color:C.textMuted,lineHeight:"1.5"}}>{step}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            <div style={{display:"flex",justifyContent:"flex-end"}}>
+              <Btn variant="outline" onClick={()=>setShowScriptModal(false)}>Fechar</Btn>
             </div>
           </div>
         </Modal>
