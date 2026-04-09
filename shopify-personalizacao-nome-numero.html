@@ -1,0 +1,274 @@
+<!-- ============================================================
+   PERSONALIZAÇÃO DE NOME E NÚMERO — SHOPIFY
+
+   COMO USAR:
+   1. No admin Shopify, vá em Online Store > Themes > Edit code
+   2. Abra o arquivo: sections/main-product.liquid (ou product-template.liquid)
+   3. Cole este bloco DENTRO do <form> de adicionar ao carrinho,
+      logo ANTES do botão "Adicionar ao carrinho"
+   4. Salve. Os dados aparecem em cada pedido em:
+      Orders > [pedido] > "Nome" e "Número" abaixo do produto
+   ============================================================ -->
+
+<div class="personalizacao-wrap" id="personalizacao-wrap">
+
+  <!-- Botão toggle -->
+  <div class="personalizacao-toggle-row">
+    <span class="personalizacao-label-main">Personalizar Nome e Número</span>
+    <span class="personalizacao-preco">(+ R$30)</span>
+    <div class="personalizacao-toggle-btns">
+      <button type="button" class="toggle-btn" id="btn-nao" onclick="togglePersonalizacao(false)">Não</button>
+      <button type="button" class="toggle-btn ativo" id="btn-sim" onclick="togglePersonalizacao(true)">Sim</button>
+    </div>
+  </div>
+
+  <!-- Campos (visíveis por padrão se quiser, ou hidden) -->
+  <div class="personalizacao-campos" id="personalizacao-campos">
+
+    <!-- NOME -->
+    <div class="campo-grupo">
+      <label class="campo-label" for="prop-nome">
+        <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none"
+          stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+          <circle cx="12" cy="7" r="4"/>
+        </svg>
+        NOME: <span class="campo-hint">(até 16 caracteres)</span>
+      </label>
+      <input
+        type="text"
+        id="prop-nome"
+        name="properties[Nome]"
+        class="campo-input"
+        placeholder="Ex: Vinicius Jr"
+        maxlength="16"
+        autocomplete="off"
+      />
+      <span class="campo-contador" id="contador-nome">0/16</span>
+    </div>
+
+    <!-- NÚMERO -->
+    <div class="campo-grupo">
+      <label class="campo-label" for="prop-numero">
+        <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none"
+          stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="10"/>
+          <path d="M12 8v4l3 3"/>
+        </svg>
+        NÚMERO: <span class="campo-hint">(até 2 dígitos)</span>
+      </label>
+      <input
+        type="text"
+        id="prop-numero"
+        name="properties[Número]"
+        class="campo-input"
+        placeholder="Ex: 10"
+        maxlength="2"
+        inputmode="numeric"
+        pattern="[0-9]*"
+        autocomplete="off"
+      />
+    </div>
+
+  </div>
+  <!-- /personalizacao-campos -->
+
+</div>
+<!-- /personalizacao-wrap -->
+
+
+<!-- ============================================================
+   ESTILOS
+   Cole dentro de <style> ou no seu arquivo CSS do tema
+   ============================================================ -->
+<style>
+  .personalizacao-wrap {
+    margin: 18px 0;
+    font-family: inherit;
+  }
+
+  /* ---- Toggle row ---- */
+  .personalizacao-toggle-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-bottom: 14px;
+  }
+
+  .personalizacao-label-main {
+    font-weight: 600;
+    font-size: 14px;
+    color: #222;
+  }
+
+  .personalizacao-preco {
+    font-size: 13px;
+    color: #555;
+  }
+
+  .personalizacao-toggle-btns {
+    display: flex;
+    border: 1.5px solid #d0d0d0;
+    border-radius: 6px;
+    overflow: hidden;
+    margin-left: auto;
+  }
+
+  .toggle-btn {
+    background: #fff;
+    border: none;
+    padding: 6px 18px;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    color: #444;
+    transition: background 0.15s, color 0.15s;
+    outline: none;
+  }
+
+  .toggle-btn + .toggle-btn {
+    border-left: 1.5px solid #d0d0d0;
+  }
+
+  .toggle-btn.ativo {
+    background: #1a7a3f;
+    color: #fff;
+  }
+
+  /* ---- Campos ---- */
+  .personalizacao-campos {
+    background: #f5f5f5;
+    border-radius: 10px;
+    padding: 18px 16px 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    transition: opacity 0.2s;
+  }
+
+  .personalizacao-campos.oculto {
+    display: none;
+  }
+
+  .campo-grupo {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    position: relative;
+  }
+
+  .campo-label {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    color: #444;
+    text-transform: uppercase;
+  }
+
+  .campo-hint {
+    font-weight: 400;
+    text-transform: none;
+    letter-spacing: 0;
+    color: #888;
+    font-size: 11px;
+  }
+
+  .campo-input {
+    width: 100%;
+    padding: 11px 14px;
+    border: 1.5px solid #ddd;
+    border-radius: 8px;
+    font-size: 14px;
+    color: #333;
+    background: #fff;
+    outline: none;
+    box-sizing: border-box;
+    transition: border-color 0.2s;
+  }
+
+  .campo-input:focus {
+    border-color: #1a7a3f;
+  }
+
+  .campo-input::placeholder {
+    color: #bbb;
+  }
+
+  .campo-contador {
+    font-size: 11px;
+    color: #aaa;
+    text-align: right;
+    margin-top: -2px;
+  }
+</style>
+
+
+<!-- ============================================================
+   JAVASCRIPT
+   Cole antes do </body> ou no seu arquivo JS do tema
+   ============================================================ -->
+<script>
+  (function () {
+    // Estado inicial: "Sim" ativo, campos visíveis
+    var ativo = true;
+
+    function togglePersonalizacao(sim) {
+      ativo = sim;
+      var campos = document.getElementById('personalizacao-campos');
+      var btnSim = document.getElementById('btn-sim');
+      var btnNao = document.getElementById('btn-nao');
+      var inputNome   = document.getElementById('prop-nome');
+      var inputNumero = document.getElementById('prop-numero');
+
+      if (sim) {
+        campos.classList.remove('oculto');
+        btnSim.classList.add('ativo');
+        btnNao.classList.remove('ativo');
+        // Reativa os campos para serem enviados com o formulário
+        inputNome.removeAttribute('disabled');
+        inputNumero.removeAttribute('disabled');
+      } else {
+        campos.classList.add('oculto');
+        btnNao.classList.add('ativo');
+        btnSim.classList.remove('ativo');
+        // Limpa e desativa para não enviar dados em branco
+        inputNome.value = '';
+        inputNumero.value = '';
+        inputNome.setAttribute('disabled', 'disabled');
+        inputNumero.setAttribute('disabled', 'disabled');
+        document.getElementById('contador-nome').textContent = '0/16';
+      }
+    }
+
+    // Contador de caracteres do nome
+    document.getElementById('prop-nome').addEventListener('input', function () {
+      document.getElementById('contador-nome').textContent = this.value.length + '/16';
+    });
+
+    // Permite apenas dígitos no campo número
+    document.getElementById('prop-numero').addEventListener('input', function () {
+      this.value = this.value.replace(/[^0-9]/g, '');
+    });
+
+    // Expõe a função globalmente para os botões onclick
+    window.togglePersonalizacao = togglePersonalizacao;
+
+    // Valida antes de enviar o formulário
+    var form = document.getElementById('personalizacao-wrap').closest('form');
+    if (form) {
+      form.addEventListener('submit', function (e) {
+        if (!ativo) return; // não personalizado, ok
+        var nome   = document.getElementById('prop-nome').value.trim();
+        var numero = document.getElementById('prop-numero').value.trim();
+        if (!nome || !numero) {
+          e.preventDefault();
+          alert('Preencha o Nome e o Número para personalizar a camiseta.');
+        }
+      });
+    }
+  })();
+</script>

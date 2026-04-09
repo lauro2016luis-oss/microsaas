@@ -15,7 +15,10 @@
       "Bash(npm run:*)",
       "Bash(gh auth:*)",
       "Bash(export PATH=\"/opt/homebrew/bin:$PATH\")",
-      "Bash(/opt/homebrew/bin/gh repo:*)"
+      "Bash(/opt/homebrew/bin/gh repo:*)",
+      "WebFetch(domain:microsaas-qy8v-ikksybzzb-lauro2016luis-9467s-projects.vercel.app)",
+      "WebSearch",
+      "mcp__6e2a353a-6861-407a-8da6-fdb034188deb__deploy_edge_function"
     ]
   }
 }

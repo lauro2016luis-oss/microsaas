@@ -445,6 +445,8 @@ const LineChart=({data})=>{
 };
 
 // ─── PAINEL ───────────────────────────────────────────────────────────────────
+const SUPA_FUNCTIONS_URL="https://vvdhnwknluxsaxcqvlyh.supabase.co/functions/v1";
+
 const PainelPage=({sb,user,setPage})=>{
   const [tasks,setTasks]=useState([]);
   const [links,setLinks]=useState([]);
@@ -462,7 +464,42 @@ const PainelPage=({sb,user,setPage})=>{
   const [filtroDataCustom,setFiltroDataCustom]=useState("");
   const hoje=new Date().toISOString().slice(0,10);
   const [form,setForm]=useState({store_name:"",date:hoje,currency:"BRL",revenue:"",ad_spend:""});
+  // Shopify
+  const [shopifyConfig,setShopifyConfig]=useState(null);
+  const [shopifyLoading,setShopifyLoading]=useState(false);
+  const [syncing,setSyncing]=useState(false);
   const {show,El}=useToast();
+
+  // Detecta retorno do OAuth Shopify
+  useEffect(()=>{
+    const params=new URLSearchParams(window.location.search);
+    if(params.get("shopify_connected")==="1"){show("Shopify conectado com sucesso! 🎉");window.history.replaceState({},"",window.location.pathname);loadShopifyConfig();}
+    if(params.get("shopify_error")){show("Erro ao conectar Shopify: "+params.get("shopify_error"),"error");window.history.replaceState({},"",window.location.pathname);}
+  },[]);
+
+  const loadShopifyConfig=async()=>{
+    const{data}=await sb.from("shopify_configs").select("*").eq("user_id",user.id).single();
+    setShopifyConfig(data||null);
+  };
+
+  const connectShopify=async()=>{
+    setShopifyLoading(true);
+    const{data:{session}}=await sb.auth.getSession();
+    const res=await fetch(`${SUPA_FUNCTIONS_URL}/shopify-auth`,{headers:{Authorization:`Bearer ${session.access_token}`}});
+    const{url,error}=await res.json();
+    if(error){show("Erro: "+error,"error");setShopifyLoading(false);return;}
+    window.location.href=url;
+  };
+
+  const syncShopify=async()=>{
+    setSyncing(true);
+    const{data:{session}}=await sb.auth.getSession();
+    const res=await fetch(`${SUPA_FUNCTIONS_URL}/shopify-sync`,{method:"POST",headers:{Authorization:`Bearer ${session.access_token}`}});
+    const data=await res.json();
+    if(data.error){show("Erro na sync: "+data.error,"error");}
+    else{show(`✅ ${data.orders_synced} pedidos sincronizados (${data.days_synced} dias)`);await loadAll();await loadShopifyConfig();}
+    setSyncing(false);
+  };
 
   // Carrega Chart.js uma vez
   useEffect(()=>{
@@ -473,7 +510,7 @@ const PainelPage=({sb,user,setPage})=>{
     document.head.appendChild(s);
   },[]);
 
-  useEffect(()=>{loadAll();},[]);
+  useEffect(()=>{loadAll();loadShopifyConfig();},[]);
 
   const loadAll=async()=>{
     const[l,t,p,pr,lj]=await Promise.all([
@@ -659,6 +696,25 @@ const PainelPage=({sb,user,setPage})=>{
           onMouseEnter={e=>e.currentTarget.style.background="#6c5ce7"} onMouseLeave={e=>e.currentTarget.style.background=C.accent}>
           <Icon name="plus" size={14}/> Registrar
         </button>
+      </div>
+
+      {/* SHOPIFY CARD */}
+      <div style={{marginBottom:20,padding:"14px 18px",background:C.surface,border:`0.5px solid ${shopifyConfig?"rgba(34,197,94,0.3)":C.border}`,borderRadius:12,display:"flex",alignItems:"center",gap:14,flexWrap:"wrap"}}>
+        <div style={{width:36,height:36,borderRadius:9,background:shopifyConfig?"rgba(34,197,94,0.12)":"rgba(124,107,255,0.12)",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M15.5 3.5C15.5 3.5 15 3 13.5 3C12 3 11 4.5 10.5 5.5L6 6.5L4 20H18L20 6.5L16.5 5.5C16.5 5.5 16.5 3.5 15.5 3.5Z" stroke={shopifyConfig?C.green:C.accent} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/><path d="M10.5 5.5C10.5 5.5 11 9 14 9C17 9 16.5 5.5 16.5 5.5" stroke={shopifyConfig?C.green:C.accent} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+        </div>
+        <div style={{flex:1,minWidth:0}}>
+          <div style={{fontSize:13,fontWeight:500,color:C.text}}>Shopify</div>
+          <div style={{fontSize:11,color:shopifyConfig?C.green:C.textMuted,marginTop:2}}>
+            {shopifyConfig
+              ?`✅ Conectado · última sync: ${shopifyConfig.last_sync_at?new Date(shopifyConfig.last_sync_at).toLocaleString("pt-BR",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"}):"nunca"}`
+              :"Conecte sua loja para importar pedidos automaticamente"}
+          </div>
+        </div>
+        {shopifyConfig
+          ?<Btn variant="outline" small onClick={syncShopify} loading={syncing} icon="zap">Sincronizar agora</Btn>
+          :<Btn variant="primary" small onClick={connectShopify} loading={shopifyLoading} icon="link">Conectar Shopify</Btn>
+        }
       </div>
 
       {/* KPI CARDS */}
