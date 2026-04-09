@@ -569,6 +569,18 @@ const PainelPage=({sb,user,setPage})=>{
     setManualSaving(false);
   };
 
+  const connectShopifyOAuth=async()=>{
+    try{
+      const{data:{session}}=await sb.auth.getSession();
+      const res=await fetch(`${SUPA_FUNCTIONS_URL}/shopify-auth`,{
+        headers:{Authorization:`Bearer ${session.access_token}`}
+      });
+      const data=await res.json();
+      if(data.url){window.location.href=data.url;}
+      else{show("Erro ao iniciar OAuth: "+(data.error||"desconhecido"),"error");}
+    }catch(e){show("Erro: "+String(e),"error");}
+  };
+
   const disconnectShopify=async(id)=>{
     if(!window.confirm("Remover esta loja? Os dados importados serão mantidos."))return;
     await sb.from("shopify_configs").delete().eq("id",id);
@@ -918,14 +930,31 @@ function main() {
               </div>
             ))}
 
-            {/* Botão adicionar Shopify — GRANDE e óbvio */}
-            <button onClick={()=>{setManualDomain("");setManualToken("");setShowShopifySettings(true);}}
-              style={{width:"100%",padding:"14px 16px",background:"transparent",border:"none",color:C.accent,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:8,fontSize:13,fontWeight:500,fontFamily:"'Geist',sans-serif",borderTop:shopifyConfigs.length>0?`0.5px solid ${C.border}`:"none",transition:"background 0.15s"}}
-              onMouseEnter={e=>e.currentTarget.style.background=C.accentDim}
-              onMouseLeave={e=>e.currentTarget.style.background="transparent"}>
-              <Icon name="plus" size={16}/>
-              {shopifyConfigs.length===0?"Conectar loja Shopify":"Adicionar outra loja"}
-            </button>
+            {/* Botões adicionar Shopify */}
+            <div style={{borderTop:shopifyConfigs.length>0?`0.5px solid ${C.border}`:"none",display:"flex",flexDirection:"column"}}>
+              {/* OAuth — loja própria (5scnm9-hz) */}
+              <button onClick={connectShopifyOAuth}
+                style={{width:"100%",padding:"13px 16px",background:"transparent",border:"none",borderBottom:`0.5px solid ${C.border}`,color:C.green,cursor:"pointer",display:"flex",alignItems:"center",gap:8,fontSize:12,fontWeight:500,fontFamily:"'Geist',sans-serif",transition:"background 0.15s"}}
+                onMouseEnter={e=>e.currentTarget.style.background="rgba(34,197,94,0.06)"}
+                onMouseLeave={e=>e.currentTarget.style.background="transparent"}>
+                <Icon name="zap" size={13}/>
+                <div style={{textAlign:"left"}}>
+                  <div>Reconectar minha loja (OAuth)</div>
+                  <div style={{fontSize:10,color:C.textMuted,fontWeight:400}}>5scnm9-hz.myshopify.com — reautorizar com novas permissões</div>
+                </div>
+              </button>
+              {/* Manual — qualquer loja */}
+              <button onClick={()=>{setManualDomain("");setManualToken("");setShowShopifySettings(true);}}
+                style={{width:"100%",padding:"13px 16px",background:"transparent",border:"none",color:C.accent,cursor:"pointer",display:"flex",alignItems:"center",gap:8,fontSize:12,fontWeight:500,fontFamily:"'Geist',sans-serif",transition:"background 0.15s"}}
+                onMouseEnter={e=>e.currentTarget.style.background=C.accentDim}
+                onMouseLeave={e=>e.currentTarget.style.background="transparent"}>
+                <Icon name="plus" size={13}/>
+                <div style={{textAlign:"left"}}>
+                  <div>Adicionar outra loja (token manual)</div>
+                  <div style={{fontSize:10,color:C.textMuted,fontWeight:400}}>Qualquer loja Shopify — precisa do shpat_</div>
+                </div>
+              </button>
+            </div>
           </div>
 
           {/* ── COLUNA GOOGLE ADS ── */}
