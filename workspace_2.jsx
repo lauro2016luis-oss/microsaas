@@ -191,7 +191,7 @@ const BottomNav=({page,setPage,sb})=>{
 };
 
 // ─── LOGIN ────────────────────────────────────────────────────────────────────
-const LoginPage=({sb})=>{
+const LoginPage=({sb,otpPendingRef})=>{
   const [mode,setMode]=useState("login"); // "login" | "signup" | "reset" | "otp"
   const [email,setEmail]=useState("");
   const [password,setPassword]=useState("");
@@ -213,8 +213,13 @@ const LoginPage=({sb})=>{
     }
 
     if(mode==="otp"){
+      // Verifica o codigo — permite a sessao ser criada
+      if(otpPendingRef) otpPendingRef.current=false;
       const{error}=await sb.auth.verifyOtp({email:email.trim(),token:otpCode.trim(),type:"email"});
-      if(error){setMsg({text:"Codigo invalido ou expirado. Tente novamente.",type:"error"});}
+      if(error){
+        if(otpPendingRef) otpPendingRef.current=true; // volta a bloquear se falhou
+        setMsg({text:"Codigo invalido ou expirado. Tente novamente.",type:"error"});
+      }
       setLoading(false);return;
     }
 
@@ -227,14 +232,23 @@ const LoginPage=({sb})=>{
       setLoading(false);return;
     }
 
-    // LOGIN: verifica senha, desloga e envia OTP
-    const{data,error}=await sb.auth.signInWithPassword({email:email.trim(),password});
-    if(error){setMsg({text:"Email ou senha incorretos.",type:"error"});setLoading(false);return;}
+    // LOGIN: bloqueia navegacao, verifica senha, desloga, envia OTP
+    if(otpPendingRef) otpPendingRef.current=true;
+    const{error}=await sb.auth.signInWithPassword({email:email.trim(),password});
+    if(error){
+      if(otpPendingRef) otpPendingRef.current=false;
+      setMsg({text:"Email ou senha incorretos.",type:"error"});
+      setLoading(false);return;
+    }
 
-    // Credenciais validas — desloga e envia codigo por email
+    // Senha correta — desloga imediatamente e envia OTP
     await sb.auth.signOut();
     const{error:otpErr}=await sb.auth.signInWithOtp({email:email.trim(),options:{shouldCreateUser:false}});
-    if(otpErr){setMsg({text:"Erro ao enviar codigo: "+otpErr.message,type:"error"});setLoading(false);return;}
+    if(otpErr){
+      if(otpPendingRef) otpPendingRef.current=false;
+      setMsg({text:"Erro ao enviar codigo: "+otpErr.message,type:"error"});
+      setLoading(false);return;
+    }
 
     setMsg({text:"Codigo enviado! Verifique seu e-mail.",type:"success"});
     setMode("otp");
@@ -2365,10 +2379,13 @@ export default function App() {
   const [user,setUser]=useState(undefined); // undefined=carregando, null=sem sessão
   const [page,setPage]=useState("dashboard");
   const [storeName,setStoreName]=useState("Minha Loja");
+  const otpPendingRef=useRef(false);
 
   useEffect(()=>{
     sb.auth.getSession().then(({data:{session}})=>setUser(session?.user??null));
-    const{data:{subscription}}=sb.auth.onAuthStateChange((_,session)=>setUser(session?.user??null));
+    const{data:{subscription}}=sb.auth.onAuthStateChange((_,session)=>{
+      if(!otpPendingRef.current) setUser(session?.user??null);
+    });
     return ()=>subscription.unsubscribe();
   },[]);
 
@@ -2383,7 +2400,7 @@ export default function App() {
   );
 
   // Não autenticado
-  if(!user) return <LoginPage sb={sb}/>;
+  if(!user) return <LoginPage sb={sb} otpPendingRef={otpPendingRef}/>;
 
   const pages={
     dashboard:<PainelPage sb={sb} user={user} setPage={setPage}/>,
