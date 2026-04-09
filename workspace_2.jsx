@@ -519,8 +519,8 @@ const PainelPage=({sb,user,setPage})=>{
       const data=await res.json();
       if(data.error){show("Erro: "+data.error,"error");}
       else{
-        const errs=data.errors?.length?` (${data.errors.join(", ")})":"";
-        show(`✅ ${data.orders_synced} pedidos · ${data.days_synced} dias${errs}`);
+        const errs=data.errors?.length?" ("+data.errors.join(", ")+")":"";
+        show(data.orders_synced+" pedidos importados · "+data.days_synced+" dias"+errs);
         await loadAll();await loadShopifyConfigs();
       }
     }catch(e){show("Erro de rede: "+String(e),"error");}
@@ -535,8 +535,8 @@ const PainelPage=({sb,user,setPage})=>{
       const data=await res.json();
       if(data.error){show("Erro Google Ads: "+data.error,"error");}
       else{
-        const errs=data.errors?.length?` ⚠ ${data.errors.join("; ")}":"";
-        show(`✅ Google Ads: ${data.days_synced} dias sincronizados${errs}`);
+        const errs=data.errors?.length?" | "+data.errors.join("; "):"";
+        show("Google Ads: "+data.days_synced+" dias sincronizados"+errs);
         await loadAll();await loadGoogleAdsConfigs();
       }
     }catch(e){show("Erro: "+String(e),"error");}
