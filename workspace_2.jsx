@@ -1913,20 +1913,31 @@ const ProdutosPage=({sb,user})=>{
     if(!preview){return;}
     if(!targetDomain){show("Selecione uma loja destino","error");return;}
     setImporting(true);
-    const session=await getSession();
-    const res=await fetch(`${SUPA_FUNCTIONS_URL}/shopify-import-product`,{
-      method:"POST",
-      headers:{Authorization:"Bearer "+session.access_token,"Content-Type":"application/json"},
-      body:JSON.stringify({action:"import",source_url:url.trim(),target_domain:targetDomain}),
-    });
-    const data=await res.json();
-    if(data.error){show("Erro ao importar: "+data.error,"error");}
-    else{
-      show("Produto importado! "+data.images_count+" imagens copiadas. Salvo como rascunho na sua loja.");
-      setPreview(null);setUrl("");
-      await loadHistory();
+    try{
+      const session=await getSession();
+      const controller=new AbortController();
+      const timer=setTimeout(()=>controller.abort(),55000);
+      const res=await fetch(`${SUPA_FUNCTIONS_URL}/shopify-import-product`,{
+        method:"POST",
+        headers:{Authorization:"Bearer "+session.access_token,"Content-Type":"application/json"},
+        body:JSON.stringify({action:"import",source_url:url.trim(),target_domain:targetDomain}),
+        signal:controller.signal,
+      });
+      clearTimeout(timer);
+      let data;
+      try{data=await res.json();}catch(e){data={error:"Resposta invalida do servidor"};}
+      if(data.error){show("Erro ao importar: "+data.error,"error");}
+      else{
+        show("Produto importado! "+data.images_count+" imagens copiadas. Salvo como rascunho na sua loja.");
+        setPreview(null);setUrl("");
+        await loadHistory();
+      }
+    }catch(e){
+      if(String(e).includes("abort")){show("Timeout: a importacao demorou demais. Tente novamente.","error");}
+      else{show("Erro ao importar: "+String(e),"error");}
+    }finally{
+      setImporting(false);
     }
-    setImporting(false);
   };
 
   return(
