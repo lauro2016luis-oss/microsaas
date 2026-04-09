@@ -191,15 +191,22 @@ const BottomNav=({page,setPage,sb})=>{
 };
 
 // ─── LOGIN ────────────────────────────────────────────────────────────────────
-const LoginPage=({sb,otpPendingRef})=>{
-  const [mode,setMode]=useState("login"); // "login" | "signup" | "reset" | "otp"
-  const [email,setEmail]=useState("");
+const LoginPage=({sb,user,setOtpVerified})=>{
+  // Se user ja existe mas OTP nao verificado, mostra direto a tela de OTP
+  const [mode,setMode]=useState(user?"otp":"login");
+  const [email,setEmail]=useState(user?.email||"");
   const [password,setPassword]=useState("");
   const [otpCode,setOtpCode]=useState("");
   const [showPw,setShowPw]=useState(false);
   const [loading,setLoading]=useState(false);
   const [msg,setMsg]=useState(null);
   const {show,El}=useToast();
+
+  const sendOtp=async(emailAddr)=>{
+    const{error}=await sb.auth.signInWithOtp({email:emailAddr,options:{shouldCreateUser:false}});
+    if(error){setMsg({text:"Erro ao enviar codigo: "+error.message,type:"error"});return false;}
+    return true;
+  };
 
   const handle=async()=>{
     if(!email.trim()){setMsg({text:"Informe o e-mail.",type:"error"});return;}
@@ -213,12 +220,14 @@ const LoginPage=({sb,otpPendingRef})=>{
     }
 
     if(mode==="otp"){
-      if(otpPendingRef) otpPendingRef.current=false;
-      const{error}=await sb.auth.verifyOtp({email:email.trim(),token:otpCode.trim(),type:"magiclink"});
+      // Verifica o codigo diretamente — usuario ja esta autenticado pela senha
+      // Apenas valida que o codigo chegou corretamente no email certo
+      const{error}=await sb.auth.verifyOtp({email:email.trim(),token:otpCode.trim(),type:"email"});
       if(error){
-        if(otpPendingRef) otpPendingRef.current=true;
-        setMsg({text:"Codigo invalido ou expirado. Tente novamente.",type:"error"});
+        setMsg({text:"Codigo invalido ou expirado. Clique em reenviar.",type:"error"});
+        setLoading(false);return;
       }
+      setOtpVerified(true);
       setLoading(false);return;
     }
 
@@ -231,26 +240,16 @@ const LoginPage=({sb,otpPendingRef})=>{
       setLoading(false);return;
     }
 
-    // LOGIN: bloqueia navegacao, verifica senha, desloga, envia OTP
-    if(otpPendingRef) otpPendingRef.current=true;
+    // LOGIN: verifica senha primeiro
     const{error}=await sb.auth.signInWithPassword({email:email.trim(),password});
-    if(error){
-      if(otpPendingRef) otpPendingRef.current=false;
-      setMsg({text:"Email ou senha incorretos.",type:"error"});
-      setLoading(false);return;
-    }
+    if(error){setMsg({text:"Email ou senha incorretos.",type:"error"});setLoading(false);return;}
 
-    // Senha correta — desloga imediatamente e envia OTP
-    await sb.auth.signOut();
-    const{error:otpErr}=await sb.auth.signInWithOtp({email:email.trim(),options:{shouldCreateUser:false}});
-    if(otpErr){
-      if(otpPendingRef) otpPendingRef.current=false;
-      setMsg({text:"Erro ao enviar codigo: "+otpErr.message,type:"error"});
-      setLoading(false);return;
+    // Senha correta — envia OTP (usuario esta logado mas app ainda nao abre)
+    const ok=await sendOtp(email.trim());
+    if(ok){
+      setMsg({text:"Codigo enviado! Verifique seu e-mail.",type:"success"});
+      setMode("otp");
     }
-
-    setMsg({text:"Codigo enviado! Verifique seu e-mail.",type:"success"});
-    setMode("otp");
     setLoading(false);
   };
 
@@ -329,7 +328,7 @@ const LoginPage=({sb,otpPendingRef})=>{
             </button>
 
             {mode==="otp"&&(
-              <button onClick={async()=>{setLoading(true);await sb.auth.signInWithOtp({email:email.trim(),options:{shouldCreateUser:false}});setMsg({text:"Novo codigo enviado!",type:"success"});setLoading(false);}}
+              <button onClick={async()=>{setLoading(true);setOtpCode("");const ok=await sendOtp(email.trim());if(ok)setMsg({text:"Novo codigo enviado!",type:"success"});setLoading(false);}}
                 style={{background:"none",border:"none",color:C.textMuted,cursor:"pointer",fontSize:12,fontFamily:"'Geist',sans-serif",textAlign:"center"}}>
                 Nao recebi o codigo — reenviar
               </button>
@@ -355,7 +354,7 @@ const LoginPage=({sb,otpPendingRef})=>{
             </button>
           )}
           {mode==="otp"&&(
-            <button onClick={()=>{setMode("login");setOtpCode("");setMsg(null);}} style={{background:"none",border:"none",color:C.textMuted,cursor:"pointer",fontSize:13,fontFamily:"'Geist',sans-serif"}}>
+            <button onClick={async()=>{await sb.auth.signOut();setMode("login");setOtpCode("");setMsg(null);}} style={{background:"none",border:"none",color:C.textMuted,cursor:"pointer",fontSize:13,fontFamily:"'Geist',sans-serif"}}>
               ← Voltar para o login
             </button>
           )}
@@ -2375,15 +2374,19 @@ const LojasPage=({sb,user})=>{
 // ─── APP ──────────────────────────────────────────────────────────────────────
 export default function App() {
   const sb=supabaseClient;
-  const [user,setUser]=useState(undefined); // undefined=carregando, null=sem sessão
+  const [user,setUser]=useState(undefined);
+  const [otpVerified,setOtpVerified]=useState(false);
   const [page,setPage]=useState("dashboard");
   const [storeName,setStoreName]=useState("Minha Loja");
-  const otpPendingRef=useRef(false);
 
   useEffect(()=>{
-    sb.auth.getSession().then(({data:{session}})=>setUser(session?.user??null));
+    sb.auth.getSession().then(({data:{session}})=>{
+      setUser(session?.user??null);
+      // Se ja tinha sessao ativa (ex: recarregou pagina), nao precisa de OTP
+      if(session?.user) setOtpVerified(true);
+    });
     const{data:{subscription}}=sb.auth.onAuthStateChange((_,session)=>{
-      if(!otpPendingRef.current) setUser(session?.user??null);
+      setUser(session?.user??null);
     });
     return ()=>subscription.unsubscribe();
   },[]);
@@ -2398,8 +2401,8 @@ export default function App() {
     </>
   );
 
-  // Não autenticado
-  if(!user) return <LoginPage sb={sb} otpPendingRef={otpPendingRef}/>;
+  // Não autenticado ou OTP pendente
+  if(!user||!otpVerified) return <LoginPage sb={sb} user={user} setOtpVerified={setOtpVerified}/>;
 
   const pages={
     dashboard:<PainelPage sb={sb} user={user} setPage={setPage}/>,
