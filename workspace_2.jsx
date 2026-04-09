@@ -91,6 +91,8 @@ const Icon = ({ name, size=16 }) => {
     zap:<svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>,
     clock:<svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>,
     alert:<svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>,
+    package:<svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><line x1="16.5" y1="9.4" x2="7.5" y2="4.21"/><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>,
+    copy:<svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>,
   };
   return I[name]||null;
 };
@@ -163,11 +165,11 @@ const useIsMobile=()=>{
 const BottomNav=({page,setPage,sb})=>{
   const nav=[
     {id:"dashboard",icon:"dashboard",label:"Painel"},
+    {id:"produtos",icon:"package",label:"Produtos"},
     {id:"tarefas",icon:"task",label:"Tarefas"},
     {id:"links",icon:"link",label:"Links"},
     {id:"payments",icon:"payment",label:"Payments"},
     {id:"lojas",icon:"store",label:"Lojas"},
-    {id:"arquivos",icon:"file",label:"Arquivos"},
   ];
   return(
     <div className="bottom-nav">
@@ -302,6 +304,7 @@ const Sidebar=({page,setPage,storeName,setStoreName,sb,user})=>{
   const [inp,setInp]=useState(storeName);
   const nav=[
     {id:"dashboard",label:"Painel",icon:"dashboard"},
+    {id:"produtos",label:"Produtos",icon:"package"},
     {id:"links",label:"Links",icon:"link"},
     {id:"tarefas",label:"Tarefas",icon:"task"},
     {id:"arquivos",label:"Arquivos",icon:"file"},
@@ -1863,6 +1866,217 @@ const PaymentsPage=({sb,user})=>{
   );
 };
 
+// ─── PRODUTOS ─────────────────────────────────────────────────────────────────
+const ProdutosPage=({sb,user})=>{
+  const [url,setUrl]=useState("");
+  const [preview,setPreview]=useState(null);
+  const [fetching,setFetching]=useState(false);
+  const [importing,setImporting]=useState(false);
+  const [history,setHistory]=useState([]);
+  const [loadingHistory,setLoadingHistory]=useState(true);
+  const [shopifyConfigs,setShopifyConfigs]=useState([]);
+  const [targetDomain,setTargetDomain]=useState("");
+  const {show,El}=useToast();
+
+  useEffect(()=>{
+    loadHistory();
+    sb.from("shopify_configs").select("shop_domain").eq("user_id",user.id).then(({data})=>{
+      setShopifyConfigs(data||[]);
+      if(data?.length>0)setTargetDomain(data[0].shop_domain);
+    });
+  },[]);
+
+  const loadHistory=async()=>{
+    const{data}=await sb.from("imported_products").select("*").eq("user_id",user.id).order("created_at",{ascending:false}).limit(50);
+    setHistory(data||[]);
+    setLoadingHistory(false);
+  };
+
+  const getSession=async()=>{const{data:{session}}=await sb.auth.getSession();return session;};
+
+  const fetchPreview=async()=>{
+    if(!url.trim()){show("Cole a URL do produto","error");return;}
+    setFetching(true);setPreview(null);
+    const session=await getSession();
+    const res=await fetch(`${SUPA_FUNCTIONS_URL}/shopify-import-product`,{
+      method:"POST",
+      headers:{Authorization:"Bearer "+session.access_token,"Content-Type":"application/json"},
+      body:JSON.stringify({action:"preview",source_url:url.trim()}),
+    });
+    const data=await res.json();
+    if(data.error){show("Erro: "+data.error,"error");}
+    else{setPreview(data.product);}
+    setFetching(false);
+  };
+
+  const importProduct=async()=>{
+    if(!preview){return;}
+    if(!targetDomain){show("Selecione uma loja destino","error");return;}
+    setImporting(true);
+    const session=await getSession();
+    const res=await fetch(`${SUPA_FUNCTIONS_URL}/shopify-import-product`,{
+      method:"POST",
+      headers:{Authorization:"Bearer "+session.access_token,"Content-Type":"application/json"},
+      body:JSON.stringify({action:"import",source_url:url.trim(),target_domain:targetDomain}),
+    });
+    const data=await res.json();
+    if(data.error){show("Erro ao importar: "+data.error,"error");}
+    else{
+      show("Produto importado! "+data.images_count+" imagens copiadas. Salvo como rascunho na sua loja.");
+      setPreview(null);setUrl("");
+      await loadHistory();
+    }
+    setImporting(false);
+  };
+
+  return(
+    <div className="page-pad" style={{overflowY:"auto",flex:1}}>
+      {El}
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:28}}>
+        <div>
+          <h1 style={{fontSize:24,fontWeight:600,color:C.text,letterSpacing:"-0.03em"}}>Importar Produtos</h1>
+          <p style={{fontSize:14,color:C.textMuted,marginTop:4}}>Cole a URL de qualquer produto Shopify e importe com tudo para a sua loja.</p>
+        </div>
+      </div>
+
+      {/* INPUT */}
+      <div style={{background:C.surface,border:`0.5px solid ${C.border}`,borderRadius:12,padding:20,marginBottom:20}}>
+        <div style={{fontSize:12,color:C.textMuted,marginBottom:10}}>URL do produto (de qualquer loja Shopify)</div>
+        <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
+          <input value={url} onChange={e=>setUrl(e.target.value)}
+            onKeyDown={e=>e.key==="Enter"&&fetchPreview()}
+            placeholder="https://loja.myshopify.com/products/nome-do-produto"
+            style={{flex:1,minWidth:200,background:"#0d0d0d",border:`0.5px solid ${C.border}`,color:C.text,fontFamily:"'Geist',sans-serif",fontSize:13,padding:"10px 14px",borderRadius:9,outline:"none"}}
+            onFocus={e=>e.target.style.borderColor=C.accentBorder}
+            onBlur={e=>e.target.style.borderColor=C.border}/>
+          <button onClick={fetchPreview} disabled={fetching}
+            style={{padding:"10px 20px",borderRadius:9,background:C.accent,color:"#fff",border:"none",fontSize:13,fontWeight:500,cursor:fetching?"not-allowed":"pointer",fontFamily:"'Geist',sans-serif",display:"flex",alignItems:"center",gap:7,opacity:fetching?0.7:1}}>
+            {fetching?<Spinner size={14}/>:<Icon name="search" size={14}/>}
+            {fetching?"Buscando...":"Buscar produto"}
+          </button>
+        </div>
+        <div style={{fontSize:11,color:C.textDim,marginTop:8}}>
+          Funciona com qualquer loja Shopify publica. Ex: nike.myshopify.com/products/air-max
+        </div>
+      </div>
+
+      {/* PREVIEW */}
+      {preview&&(
+        <div className="fade-in" style={{background:C.surface,border:`0.5px solid ${C.accentBorder}`,borderRadius:12,padding:20,marginBottom:20}}>
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16}}>
+            <h2 style={{fontSize:15,fontWeight:600,color:C.text}}>Visualizar antes de importar</h2>
+            <button onClick={()=>setPreview(null)} style={{background:"none",border:"none",color:C.textMuted,cursor:"pointer"}}><Icon name="x"/></button>
+          </div>
+
+          <div style={{display:"grid",gridTemplateColumns:"200px 1fr",gap:20}}>
+            {/* Imagens */}
+            <div>
+              {preview.images?.length>0?(
+                <div>
+                  <img src={preview.images[0].src} alt={preview.images[0].alt||preview.title}
+                    style={{width:"100%",borderRadius:10,border:`0.5px solid ${C.border}`,objectFit:"cover",aspectRatio:"1"}}
+                    onError={e=>{e.currentTarget.style.display="none";}}/>
+                  {preview.images.length>1&&(
+                    <div style={{display:"flex",gap:4,marginTop:6,flexWrap:"wrap"}}>
+                      {preview.images.slice(1,5).map((img,i)=>(
+                        <img key={i} src={img.src} style={{width:44,height:44,borderRadius:6,objectFit:"cover",border:`0.5px solid ${C.border}`}} onError={e=>{e.currentTarget.style.display="none";}}/>
+                      ))}
+                      {preview.images.length>5&&<div style={{width:44,height:44,borderRadius:6,background:C.accentDim,display:"flex",alignItems:"center",justifyContent:"center",fontSize:11,color:C.accent}}>+{preview.images.length-5}</div>}
+                    </div>
+                  )}
+                  <div style={{fontSize:11,color:C.textMuted,marginTop:6}}>{preview.images.length} imagem{preview.images.length!==1?"ns":""}</div>
+                </div>
+              ):(
+                <div style={{width:"100%",aspectRatio:"1",borderRadius:10,background:"#0d0d0d",border:`0.5px solid ${C.border}`,display:"flex",alignItems:"center",justifyContent:"center",color:C.textDim,fontSize:12}}>Sem imagem</div>
+              )}
+            </div>
+
+            {/* Detalhes */}
+            <div style={{display:"flex",flexDirection:"column",gap:12}}>
+              <div>
+                <div style={{fontSize:18,fontWeight:600,color:C.text,lineHeight:"1.3"}}>{preview.title}</div>
+                {preview.vendor&&<div style={{fontSize:12,color:C.textMuted,marginTop:4}}>Marca: {preview.vendor}</div>}
+                {preview.product_type&&<div style={{fontSize:11,color:C.textDim}}>Tipo: {preview.product_type}</div>}
+              </div>
+
+              {preview.variants?.length>0&&(
+                <div>
+                  <div style={{fontSize:12,color:C.textMuted,marginBottom:6}}>Variantes ({preview.variants.length})</div>
+                  <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
+                    {preview.variants.slice(0,8).map((v,i)=>(
+                      <div key={i} style={{padding:"4px 10px",background:"#0d0d0d",border:`0.5px solid ${C.border}`,borderRadius:6,fontSize:11,color:C.text}}>
+                        {v.option1!=="Default Title"?v.option1:""} <span style={{color:C.green,fontFamily:"'Geist Mono',monospace"}}>{v.price}</span>
+                      </div>
+                    ))}
+                    {preview.variants.length>8&&<div style={{fontSize:11,color:C.textMuted,padding:"4px 0"}}>+{preview.variants.length-8} mais</div>}
+                  </div>
+                </div>
+              )}
+
+              {preview.body_html&&(
+                <div style={{fontSize:12,color:C.textMuted,lineHeight:"1.6",maxHeight:80,overflow:"hidden",maskImage:"linear-gradient(to bottom, black 50%, transparent)"}}>
+                  {preview.body_html.replace(/<[^>]+>/g," ").replace(/\s+/g," ").trim().slice(0,300)}
+                </div>
+              )}
+
+              {/* Loja destino + botao importar */}
+              <div style={{display:"flex",gap:8,alignItems:"center",flexWrap:"wrap",marginTop:4}}>
+                {shopifyConfigs.length>1&&(
+                  <select value={targetDomain} onChange={e=>setTargetDomain(e.target.value)}
+                    style={{background:"#0d0d0d",border:`0.5px solid ${C.border}`,color:C.text,fontFamily:"'Geist',sans-serif",fontSize:12,padding:"8px 12px",borderRadius:8,outline:"none",cursor:"pointer"}}>
+                    {shopifyConfigs.map(c=><option key={c.shop_domain} value={c.shop_domain}>{c.shop_domain}</option>)}
+                  </select>
+                )}
+                {shopifyConfigs.length===0?(
+                  <div style={{fontSize:12,color:C.red}}>Conecte uma loja Shopify em Integrações primeiro</div>
+                ):(
+                  <button onClick={importProduct} disabled={importing}
+                    style={{padding:"10px 20px",borderRadius:9,background:C.green,color:"#fff",border:"none",fontSize:13,fontWeight:600,cursor:importing?"not-allowed":"pointer",fontFamily:"'Geist',sans-serif",display:"flex",alignItems:"center",gap:7,opacity:importing?0.7:1}}>
+                    {importing?<Spinner size={14}/>:<Icon name="copy" size={14}/>}
+                    {importing?"Importando...":"Importar para minha loja"}
+                  </button>
+                )}
+                {shopifyConfigs.length===1&&<div style={{fontSize:11,color:C.textMuted}}>para {targetDomain}</div>}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* HISTÓRICO */}
+      <div style={{background:C.surface,border:`0.5px solid ${C.border}`,borderRadius:12,padding:20}}>
+        <h2 style={{fontSize:14,fontWeight:500,color:C.text,marginBottom:16}}>Histórico de importações</h2>
+        {loadingHistory?<div style={{display:"flex",justifyContent:"center",padding:20}}><Spinner/></div>
+        :history.length===0?(
+          <div style={{textAlign:"center",padding:"32px 0",color:C.textDim,fontSize:13}}>Nenhum produto importado ainda. Cole uma URL acima para começar.</div>
+        ):(
+          <div style={{display:"flex",flexDirection:"column",gap:8}}>
+            {history.map(p=>(
+              <div key={p.id} style={{display:"flex",alignItems:"center",gap:12,padding:"10px 14px",background:"#0d0d0d",borderRadius:10,border:`0.5px solid ${C.border}`}}>
+                {p.image_url?(
+                  <img src={p.image_url} style={{width:40,height:40,borderRadius:7,objectFit:"cover",flexShrink:0}} onError={e=>{e.currentTarget.style.display="none";}}/>
+                ):(
+                  <div style={{width:40,height:40,borderRadius:7,background:C.accentDim,flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center"}}><Icon name="package" size={16}/></div>
+                )}
+                <div style={{flex:1,minWidth:0}}>
+                  <div style={{fontSize:13,fontWeight:500,color:C.text,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{p.title}</div>
+                  <div style={{fontSize:11,color:C.textMuted}}>{p.source_store} → {p.target_store} · {new Date(p.created_at).toLocaleDateString("pt-BR")}</div>
+                </div>
+                {p.shopify_product_id&&(
+                  <a href={"https://"+p.target_store+"/admin/products/"+p.shopify_product_id} target="_blank" rel="noopener noreferrer"
+                    style={{display:"flex",alignItems:"center",gap:5,padding:"5px 10px",borderRadius:7,background:C.accentDim,border:`0.5px solid ${C.accentBorder}`,color:C.accent,fontSize:11,fontFamily:"'Geist',sans-serif",textDecoration:"none",whiteSpace:"nowrap"}}>
+                    <Icon name="externalLink" size={11}/> Ver na loja
+                  </a>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
 // ─── LOJAS ────────────────────────────────────────────────────────────────────
 const LojasPage=({sb,user})=>{
   const [lojas,setLojas]=useState([]);
@@ -2020,6 +2234,7 @@ export default function App() {
 
   const pages={
     dashboard:<PainelPage sb={sb} user={user} setPage={setPage}/>,
+    produtos:<ProdutosPage sb={sb} user={user}/>,
     links:<LinksPage sb={sb} user={user}/>,
     tarefas:<TarefasPage sb={sb} user={user}/>,
     arquivos:<ArquivosPage sb={sb} user={user}/>,
