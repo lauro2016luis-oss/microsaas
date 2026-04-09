@@ -213,11 +213,10 @@ const LoginPage=({sb,otpPendingRef})=>{
     }
 
     if(mode==="otp"){
-      // Verifica o codigo — permite a sessao ser criada
       if(otpPendingRef) otpPendingRef.current=false;
-      const{error}=await sb.auth.verifyOtp({email:email.trim(),token:otpCode.trim(),type:"email"});
+      const{error}=await sb.auth.verifyOtp({email:email.trim(),token:otpCode.trim(),type:"magiclink"});
       if(error){
-        if(otpPendingRef) otpPendingRef.current=true; // volta a bloquear se falhou
+        if(otpPendingRef) otpPendingRef.current=true;
         setMsg({text:"Codigo invalido ou expirado. Tente novamente.",type:"error"});
       }
       setLoading(false);return;
