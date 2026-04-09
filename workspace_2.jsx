@@ -461,82 +461,133 @@ const PainelPage=({sb,user,setPage})=>{
   const [filtroLoja,setFiltroLoja]=useState("Todas");
   const [filtroPeriodo,setFiltroPeriodo]=useState("total");
   const [filtroMoeda,setFiltroMoeda]=useState("BRL");
-  const [filtroDataCustom,setFiltroDataCustom]=useState("");
+  const [filtroDataInicio,setFiltroDataInicio]=useState("");
+  const [filtroDataFim,setFiltroDataFim]=useState("");
   const hoje=new Date().toISOString().slice(0,10);
   const [form,setForm]=useState({store_name:"",date:hoje,currency:"BRL",revenue:"",ad_spend:""});
   // Shopify
-  const [shopifyConfig,setShopifyConfig]=useState(null);
+  const [shopifyConfigs,setShopifyConfigs]=useState([]);
   const [shopifyLoading,setShopifyLoading]=useState(false);
-  const [syncing,setSyncing]=useState(false);
+  const [syncingId,setSyncingId]=useState(null);
   const [showShopifySettings,setShowShopifySettings]=useState(false);
   const [manualDomain,setManualDomain]=useState("");
   const [manualToken,setManualToken]=useState("");
   const [manualSaving,setManualSaving]=useState(false);
+  // Google Ads
+  const [googleAdsConfigs,setGoogleAdsConfigs]=useState([]);
+  const [showGadsSettings,setShowGadsSettings]=useState(false);
+  const [gadsSaving,setGadsSaving]=useState(false);
+  const [gadsSyncing,setGadsSyncing]=useState(false);
+  const [gadsForm,setGadsForm]=useState({clientId:"",clientSecret:"",developerToken:"",customerId:"",accountName:""});
   const {show,El}=useToast();
 
-  // Detecta retorno do OAuth Shopify e auto-sincroniza
+  // Detecta retorno de OAuth
   useEffect(()=>{
     const params=new URLSearchParams(window.location.search);
     if(params.get("shopify_connected")==="1"){
-      show("Shopify conectado! Sincronizando pedidos... 🎉");
+      show("Shopify conectado! Sincronizando... 🎉");
       window.history.replaceState({},"",window.location.pathname);
-      loadShopifyConfig();
-      setTimeout(()=>syncShopify(),1500);
+      loadShopifyConfigs();
+      setTimeout(()=>syncShopify(null),1500);
     }
-    if(params.get("shopify_error")){show("Erro ao conectar Shopify: "+params.get("shopify_error"),"error");window.history.replaceState({},"",window.location.pathname);}
+    if(params.get("shopify_error")){show("Erro Shopify: "+params.get("shopify_error"),"error");window.history.replaceState({},"",window.location.pathname);}
+    if(params.get("gads_connected")==="1"){
+      show("Google Ads conectado! Sincronizando... 🎉");
+      window.history.replaceState({},"",window.location.pathname);
+      loadGoogleAdsConfigs();
+      setTimeout(()=>syncGoogleAds(),1500);
+    }
+    if(params.get("gads_error")){show("Erro Google Ads: "+params.get("gads_error"),"error");window.history.replaceState({},"",window.location.pathname);}
   },[]);
 
-  const loadShopifyConfig=async()=>{
-    const{data}=await sb.from("shopify_configs").select("*").eq("user_id",user.id).single();
-    setShopifyConfig(data||null);
+  const loadShopifyConfigs=async()=>{
+    const{data}=await sb.from("shopify_configs").select("*").eq("user_id",user.id).order("connected_at");
+    setShopifyConfigs(data||[]);
   };
 
-  const connectShopify=async()=>{
-    setShopifyLoading(true);
-    const{data:{session}}=await sb.auth.getSession();
-    const res=await fetch(`${SUPA_FUNCTIONS_URL}/shopify-auth`,{headers:{Authorization:`Bearer ${session.access_token}`}});
-    const{url,error}=await res.json();
-    if(error){show("Erro: "+error,"error");setShopifyLoading(false);return;}
-    window.location.href=url;
+  const loadGoogleAdsConfigs=async()=>{
+    const{data}=await sb.from("google_ads_configs").select("*").eq("user_id",user.id).order("connected_at");
+    setGoogleAdsConfigs(data||[]);
   };
 
-  const syncShopify=async()=>{
-    setSyncing(true);
+  const syncShopify=async(shopDomain)=>{
+    setSyncingId(shopDomain||"all");
     try{
       const{data:{session}}=await sb.auth.getSession();
-      const res=await fetch(`${SUPA_FUNCTIONS_URL}/shopify-sync`,{method:"POST",headers:{Authorization:`Bearer ${session.access_token}`,"Content-Type":"application/json"}});
+      const body=shopDomain?JSON.stringify({shop_domain:shopDomain}):"{}";
+      const res=await fetch(`${SUPA_FUNCTIONS_URL}/shopify-sync`,{method:"POST",headers:{Authorization:`Bearer ${session.access_token}`,"Content-Type":"application/json"},body});
       const data=await res.json();
-      if(data.error){show("Erro na sync: "+data.error,"error");}
-      else{show(`✅ ${data.orders_synced} pedidos · ${data.days_synced} dias importados`);await loadAll();await loadShopifyConfig();}
+      if(data.error){show("Erro: "+data.error,"error");}
+      else{
+        const errs=data.errors?.length?` (${data.errors.join(", ")})":"";
+        show(`✅ ${data.orders_synced} pedidos · ${data.days_synced} dias${errs}`);
+        await loadAll();await loadShopifyConfigs();
+      }
     }catch(e){show("Erro de rede: "+String(e),"error");}
-    setSyncing(false);
+    setSyncingId(null);
+  };
+
+  const syncGoogleAds=async()=>{
+    setGadsSyncing(true);
+    try{
+      const{data:{session}}=await sb.auth.getSession();
+      const res=await fetch(`${SUPA_FUNCTIONS_URL}/google-ads-sync`,{method:"POST",headers:{Authorization:`Bearer ${session.access_token}`}});
+      const data=await res.json();
+      if(data.error){show("Erro Google Ads: "+data.error,"error");}
+      else{
+        const errs=data.errors?.length?` ⚠ ${data.errors.join("; ")}":"";
+        show(`✅ Google Ads: ${data.days_synced} dias sincronizados${errs}`);
+        await loadAll();await loadGoogleAdsConfigs();
+      }
+    }catch(e){show("Erro: "+String(e),"error");}
+    setGadsSyncing(false);
   };
 
   const saveShopifyManual=async()=>{
-    if(!manualDomain.trim()||!manualToken.trim()){show("Preencha o domínio e o token de acesso","error");return;}
+    if(!manualDomain.trim()||!manualToken.trim()){show("Preencha domínio e token","error");return;}
     setManualSaving(true);
     const domain=manualDomain.trim().replace(/^https?:\/\//,"").replace(/\/$/,"");
     const{error}=await sb.from("shopify_configs").upsert({
-      user_id:user.id,
-      shop_domain:domain,
-      access_token:manualToken.trim(),
-    },{onConflict:"user_id"});
-    if(error){show("Erro ao salvar: "+error.message,"error");}
+      user_id:user.id,shop_domain:domain,access_token:manualToken.trim(),
+    },{onConflict:"user_id,shop_domain"});
+    if(error){show("Erro: "+error.message,"error");}
     else{
-      show("Shopify configurado! ✅ Sincronizando...");
-      setShowShopifySettings(false);
-      setManualDomain("");setManualToken("");
-      await loadShopifyConfig();
-      setTimeout(()=>syncShopify(),800);
+      show("Loja salva! ✅ Sincronizando...");
+      setShowShopifySettings(false);setManualDomain("");setManualToken("");
+      await loadShopifyConfigs();
+      setTimeout(()=>syncShopify(domain),800);
     }
     setManualSaving(false);
   };
 
-  const disconnectShopify=async()=>{
-    if(!window.confirm("Desconectar Shopify? Os dados já importados serão mantidos."))return;
-    await sb.from("shopify_configs").delete().eq("user_id",user.id);
-    setShopifyConfig(null);
-    show("Shopify desconectado");
+  const disconnectShopify=async(id)=>{
+    if(!window.confirm("Remover esta loja? Os dados importados serão mantidos."))return;
+    await sb.from("shopify_configs").delete().eq("id",id);
+    setShopifyConfigs(p=>p.filter(c=>c.id!==id));
+    show("Loja removida");
+  };
+
+  const connectGoogleAds=async()=>{
+    if(!gadsForm.clientId||!gadsForm.clientSecret||!gadsForm.developerToken||!gadsForm.customerId){
+      show("Preencha todos os campos obrigatórios","error");return;
+    }
+    setGadsSaving(true);
+    const{data:{session}}=await sb.auth.getSession();
+    const res=await fetch(`${SUPA_FUNCTIONS_URL}/google-ads-oauth`,{
+      method:"POST",
+      headers:{Authorization:`Bearer ${session.access_token}`,"Content-Type":"application/json"},
+      body:JSON.stringify(gadsForm),
+    });
+    const{url,error}=await res.json();
+    if(error){show("Erro: "+error,"error");setGadsSaving(false);return;}
+    window.location.href=url;
+  };
+
+  const disconnectGoogleAds=async(id)=>{
+    if(!window.confirm("Remover esta conta Google Ads? Dados importados serão mantidos."))return;
+    await sb.from("google_ads_configs").delete().eq("id",id);
+    setGoogleAdsConfigs(p=>p.filter(c=>c.id!==id));
+    show("Conta removida");
   };
 
   // Carrega Chart.js uma vez
@@ -548,7 +599,7 @@ const PainelPage=({sb,user,setPage})=>{
     document.head.appendChild(s);
   },[]);
 
-  useEffect(()=>{loadAll();loadShopifyConfig();},[]);
+  useEffect(()=>{loadAll();loadShopifyConfigs();loadGoogleAdsConfigs();},[]);
 
   const loadAll=async()=>{
     const[l,t,p,pr,lj]=await Promise.all([
@@ -617,7 +668,12 @@ const PainelPage=({sb,user,setPage})=>{
       if(filtroPeriodo==="hoje") return d===hoje;
       if(filtroPeriodo==="ontem") return d===ontem;
       if(filtroPeriodo==="7dias"){const cutoff=new Date(Date.now()-7*86400000).toISOString().slice(0,10);return d>=cutoff;}
-      if(filtroPeriodo==="custom"&&filtroDataCustom) return d===filtroDataCustom;
+      if(filtroPeriodo==="30dias"){const cutoff=new Date(Date.now()-30*86400000).toISOString().slice(0,10);return d>=cutoff;}
+      if(filtroPeriodo==="custom"){
+        if(filtroDataInicio&&filtroDataFim) return d>=filtroDataInicio&&d<=filtroDataFim;
+        if(filtroDataInicio) return d>=filtroDataInicio;
+        return true;
+      }
       return true;
     });
   };
@@ -631,7 +687,11 @@ const PainelPage=({sb,user,setPage})=>{
   const kpiFat=filtradosPeriodo.reduce((a,r)=>a+converter(r.revenue,r.currency),0);
   const kpiAds=filtradosPeriodo.reduce((a,r)=>a+converter(r.ad_spend,r.currency),0);
   const lucroTotal=filtrados.reduce((a,r)=>a+converter(r.profit,r.currency),0);
-  const periodoLabel={total:"Total",hoje:"Hoje",ontem:"Ontem","7dias":"7 Dias",custom:filtroDataCustom||"Data"}[filtroPeriodo]||"";
+  const periodoLabel={
+    total:"Total",hoje:"Hoje",ontem:"Ontem",
+    "7dias":"7 Dias","30dias":"30 Dias",
+    custom:(filtroDataInicio&&filtroDataFim)?`${filtroDataInicio.slice(5).replace("-","/")} → ${filtroDataFim.slice(5).replace("-","/")}`:filtroDataInicio?`desde ${filtroDataInicio.slice(5).replace("-","/")}` :"Período",
+  }[filtroPeriodo]||"";
 
   const simbolo={"BRL":"R$","USD":"US$","EUR":"€","GBP":"£"}[filtroMoeda]||"R$";
   const fmtVal=(v)=>`${v<0?"-":""}${simbolo} ${Math.abs(v).toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2})}`;
@@ -719,7 +779,8 @@ const PainelPage=({sb,user,setPage})=>{
     {id:"hoje",label:"Hoje"},
     {id:"ontem",label:"Ontem"},
     {id:"7dias",label:"7 dias"},
-    {id:"custom",label:"📅 Data"},
+    {id:"30dias",label:"30 dias"},
+    {id:"custom",label:"📅 Período"},
   ];
   const moedas=["BRL","USD","EUR","GBP"];
 
@@ -736,55 +797,104 @@ const PainelPage=({sb,user,setPage})=>{
         </button>
       </div>
 
-      {/* SHOPIFY CARD */}
-      <div style={{marginBottom:20,padding:"14px 18px",background:C.surface,border:`0.5px solid ${shopifyConfig?"rgba(34,197,94,0.3)":C.border}`,borderRadius:12,display:"flex",alignItems:"center",gap:14,flexWrap:"wrap"}}>
-        <div style={{width:36,height:36,borderRadius:9,background:shopifyConfig?"rgba(34,197,94,0.12)":"rgba(124,107,255,0.12)",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M15.5 3.5C15.5 3.5 15 3 13.5 3C12 3 11 4.5 10.5 5.5L6 6.5L4 20H18L20 6.5L16.5 5.5C16.5 5.5 16.5 3.5 15.5 3.5Z" stroke={shopifyConfig?C.green:C.accent} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/><path d="M10.5 5.5C10.5 5.5 11 9 14 9C17 9 16.5 5.5 16.5 5.5" stroke={shopifyConfig?C.green:C.accent} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
-        </div>
-        <div style={{flex:1,minWidth:0}}>
-          <div style={{fontSize:13,fontWeight:500,color:C.text}}>Shopify{shopifyConfig&&<span style={{fontSize:11,color:C.green,marginLeft:8}}>● Conectado</span>}</div>
-          <div style={{fontSize:11,color:shopifyConfig?C.textMuted:C.textMuted,marginTop:2}}>
-            {shopifyConfig
-              ?`${shopifyConfig.shop_domain} · última sync: ${shopifyConfig.last_sync_at?new Date(shopifyConfig.last_sync_at).toLocaleString("pt-BR",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"}):"nunca"}`
-              :"Conecte sua loja Shopify para importar pedidos automaticamente"}
+      {/* INTEGRAÇÕES */}
+      <div style={{marginBottom:20,background:C.surface,border:`0.5px solid ${C.border}`,borderRadius:12,overflow:"hidden"}}>
+        {/* Header */}
+        <div style={{padding:"12px 18px",borderBottom:`0.5px solid ${C.border}`,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+          <span style={{fontSize:13,fontWeight:500,color:C.text}}>Integrações</span>
+          <div style={{display:"flex",gap:6}}>
+            {(shopifyConfigs.length>0||googleAdsConfigs.length>0)&&(
+              <Btn variant="outline" small onClick={()=>{syncShopify(null);if(googleAdsConfigs.length>0)syncGoogleAds();}} loading={syncingId==="all"} icon="zap">Sincronizar tudo</Btn>
+            )}
           </div>
         </div>
-        <div style={{display:"flex",gap:6,flexWrap:"wrap",alignItems:"center"}}>
-          {shopifyConfig?(
-            <>
-              <Btn variant="outline" small onClick={syncShopify} loading={syncing} icon="zap">Sincronizar</Btn>
-              <Btn variant="ghost" small onClick={()=>{setManualDomain(shopifyConfig.shop_domain||"");setManualToken("");setShowShopifySettings(true);}} icon="edit">Configurar</Btn>
-              <Btn variant="ghost" small onClick={disconnectShopify} icon="x"/>
-            </>
-          ):(
-            <>
-              <Btn variant="primary" small onClick={()=>{setManualDomain("");setManualToken("");setShowShopifySettings(true);}} icon="edit">Configurar</Btn>
-            </>
-          )}
+
+        {/* Lista Shopify */}
+        {shopifyConfigs.map(cfg=>(
+          <div key={cfg.id} style={{padding:"12px 18px",borderBottom:`0.5px solid ${C.border}`,display:"flex",alignItems:"center",gap:12,flexWrap:"wrap"}}>
+            <div style={{width:32,height:32,borderRadius:8,background:"rgba(34,197,94,0.12)",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M15.5 3.5C15.5 3.5 15 3 13.5 3C12 3 11 4.5 10.5 5.5L6 6.5L4 20H18L20 6.5L16.5 5.5C16.5 5.5 16.5 3.5 15.5 3.5Z" stroke={C.green} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/><path d="M10.5 5.5C10.5 5.5 11 9 14 9C17 9 16.5 5.5 16.5 5.5" stroke={C.green} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+            </div>
+            <div style={{flex:1,minWidth:0}}>
+              <div style={{fontSize:12,fontWeight:500,color:C.text}}>Shopify · <span style={{color:C.green}}>● {cfg.shop_domain}</span></div>
+              <div style={{fontSize:11,color:C.textMuted,marginTop:1}}>última sync: {cfg.last_sync_at?new Date(cfg.last_sync_at).toLocaleString("pt-BR",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"}):"nunca"}</div>
+            </div>
+            <Btn variant="outline" small onClick={()=>syncShopify(cfg.shop_domain)} loading={syncingId===cfg.shop_domain} icon="zap">Sync</Btn>
+            <Btn variant="ghost" small onClick={()=>{setManualDomain(cfg.shop_domain);setManualToken("");setShowShopifySettings(true);}} icon="edit"/>
+            <Btn variant="ghost" small onClick={()=>disconnectShopify(cfg.id)} icon="x"/>
+          </div>
+        ))}
+
+        {/* Lista Google Ads */}
+        {googleAdsConfigs.map(cfg=>(
+          <div key={cfg.id} style={{padding:"12px 18px",borderBottom:`0.5px solid ${C.border}`,display:"flex",alignItems:"center",gap:12,flexWrap:"wrap"}}>
+            <div style={{width:32,height:32,borderRadius:8,background:"rgba(59,130,246,0.12)",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,fontSize:12,fontWeight:700,color:C.blue}}>G</div>
+            <div style={{flex:1,minWidth:0}}>
+              <div style={{fontSize:12,fontWeight:500,color:C.text}}>Google Ads · <span style={{color:C.blue}}>● {cfg.account_name||cfg.customer_id}</span></div>
+              <div style={{fontSize:11,color:C.textMuted,marginTop:1}}>ID: {cfg.customer_id} · última sync: {cfg.last_sync_at?new Date(cfg.last_sync_at).toLocaleString("pt-BR",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"}):"nunca"}</div>
+            </div>
+            <Btn variant="outline" small onClick={syncGoogleAds} loading={gadsSyncing} icon="zap">Sync</Btn>
+            <Btn variant="ghost" small onClick={()=>disconnectGoogleAds(cfg.id)} icon="x"/>
+          </div>
+        ))}
+
+        {/* Adicionar */}
+        <div style={{padding:"10px 18px",display:"flex",gap:8,flexWrap:"wrap"}}>
+          <Btn variant="ghost" small onClick={()=>{setManualDomain("");setManualToken("");setShowShopifySettings(true);}} icon="plus">Adicionar Shopify</Btn>
+          <Btn variant="ghost" small onClick={()=>{setGadsForm({clientId:"",clientSecret:"",developerToken:"",customerId:"",accountName:""});setShowGadsSettings(true);}} icon="plus">Adicionar Google Ads</Btn>
         </div>
       </div>
 
-      {/* MODAL CONFIGURAR SHOPIFY */}
+      {/* MODAL SHOPIFY */}
       {showShopifySettings&&(
-        <Modal title="Configurar Shopify" onClose={()=>setShowShopifySettings(false)}>
+        <Modal title={manualDomain?"Editar Loja Shopify":"Adicionar Loja Shopify"} onClose={()=>setShowShopifySettings(false)}>
           <div style={{display:"flex",flexDirection:"column",gap:16}}>
             <div style={{padding:"10px 14px",background:"rgba(124,107,255,0.08)",borderRadius:9,border:`0.5px solid ${C.accentBorder}`,fontSize:12,color:C.textMuted,lineHeight:"1.6"}}>
-              Para conectar manualmente, você precisa de um <strong style={{color:C.text}}>Token de Acesso</strong> da sua loja.<br/>
-              No painel Shopify: <strong style={{color:C.accent}}>Configurações → Apps → Desenvolver apps</strong> → crie um app, instale e copie o Admin API access token.
+              Precisa do <strong style={{color:C.text}}>Admin API Access Token</strong> da sua loja.<br/>
+              Shopify Admin → <strong style={{color:C.accent}}>Configurações → Apps → Desenvolver apps</strong> → crie um app → instale → copie o token.
             </div>
             <div>
               <label style={{fontSize:12,color:C.textMuted,display:"block",marginBottom:6}}>Domínio da loja</label>
               <Input value={manualDomain} onChange={setManualDomain} placeholder="minhaloja.myshopify.com"/>
-              <div style={{fontSize:11,color:C.textDim,marginTop:4}}>Ex: 5scnm9-hz.myshopify.com</div>
             </div>
             <div>
               <label style={{fontSize:12,color:C.textMuted,display:"block",marginBottom:6}}>Admin API Access Token</label>
-              <Input value={manualToken} onChange={setManualToken} placeholder="shpat_xxxxxxxxxxxxxxxxxxxx" type="password"/>
-              <div style={{fontSize:11,color:C.textDim,marginTop:4}}>Começa com "shpat_" — encontrado em Apps → seu app → Admin API credentials</div>
+              <Input value={manualToken} onChange={setManualToken} placeholder="shpat_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx" type="password"/>
             </div>
-            <div style={{display:"flex",gap:8,justifyContent:"flex-end",marginTop:4}}>
+            <div style={{display:"flex",gap:8,justifyContent:"flex-end"}}>
               <Btn variant="outline" onClick={()=>setShowShopifySettings(false)}>Cancelar</Btn>
               <Btn variant="primary" onClick={saveShopifyManual} loading={manualSaving} icon="zap">Salvar e Sincronizar</Btn>
+            </div>
+          </div>
+        </Modal>
+      )}
+
+      {/* MODAL GOOGLE ADS */}
+      {showGadsSettings&&(
+        <Modal title="Conectar Google Ads" onClose={()=>setShowGadsSettings(false)}>
+          <div style={{display:"flex",flexDirection:"column",gap:14}}>
+            <div style={{padding:"10px 14px",background:"rgba(59,130,246,0.08)",borderRadius:9,border:"0.5px solid rgba(59,130,246,0.3)",fontSize:12,color:C.textMuted,lineHeight:"1.7"}}>
+              <strong style={{color:C.text}}>O que você precisa:</strong><br/>
+              1. <strong style={{color:C.blue}}>Customer ID</strong> — número da sua conta Google Ads (ex: 123-456-7890)<br/>
+              2. <strong style={{color:C.blue}}>Client ID + Secret</strong> — crie em <strong>console.cloud.google.com</strong> → APIs → Credenciais → OAuth<br/>
+              3. <strong style={{color:C.blue}}>Developer Token</strong> — no Google Ads: Ferramentas → API Google Ads → Centro de API<br/>
+              4. Após preencher, clique Conectar e autorize no Google.
+            </div>
+            {[
+              {label:"Customer ID",key:"customerId",ph:"123-456-7890"},
+              {label:"Nome da conta (opcional)",key:"accountName",ph:"Minha Loja Ads"},
+              {label:"Client ID (Google Cloud)",key:"clientId",ph:"xxxxxx.apps.googleusercontent.com"},
+              {label:"Client Secret",key:"clientSecret",ph:"GOCSPX-xxxxxxx",type:"password"},
+              {label:"Developer Token",key:"developerToken",ph:"xxxxxxxxxxxxxxxx",type:"password"},
+            ].map(f=>(
+              <div key={f.key}>
+                <label style={{fontSize:12,color:C.textMuted,display:"block",marginBottom:5}}>{f.label}{!f.label.includes("opcional")&&<span style={{color:C.red}}> *</span>}</label>
+                <Input value={gadsForm[f.key]} onChange={v=>setGadsForm(p=>({...p,[f.key]:v}))} placeholder={f.ph} type={f.type||"text"}/>
+              </div>
+            ))}
+            <div style={{display:"flex",gap:8,justifyContent:"flex-end",marginTop:4}}>
+              <Btn variant="outline" onClick={()=>setShowGadsSettings(false)}>Cancelar</Btn>
+              <Btn variant="primary" onClick={connectGoogleAds} loading={gadsSaving} icon="zap">Conectar com Google</Btn>
             </div>
           </div>
         </Modal>
@@ -822,7 +932,15 @@ const PainelPage=({sb,user,setPage})=>{
           {periodos.map(p=>(
             <button key={p.id} onClick={()=>setFiltroPeriodo(p.id)} style={{padding:"5px 12px",borderRadius:7,fontSize:12,fontFamily:"'Geist',sans-serif",fontWeight:500,cursor:"pointer",background:filtroPeriodo===p.id?C.accentDim:"transparent",color:filtroPeriodo===p.id?C.accent:C.textMuted,border:`0.5px solid ${filtroPeriodo===p.id?C.accentBorder:C.border}`,transition:"all 0.15s"}}>{p.label}</button>
           ))}
-          {filtroPeriodo==="custom"&&<input type="date" value={filtroDataCustom} onChange={e=>setFiltroDataCustom(e.target.value)} style={{background:"#1a1a1a",border:`0.5px solid ${C.border}`,color:C.text,fontFamily:"'Geist Mono',monospace",fontSize:12,padding:"5px 10px",borderRadius:7,outline:"none"}}/>}
+          {filtroPeriodo==="custom"&&(
+            <div style={{display:"flex",alignItems:"center",gap:6,flexWrap:"wrap"}}>
+              <input type="date" value={filtroDataInicio} onChange={e=>setFiltroDataInicio(e.target.value)}
+                style={{background:"#1a1a1a",border:`0.5px solid ${C.border}`,color:C.text,fontFamily:"'Geist Mono',monospace",fontSize:12,padding:"5px 10px",borderRadius:7,outline:"none"}}/>
+              <span style={{fontSize:11,color:C.textMuted}}>até</span>
+              <input type="date" value={filtroDataFim} onChange={e=>setFiltroDataFim(e.target.value)}
+                style={{background:"#1a1a1a",border:`0.5px solid ${C.border}`,color:C.text,fontFamily:"'Geist Mono',monospace",fontSize:12,padding:"5px 10px",borderRadius:7,outline:"none"}}/>
+            </div>
+          )}
         </div>
       </div>
 
