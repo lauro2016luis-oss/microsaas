@@ -926,7 +926,7 @@ function main() {
 
       {/* HEADER */}
       <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:28}}>
-        <div><h1 style={{fontSize:24,fontWeight:600,color:C.text,letterSpacing:"-0.03em"}}>Bom dia 👋</h1><p style={{fontSize:14,color:C.textMuted,marginTop:4}}>Seu espaço de trabalho.</p></div>
+        <div><h1 style={{fontSize:24,fontWeight:600,color:C.text,letterSpacing:"-0.03em"}}>{(()=>{const h=new Date().getHours();if(h>=5&&h<12)return"Bom dia, chefe!";if(h>=12&&h<18)return"Boa tarde, chefe!";if(h>=18&&h<24)return"Boa noite, chefe!";return"Boa madrugada, chefe!";})()}</h1><p style={{fontSize:14,color:C.textMuted,marginTop:4}}>Seu espaco de trabalho.</p></div>
         <button onClick={()=>setModalResultado(true)} style={{display:"flex",alignItems:"center",gap:7,padding:"9px 16px",borderRadius:9,background:C.accent,color:"#fff",border:"none",fontSize:13,fontWeight:500,cursor:"pointer",fontFamily:"'Geist',sans-serif"}}
           onMouseEnter={e=>e.currentTarget.style.background="#6c5ce7"} onMouseLeave={e=>e.currentTarget.style.background=C.accent}>
           <Icon name="plus" size={14}/> Registrar
