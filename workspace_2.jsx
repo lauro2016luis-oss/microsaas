@@ -191,70 +191,36 @@ const BottomNav=({page,setPage,sb})=>{
 };
 
 // ─── LOGIN ────────────────────────────────────────────────────────────────────
-const LoginPage=({sb,user,setOtpVerified})=>{
-  // Se user ja existe mas OTP nao verificado, mostra direto a tela de OTP
-  const [mode,setMode]=useState(user?"otp":"login");
-  const [email,setEmail]=useState(user?.email||"");
+const LoginPage=({sb})=>{
+  const [mode,setMode]=useState("login"); // "login" | "signup" | "reset"
+  const [email,setEmail]=useState("");
   const [password,setPassword]=useState("");
-  const [otpCode,setOtpCode]=useState("");
   const [showPw,setShowPw]=useState(false);
   const [loading,setLoading]=useState(false);
   const [msg,setMsg]=useState(null);
   const {show,El}=useToast();
 
-  const sendOtp=async(emailAddr)=>{
-    const{error}=await sb.auth.signInWithOtp({email:emailAddr,options:{shouldCreateUser:false}});
-    if(error){setMsg({text:"Erro ao enviar codigo: "+error.message,type:"error"});return false;}
-    return true;
-  };
-
   const handle=async()=>{
     if(!email.trim()){setMsg({text:"Informe o e-mail.",type:"error"});return;}
     setLoading(true);setMsg(null);
-
     if(mode==="reset"){
       const{error}=await sb.auth.resetPasswordForEmail(email,{redirectTo:window.location.origin});
       if(error){setMsg({text:error.message,type:"error"});}
       else{setMsg({text:"Enviamos um link de redefinicao para o seu e-mail.",type:"success"});}
       setLoading(false);return;
     }
-
-    if(mode==="otp"){
-      // Verifica o codigo diretamente — usuario ja esta autenticado pela senha
-      // Apenas valida que o codigo chegou corretamente no email certo
-      const{error}=await sb.auth.verifyOtp({email:email.trim(),token:otpCode.trim(),type:"email"});
-      if(error){
-        setMsg({text:"Codigo invalido ou expirado. Clique em reenviar.",type:"error"});
-        setLoading(false);return;
-      }
-      setOtpVerified(true);
-      setLoading(false);return;
-    }
-
     if(!password){setMsg({text:"Informe a senha.",type:"error"});setLoading(false);return;}
-
-    if(mode==="signup"){
-      const{error}=await sb.auth.signUp({email:email.trim(),password});
-      if(error){setMsg({text:error.message,type:"error"});}
-      else{setMsg({text:"Conta criada! Verifique seu e-mail para confirmar.",type:"success"});}
-      setLoading(false);return;
-    }
-
-    // LOGIN: verifica senha primeiro
-    const{error}=await sb.auth.signInWithPassword({email:email.trim(),password});
-    if(error){setMsg({text:"Email ou senha incorretos.",type:"error"});setLoading(false);return;}
-
-    // Senha correta — envia OTP (usuario esta logado mas app ainda nao abre)
-    const ok=await sendOtp(email.trim());
-    if(ok){
-      setMsg({text:"Codigo enviado! Verifique seu e-mail.",type:"success"});
-      setMode("otp");
-    }
+    const fn=mode==="signup"
+      ?sb.auth.signUp({email:email.trim(),password})
+      :sb.auth.signInWithPassword({email:email.trim(),password});
+    const{error}=await fn;
+    if(error){setMsg({text:error.message,type:"error"});}
+    else if(mode==="signup"){setMsg({text:"Conta criada! Verifique seu e-mail para confirmar.",type:"success"});}
     setLoading(false);
   };
 
-  const titles={login:"Entrar",signup:"Criar conta",reset:"Redefinir senha",otp:"Verificacao em 2 etapas"};
-  const btnLabels={login:"Entrar",signup:"Criar conta",reset:"Enviar link",otp:"Verificar codigo"};
+  const titles={login:"Entrar",signup:"Criar conta",reset:"Redefinir senha"};
+  const btnLabels={login:"Entrar",signup:"Criar conta",reset:"Enviar link"};
 
   return (
     <div style={{minHeight:"100vh",display:"flex",alignItems:"center",justifyContent:"center",background:C.bg,padding:24}}>
@@ -279,60 +245,26 @@ const LoginPage=({sb,user,setOtpVerified})=>{
           )}
 
           <div style={{display:"flex",flexDirection:"column",gap:14}}>
-
-            {mode==="otp"?(
-              <>
-                <div style={{textAlign:"center",padding:"8px 0"}}>
-                  <div style={{fontSize:13,color:C.textMuted,lineHeight:"1.6"}}>
-                    Enviamos um codigo de 6 digitos para<br/>
-                    <strong style={{color:C.text}}>{email}</strong>
-                  </div>
+            <div>
+              <label style={{fontSize:12,color:C.textMuted,display:"block",marginBottom:6}}>E-mail</label>
+              <Input value={email} onChange={setEmail} placeholder="seu@email.com" type="email" onKeyDown={e=>e.key==="Enter"&&handle()}/>
+            </div>
+            {mode!=="reset"&&(
+              <div>
+                <label style={{fontSize:12,color:C.textMuted,display:"block",marginBottom:6}}>Senha</label>
+                <div style={{position:"relative"}}>
+                  <Input value={password} onChange={setPassword} placeholder={mode==="signup"?"Minimo 6 caracteres":"Sua senha"} type={showPw?"text":"password"} onKeyDown={e=>e.key==="Enter"&&handle()}/>
+                  <button onClick={()=>setShowPw(p=>!p)} style={{position:"absolute",right:10,top:"50%",transform:"translateY(-50%)",background:"none",border:"none",color:C.textMuted,cursor:"pointer",padding:4}}>
+                    <Icon name={showPw?"eyeOff":"eye"} size={14}/>
+                  </button>
                 </div>
-                <div>
-                  <label style={{fontSize:12,color:C.textMuted,display:"block",marginBottom:6}}>Codigo de verificacao</label>
-                  <input
-                    value={otpCode}
-                    onChange={e=>setOtpCode(e.target.value.replace(/\D/g,"").slice(0,6))}
-                    placeholder="000000"
-                    maxLength={6}
-                    onKeyDown={e=>e.key==="Enter"&&handle()}
-                    style={{width:"100%",padding:"10px 14px",borderRadius:9,background:"#0d0d0d",border:`0.5px solid ${C.border}`,color:C.text,fontSize:24,fontWeight:600,letterSpacing:"0.3em",textAlign:"center",outline:"none",fontFamily:"monospace",boxSizing:"border-box"}}
-                    autoFocus
-                  />
-                </div>
-              </>
-            ):(
-              <>
-                <div>
-                  <label style={{fontSize:12,color:C.textMuted,display:"block",marginBottom:6}}>E-mail</label>
-                  <Input value={email} onChange={setEmail} placeholder="seu@email.com" type="email" onKeyDown={e=>e.key==="Enter"&&handle()}/>
-                </div>
-                {mode!=="reset"&&(
-                  <div>
-                    <label style={{fontSize:12,color:C.textMuted,display:"block",marginBottom:6}}>Senha</label>
-                    <div style={{position:"relative"}}>
-                      <Input value={password} onChange={setPassword} placeholder={mode==="signup"?"Minimo 6 caracteres":"Sua senha"} type={showPw?"text":"password"} onKeyDown={e=>e.key==="Enter"&&handle()}/>
-                      <button onClick={()=>setShowPw(p=>!p)} style={{position:"absolute",right:10,top:"50%",transform:"translateY(-50%)",background:"none",border:"none",color:C.textMuted,cursor:"pointer",padding:4}}>
-                        <Icon name={showPw?"eyeOff":"eye"} size={14}/>
-                      </button>
-                    </div>
-                  </div>
-                )}
-              </>
+              </div>
             )}
-
             <button onClick={handle} disabled={loading} style={{width:"100%",padding:"10px",borderRadius:9,background:loading?"#333":C.accent,color:"#fff",border:"none",fontSize:14,fontWeight:500,cursor:loading?"not-allowed":"pointer",fontFamily:"'Geist',sans-serif",display:"flex",alignItems:"center",justifyContent:"center",gap:8,transition:"background 0.15s"}}
               onMouseEnter={e=>{if(!loading)e.currentTarget.style.background="#6c5ce7";}}
               onMouseLeave={e=>{if(!loading)e.currentTarget.style.background=C.accent;}}>
               {loading?<Spinner size={14}/>:null}{btnLabels[mode]}
             </button>
-
-            {mode==="otp"&&(
-              <button onClick={async()=>{setLoading(true);setOtpCode("");const ok=await sendOtp(email.trim());if(ok)setMsg({text:"Novo codigo enviado!",type:"success"});setLoading(false);}}
-                style={{background:"none",border:"none",color:C.textMuted,cursor:"pointer",fontSize:12,fontFamily:"'Geist',sans-serif",textAlign:"center"}}>
-                Nao recebi o codigo — reenviar
-              </button>
-            )}
           </div>
         </div>
 
@@ -351,11 +283,6 @@ const LoginPage=({sb,user,setOtpVerified})=>{
           {mode==="signup"&&(
             <button onClick={()=>{setMode("login");setMsg(null);}} style={{background:"none",border:"none",color:C.textMuted,cursor:"pointer",fontSize:13,fontFamily:"'Geist',sans-serif"}}>
               Já tem conta? <span style={{color:C.accent}}>Entrar</span>
-            </button>
-          )}
-          {mode==="otp"&&(
-            <button onClick={async()=>{await sb.auth.signOut();setMode("login");setOtpCode("");setMsg(null);}} style={{background:"none",border:"none",color:C.textMuted,cursor:"pointer",fontSize:13,fontFamily:"'Geist',sans-serif"}}>
-              ← Voltar para o login
             </button>
           )}
           {mode==="reset"&&(
@@ -2375,19 +2302,12 @@ const LojasPage=({sb,user})=>{
 export default function App() {
   const sb=supabaseClient;
   const [user,setUser]=useState(undefined);
-  const [otpVerified,setOtpVerified]=useState(false);
   const [page,setPage]=useState("dashboard");
   const [storeName,setStoreName]=useState("Minha Loja");
 
   useEffect(()=>{
-    sb.auth.getSession().then(({data:{session}})=>{
-      setUser(session?.user??null);
-      // Se ja tinha sessao ativa (ex: recarregou pagina), nao precisa de OTP
-      if(session?.user) setOtpVerified(true);
-    });
-    const{data:{subscription}}=sb.auth.onAuthStateChange((_,session)=>{
-      setUser(session?.user??null);
-    });
+    sb.auth.getSession().then(({data:{session}})=>setUser(session?.user??null));
+    const{data:{subscription}}=sb.auth.onAuthStateChange((_,session)=>setUser(session?.user??null));
     return ()=>subscription.unsubscribe();
   },[]);
 
@@ -2401,8 +2321,7 @@ export default function App() {
     </>
   );
 
-  // Não autenticado ou OTP pendente
-  if(!user||!otpVerified) return <LoginPage sb={sb} user={user} setOtpVerified={setOtpVerified}/>;
+  if(!user) return <LoginPage sb={sb}/>;
 
   const pages={
     dashboard:<PainelPage sb={sb} user={user} setPage={setPage}/>,
