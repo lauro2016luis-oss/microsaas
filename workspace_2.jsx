@@ -468,12 +468,21 @@ const PainelPage=({sb,user,setPage})=>{
   const [shopifyConfig,setShopifyConfig]=useState(null);
   const [shopifyLoading,setShopifyLoading]=useState(false);
   const [syncing,setSyncing]=useState(false);
+  const [showShopifySettings,setShowShopifySettings]=useState(false);
+  const [manualDomain,setManualDomain]=useState("");
+  const [manualToken,setManualToken]=useState("");
+  const [manualSaving,setManualSaving]=useState(false);
   const {show,El}=useToast();
 
-  // Detecta retorno do OAuth Shopify
+  // Detecta retorno do OAuth Shopify e auto-sincroniza
   useEffect(()=>{
     const params=new URLSearchParams(window.location.search);
-    if(params.get("shopify_connected")==="1"){show("Shopify conectado com sucesso! 🎉");window.history.replaceState({},"",window.location.pathname);loadShopifyConfig();}
+    if(params.get("shopify_connected")==="1"){
+      show("Shopify conectado! Sincronizando pedidos... 🎉");
+      window.history.replaceState({},"",window.location.pathname);
+      loadShopifyConfig();
+      setTimeout(()=>syncShopify(),1500);
+    }
     if(params.get("shopify_error")){show("Erro ao conectar Shopify: "+params.get("shopify_error"),"error");window.history.replaceState({},"",window.location.pathname);}
   },[]);
 
@@ -493,12 +502,41 @@ const PainelPage=({sb,user,setPage})=>{
 
   const syncShopify=async()=>{
     setSyncing(true);
-    const{data:{session}}=await sb.auth.getSession();
-    const res=await fetch(`${SUPA_FUNCTIONS_URL}/shopify-sync`,{method:"POST",headers:{Authorization:`Bearer ${session.access_token}`}});
-    const data=await res.json();
-    if(data.error){show("Erro na sync: "+data.error,"error");}
-    else{show(`✅ ${data.orders_synced} pedidos sincronizados (${data.days_synced} dias)`);await loadAll();await loadShopifyConfig();}
+    try{
+      const{data:{session}}=await sb.auth.getSession();
+      const res=await fetch(`${SUPA_FUNCTIONS_URL}/shopify-sync`,{method:"POST",headers:{Authorization:`Bearer ${session.access_token}`,"Content-Type":"application/json"}});
+      const data=await res.json();
+      if(data.error){show("Erro na sync: "+data.error,"error");}
+      else{show(`✅ ${data.orders_synced} pedidos · ${data.days_synced} dias importados`);await loadAll();await loadShopifyConfig();}
+    }catch(e){show("Erro de rede: "+String(e),"error");}
     setSyncing(false);
+  };
+
+  const saveShopifyManual=async()=>{
+    if(!manualDomain.trim()||!manualToken.trim()){show("Preencha o domínio e o token de acesso","error");return;}
+    setManualSaving(true);
+    const domain=manualDomain.trim().replace(/^https?:\/\//,"").replace(/\/$/,"");
+    const{error}=await sb.from("shopify_configs").upsert({
+      user_id:user.id,
+      shop_domain:domain,
+      access_token:manualToken.trim(),
+    },{onConflict:"user_id"});
+    if(error){show("Erro ao salvar: "+error.message,"error");}
+    else{
+      show("Shopify configurado! ✅ Sincronizando...");
+      setShowShopifySettings(false);
+      setManualDomain("");setManualToken("");
+      await loadShopifyConfig();
+      setTimeout(()=>syncShopify(),800);
+    }
+    setManualSaving(false);
+  };
+
+  const disconnectShopify=async()=>{
+    if(!window.confirm("Desconectar Shopify? Os dados já importados serão mantidos."))return;
+    await sb.from("shopify_configs").delete().eq("user_id",user.id);
+    setShopifyConfig(null);
+    show("Shopify desconectado");
   };
 
   // Carrega Chart.js uma vez
@@ -588,12 +626,12 @@ const PainelPage=({sb,user,setPage})=>{
   const filtrados=profits.filter(r=>filtroLoja==="Todas"||r.store_name===filtroLoja);
   const filtradosPeriodo=filterByPeriod(filtrados);
 
-  // KPIs convertidos para a moeda selecionada
-  const dadosHoje=profits.filter(r=>r.date?.slice(0,10)===hoje);
-  const lucroHoje=dadosHoje.reduce((a,r)=>a+converter(r.profit,r.currency),0);
-  const fatHoje=dadosHoje.reduce((a,r)=>a+converter(r.revenue,r.currency),0);
-  const adsHoje=dadosHoje.reduce((a,r)=>a+converter(r.ad_spend,r.currency),0);
+  // KPIs respondem ao período selecionado
+  const kpiLucro=filtradosPeriodo.reduce((a,r)=>a+converter(r.profit,r.currency),0);
+  const kpiFat=filtradosPeriodo.reduce((a,r)=>a+converter(r.revenue,r.currency),0);
+  const kpiAds=filtradosPeriodo.reduce((a,r)=>a+converter(r.ad_spend,r.currency),0);
   const lucroTotal=filtrados.reduce((a,r)=>a+converter(r.profit,r.currency),0);
+  const periodoLabel={total:"Total",hoje:"Hoje",ontem:"Ontem","7dias":"7 Dias",custom:filtroDataCustom||"Data"}[filtroPeriodo]||"";
 
   const simbolo={"BRL":"R$","USD":"US$","EUR":"€","GBP":"£"}[filtroMoeda]||"R$";
   const fmtVal=(v)=>`${v<0?"-":""}${simbolo} ${Math.abs(v).toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2})}`;
@@ -704,26 +742,61 @@ const PainelPage=({sb,user,setPage})=>{
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M15.5 3.5C15.5 3.5 15 3 13.5 3C12 3 11 4.5 10.5 5.5L6 6.5L4 20H18L20 6.5L16.5 5.5C16.5 5.5 16.5 3.5 15.5 3.5Z" stroke={shopifyConfig?C.green:C.accent} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/><path d="M10.5 5.5C10.5 5.5 11 9 14 9C17 9 16.5 5.5 16.5 5.5" stroke={shopifyConfig?C.green:C.accent} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
         </div>
         <div style={{flex:1,minWidth:0}}>
-          <div style={{fontSize:13,fontWeight:500,color:C.text}}>Shopify</div>
-          <div style={{fontSize:11,color:shopifyConfig?C.green:C.textMuted,marginTop:2}}>
+          <div style={{fontSize:13,fontWeight:500,color:C.text}}>Shopify{shopifyConfig&&<span style={{fontSize:11,color:C.green,marginLeft:8}}>● Conectado</span>}</div>
+          <div style={{fontSize:11,color:shopifyConfig?C.textMuted:C.textMuted,marginTop:2}}>
             {shopifyConfig
-              ?`✅ Conectado · última sync: ${shopifyConfig.last_sync_at?new Date(shopifyConfig.last_sync_at).toLocaleString("pt-BR",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"}):"nunca"}`
-              :"Conecte sua loja para importar pedidos automaticamente"}
+              ?`${shopifyConfig.shop_domain} · última sync: ${shopifyConfig.last_sync_at?new Date(shopifyConfig.last_sync_at).toLocaleString("pt-BR",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"}):"nunca"}`
+              :"Conecte sua loja Shopify para importar pedidos automaticamente"}
           </div>
         </div>
-        {shopifyConfig
-          ?<Btn variant="outline" small onClick={syncShopify} loading={syncing} icon="zap">Sincronizar agora</Btn>
-          :<Btn variant="primary" small onClick={connectShopify} loading={shopifyLoading} icon="link">Conectar Shopify</Btn>
-        }
+        <div style={{display:"flex",gap:6,flexWrap:"wrap",alignItems:"center"}}>
+          {shopifyConfig?(
+            <>
+              <Btn variant="outline" small onClick={syncShopify} loading={syncing} icon="zap">Sincronizar</Btn>
+              <Btn variant="ghost" small onClick={()=>{setManualDomain(shopifyConfig.shop_domain||"");setManualToken("");setShowShopifySettings(true);}} icon="edit">Configurar</Btn>
+              <Btn variant="ghost" small onClick={disconnectShopify} icon="x"/>
+            </>
+          ):(
+            <>
+              <Btn variant="primary" small onClick={()=>{setManualDomain("");setManualToken("");setShowShopifySettings(true);}} icon="edit">Configurar</Btn>
+            </>
+          )}
+        </div>
       </div>
+
+      {/* MODAL CONFIGURAR SHOPIFY */}
+      {showShopifySettings&&(
+        <Modal title="Configurar Shopify" onClose={()=>setShowShopifySettings(false)}>
+          <div style={{display:"flex",flexDirection:"column",gap:16}}>
+            <div style={{padding:"10px 14px",background:"rgba(124,107,255,0.08)",borderRadius:9,border:`0.5px solid ${C.accentBorder}`,fontSize:12,color:C.textMuted,lineHeight:"1.6"}}>
+              Para conectar manualmente, você precisa de um <strong style={{color:C.text}}>Token de Acesso</strong> da sua loja.<br/>
+              No painel Shopify: <strong style={{color:C.accent}}>Configurações → Apps → Desenvolver apps</strong> → crie um app, instale e copie o Admin API access token.
+            </div>
+            <div>
+              <label style={{fontSize:12,color:C.textMuted,display:"block",marginBottom:6}}>Domínio da loja</label>
+              <Input value={manualDomain} onChange={setManualDomain} placeholder="minhaloja.myshopify.com"/>
+              <div style={{fontSize:11,color:C.textDim,marginTop:4}}>Ex: 5scnm9-hz.myshopify.com</div>
+            </div>
+            <div>
+              <label style={{fontSize:12,color:C.textMuted,display:"block",marginBottom:6}}>Admin API Access Token</label>
+              <Input value={manualToken} onChange={setManualToken} placeholder="shpat_xxxxxxxxxxxxxxxxxxxx" type="password"/>
+              <div style={{fontSize:11,color:C.textDim,marginTop:4}}>Começa com "shpat_" — encontrado em Apps → seu app → Admin API credentials</div>
+            </div>
+            <div style={{display:"flex",gap:8,justifyContent:"flex-end",marginTop:4}}>
+              <Btn variant="outline" onClick={()=>setShowShopifySettings(false)}>Cancelar</Btn>
+              <Btn variant="primary" onClick={saveShopifyManual} loading={manualSaving} icon="zap">Salvar e Sincronizar</Btn>
+            </div>
+          </div>
+        </Modal>
+      )}
 
       {/* KPI CARDS */}
       <div className="grid-kpi-4">
         {[
-          {l:"💰 Lucro Hoje",v:lucroHoje,c:lucroHoje>=0?C.green:C.red},
-          {l:"🧾 Faturamento Hoje",v:fatHoje,c:C.accent},
-          {l:"📢 Gasto em Ads Hoje",v:adsHoje,c:C.red},
-          {l:"📈 Lucro Total",v:lucroTotal,c:lucroTotal>=0?C.green:C.red},
+          {l:`💰 Lucro · ${periodoLabel}`,v:kpiLucro,c:kpiLucro>=0?C.green:C.red},
+          {l:`🧾 Faturamento · ${periodoLabel}`,v:kpiFat,c:C.accent},
+          {l:`📢 Gasto em Ads · ${periodoLabel}`,v:kpiAds,c:C.red},
+          {l:"📈 Lucro Total (tudo)",v:lucroTotal,c:lucroTotal>=0?C.green:C.red},
         ].map((s,i)=>(
           <div key={i} style={{background:C.surface,border:`0.5px solid ${C.border}`,borderRadius:12,padding:"18px 20px"}}>
             <div style={{fontSize:11,color:C.textMuted,marginBottom:10,textTransform:"uppercase",letterSpacing:"0.05em"}}>{s.l}</div>
