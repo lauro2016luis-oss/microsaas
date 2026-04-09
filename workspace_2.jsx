@@ -569,11 +569,13 @@ const PainelPage=({sb,user,setPage})=>{
     setManualSaving(false);
   };
 
-  const connectShopifyOAuth=async()=>{
+  const connectShopifyOAuth=async(domain)=>{
     try{
       const{data:{session}}=await sb.auth.getSession();
       const res=await fetch(`${SUPA_FUNCTIONS_URL}/shopify-auth`,{
-        headers:{Authorization:`Bearer ${session.access_token}`}
+        method:"POST",
+        headers:{Authorization:`Bearer ${session.access_token}`,"Content-Type":"application/json"},
+        body:JSON.stringify({shop_domain:domain||""}),
       });
       const data=await res.json();
       if(data.url){window.location.href=data.url;}
@@ -930,31 +932,14 @@ function main() {
               </div>
             ))}
 
-            {/* Botões adicionar Shopify */}
-            <div style={{borderTop:shopifyConfigs.length>0?`0.5px solid ${C.border}`:"none",display:"flex",flexDirection:"column"}}>
-              {/* OAuth — loja própria (5scnm9-hz) */}
-              <button onClick={connectShopifyOAuth}
-                style={{width:"100%",padding:"13px 16px",background:"transparent",border:"none",borderBottom:`0.5px solid ${C.border}`,color:C.green,cursor:"pointer",display:"flex",alignItems:"center",gap:8,fontSize:12,fontWeight:500,fontFamily:"'Geist',sans-serif",transition:"background 0.15s"}}
-                onMouseEnter={e=>e.currentTarget.style.background="rgba(34,197,94,0.06)"}
-                onMouseLeave={e=>e.currentTarget.style.background="transparent"}>
-                <Icon name="zap" size={13}/>
-                <div style={{textAlign:"left"}}>
-                  <div>Reconectar minha loja (OAuth)</div>
-                  <div style={{fontSize:10,color:C.textMuted,fontWeight:400}}>5scnm9-hz.myshopify.com — reautorizar com novas permissões</div>
-                </div>
-              </button>
-              {/* Manual — qualquer loja */}
-              <button onClick={()=>{setManualDomain("");setManualToken("");setShowShopifySettings(true);}}
-                style={{width:"100%",padding:"13px 16px",background:"transparent",border:"none",color:C.accent,cursor:"pointer",display:"flex",alignItems:"center",gap:8,fontSize:12,fontWeight:500,fontFamily:"'Geist',sans-serif",transition:"background 0.15s"}}
-                onMouseEnter={e=>e.currentTarget.style.background=C.accentDim}
-                onMouseLeave={e=>e.currentTarget.style.background="transparent"}>
-                <Icon name="plus" size={13}/>
-                <div style={{textAlign:"left"}}>
-                  <div>Adicionar outra loja (token manual)</div>
-                  <div style={{fontSize:10,color:C.textMuted,fontWeight:400}}>Qualquer loja Shopify — precisa do shpat_</div>
-                </div>
-              </button>
-            </div>
+            {/* Botão adicionar Shopify */}
+            <button onClick={()=>{setManualDomain("");setShowShopifySettings(true);}}
+              style={{width:"100%",padding:"14px 16px",background:"transparent",border:"none",borderTop:shopifyConfigs.length>0?`0.5px solid ${C.border}`:"none",color:C.accent,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:8,fontSize:13,fontWeight:500,fontFamily:"'Geist',sans-serif",transition:"background 0.15s"}}
+              onMouseEnter={e=>e.currentTarget.style.background=C.accentDim}
+              onMouseLeave={e=>e.currentTarget.style.background="transparent"}>
+              <Icon name="plus" size={15}/>
+              {shopifyConfigs.length===0?"Conectar loja Shopify":"Adicionar outra loja"}
+            </button>
           </div>
 
           {/* ── COLUNA GOOGLE ADS ── */}
@@ -993,40 +978,18 @@ function main() {
       {showShopifySettings&&(
         <Modal title="Conectar Loja Shopify" onClose={()=>setShowShopifySettings(false)}>
           <div style={{display:"flex",flexDirection:"column",gap:16}}>
-            {/* Passo a passo */}
-            <div style={{background:"rgba(124,107,255,0.07)",border:`0.5px solid ${C.accentBorder}`,borderRadius:10,padding:"14px 16px"}}>
-              <div style={{fontSize:12,fontWeight:600,color:C.text,marginBottom:10}}>Como obter seu token (App Privado):</div>
-              {[
-                ["1","Acesse","Shopify Admin → Configurações → Apps e canais de vendas"],
-                ["2","Clique em","Desenvolver apps → Criar um app"],
-                ["3","Dê um nome","ex: Workspace Sync → clique em Criar app"],
-                ["4","Clique em","Configurar escopos da API de administrador"],
-                ["5","Marque as permissões","read_orders, write_orders, read_products, write_products → Salvar"],
-                ["6","Clique em","Instalar app → Instalar"],
-                ["7","Copie o token","Admin API access token (começa com shpat_)"],
-              ].map(([n,label,val])=>(
-                <div key={n} style={{display:"flex",gap:10,alignItems:"flex-start",marginBottom:7}}>
-                  <span style={{minWidth:20,height:20,borderRadius:"50%",background:C.accentDim,border:`0.5px solid ${C.accentBorder}`,display:"inline-flex",alignItems:"center",justifyContent:"center",fontSize:10,fontWeight:700,color:C.accent,flexShrink:0}}>{n}</span>
-                  <div style={{fontSize:12,color:C.textMuted,lineHeight:"1.5"}}>
-                    <span style={{color:C.textMuted}}>{label} </span>
-                    <span style={{color:C.text,fontWeight:500}}>{val}</span>
-                  </div>
-                </div>
-              ))}
+            <div style={{padding:"12px 14px",background:"rgba(34,197,94,0.07)",borderRadius:10,border:"0.5px solid rgba(34,197,94,0.2)",fontSize:12,color:C.textMuted,lineHeight:"1.6"}}>
+              Digite o domínio da sua loja e clique em <strong style={{color:C.text}}>Conectar</strong>.<br/>
+              Você será redirecionado para o Shopify para autorizar o acesso.
             </div>
             <div>
               <label style={{fontSize:12,color:C.textMuted,display:"block",marginBottom:6}}>Domínio da loja <span style={{color:C.red}}>*</span></label>
               <Input value={manualDomain} onChange={setManualDomain} placeholder="minhaloja.myshopify.com"/>
-              <div style={{fontSize:11,color:C.textMuted,marginTop:4}}>Só o domínio, sem https://</div>
-            </div>
-            <div>
-              <label style={{fontSize:12,color:C.textMuted,display:"block",marginBottom:6}}>Admin API Access Token <span style={{color:C.red}}>*</span></label>
-              <Input value={manualToken} onChange={setManualToken} placeholder="shpat_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx" type="password"/>
-              <div style={{fontSize:11,color:C.textMuted,marginTop:4}}>Token gerado no passo 7 acima</div>
+              <div style={{fontSize:11,color:C.textMuted,marginTop:4}}>Só o domínio, sem https:// — ex: minha-loja.myshopify.com</div>
             </div>
             <div style={{display:"flex",gap:8,justifyContent:"flex-end"}}>
               <Btn variant="outline" onClick={()=>setShowShopifySettings(false)}>Cancelar</Btn>
-              <Btn variant="primary" onClick={saveShopifyManual} loading={manualSaving} icon="zap">Salvar e Sincronizar</Btn>
+              <Btn variant="primary" onClick={()=>{if(!manualDomain.trim()){show("Digite o domínio da loja","error");return;}connectShopifyOAuth(manualDomain.trim().replace(/^https?:\/\//,"").replace(/\/$/,""));setShowShopifySettings(false);}} icon="zap">Conectar com Shopify</Btn>
             </div>
           </div>
         </Modal>
@@ -2080,7 +2043,7 @@ const ProdutosPage=({sb,user})=>{
 
               {/* Loja destino + botao importar */}
               <div style={{display:"flex",gap:8,alignItems:"center",flexWrap:"wrap",marginTop:4}}>
-                {shopifyConfigs.length>1&&(
+                {shopifyConfigs.length>0&&(
                   <select value={targetDomain} onChange={e=>setTargetDomain(e.target.value)}
                     style={{background:"#0d0d0d",border:`0.5px solid ${C.border}`,color:C.text,fontFamily:"'Geist',sans-serif",fontSize:12,padding:"8px 12px",borderRadius:8,outline:"none",cursor:"pointer"}}>
                     {shopifyConfigs.map(c=><option key={c.shop_domain} value={c.shop_domain}>{c.shop_domain}</option>)}
@@ -2095,7 +2058,6 @@ const ProdutosPage=({sb,user})=>{
                     {importing?"Importando...":"Importar para minha loja"}
                   </button>
                 )}
-                {shopifyConfigs.length===1&&<div style={{fontSize:11,color:C.textMuted}}>para {targetDomain}</div>}
               </div>
             </div>
           </div>
