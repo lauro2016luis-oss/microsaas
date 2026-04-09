@@ -975,25 +975,72 @@ function main() {
       </div>
 
       {/* MODAL SHOPIFY */}
-      {showShopifySettings&&(
-        <Modal title="Conectar Loja Shopify" onClose={()=>setShowShopifySettings(false)}>
+      {showShopifySettings&&(()=>{
+        const [shopTab,setShopTab]=useState("manual");
+        return(
+        <Modal title="Adicionar Loja Shopify" onClose={()=>setShowShopifySettings(false)}>
           <div style={{display:"flex",flexDirection:"column",gap:16}}>
-            <div style={{padding:"12px 14px",background:"rgba(34,197,94,0.07)",borderRadius:10,border:"0.5px solid rgba(34,197,94,0.2)",fontSize:12,color:C.textMuted,lineHeight:"1.6"}}>
-              Digite o domínio da sua loja e clique em <strong style={{color:C.text}}>Conectar</strong>.<br/>
-              Você será redirecionado para o Shopify para autorizar o acesso.
+            {/* Abas */}
+            <div style={{display:"flex",gap:4,background:C.bg,borderRadius:8,padding:3}}>
+              {[["manual","Token Manual (qualquer loja)"],["oauth","Minha loja (OAuth automático)"]].map(([k,lbl])=>(
+                <button key={k} onClick={()=>setShopTab(k)}
+                  style={{flex:1,padding:"7px 10px",borderRadius:6,border:"none",background:shopTab===k?C.surface:"transparent",color:shopTab===k?C.text:C.textMuted,fontSize:11,fontWeight:shopTab===k?600:400,cursor:"pointer",fontFamily:"'Geist',sans-serif",transition:"all 0.15s"}}>
+                  {lbl}
+                </button>
+              ))}
             </div>
-            <div>
-              <label style={{fontSize:12,color:C.textMuted,display:"block",marginBottom:6}}>Domínio da loja <span style={{color:C.red}}>*</span></label>
-              <Input value={manualDomain} onChange={setManualDomain} placeholder="minhaloja.myshopify.com"/>
-              <div style={{fontSize:11,color:C.textMuted,marginTop:4}}>Só o domínio, sem https:// — ex: minha-loja.myshopify.com</div>
-            </div>
-            <div style={{display:"flex",gap:8,justifyContent:"flex-end"}}>
-              <Btn variant="outline" onClick={()=>setShowShopifySettings(false)}>Cancelar</Btn>
-              <Btn variant="primary" onClick={()=>{if(!manualDomain.trim()){show("Digite o domínio da loja","error");return;}connectShopifyOAuth(manualDomain.trim().replace(/^https?:\/\//,"").replace(/\/$/,""));setShowShopifySettings(false);}} icon="zap">Conectar com Shopify</Btn>
-            </div>
+
+            {shopTab==="manual"?(
+              <>
+                <div style={{padding:"12px 14px",background:"rgba(124,107,255,0.07)",borderRadius:10,border:`0.5px solid ${C.accentBorder}`,fontSize:12,color:C.textMuted,lineHeight:"1.7"}}>
+                  <strong style={{color:C.text,display:"block",marginBottom:8}}>Como gerar o token (App Privado):</strong>
+                  {[
+                    "Shopify Admin → Configuracoes → Apps e canais de vendas",
+                    "Clique em Desenvolver apps → Criar um app",
+                    "De um nome (ex: Workspace) e clique em Criar app",
+                    "Clique em Configurar escopos da API → marque: read_orders, write_orders, read_products, write_products → Salvar",
+                    "Clique em Instalar app → Instalar",
+                    "Va em Credenciais da API → copie o Admin API access token (shpat_...)",
+                  ].map((s,i)=>(
+                    <div key={i} style={{display:"flex",gap:8,alignItems:"flex-start",marginBottom:5}}>
+                      <span style={{minWidth:18,height:18,borderRadius:"50%",background:C.accentDim,display:"inline-flex",alignItems:"center",justifyContent:"center",fontSize:9,fontWeight:700,color:C.accent,flexShrink:0}}>{i+1}</span>
+                      <span style={{fontSize:11,lineHeight:"1.5"}}>{s}</span>
+                    </div>
+                  ))}
+                </div>
+                <div>
+                  <label style={{fontSize:12,color:C.textMuted,display:"block",marginBottom:6}}>Dominio da loja <span style={{color:C.red}}>*</span></label>
+                  <Input value={manualDomain} onChange={setManualDomain} placeholder="minhaloja.myshopify.com"/>
+                </div>
+                <div>
+                  <label style={{fontSize:12,color:C.textMuted,display:"block",marginBottom:6}}>Admin API Access Token <span style={{color:C.red}}>*</span></label>
+                  <Input value={manualToken} onChange={setManualToken} placeholder="shpat_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx" type="password"/>
+                </div>
+                <div style={{display:"flex",gap:8,justifyContent:"flex-end"}}>
+                  <Btn variant="outline" onClick={()=>setShowShopifySettings(false)}>Cancelar</Btn>
+                  <Btn variant="primary" onClick={saveShopifyManual} loading={manualSaving} icon="zap">Salvar e Sincronizar</Btn>
+                </div>
+              </>
+            ):(
+              <>
+                <div style={{padding:"12px 14px",background:"rgba(34,197,94,0.07)",borderRadius:10,border:"0.5px solid rgba(34,197,94,0.2)",fontSize:12,color:C.textMuted,lineHeight:"1.6"}}>
+                  Voce sera redirecionado para o Shopify para autorizar o acesso automaticamente.
+                </div>
+                <div>
+                  <label style={{fontSize:12,color:C.textMuted,display:"block",marginBottom:6}}>Dominio da loja <span style={{color:C.red}}>*</span></label>
+                  <Input value={manualDomain} onChange={setManualDomain} placeholder="5scnm9-hz.myshopify.com"/>
+                  <div style={{fontSize:11,color:C.textMuted,marginTop:4}}>So funciona em lojas onde o app ja esta instalado</div>
+                </div>
+                <div style={{display:"flex",gap:8,justifyContent:"flex-end"}}>
+                  <Btn variant="outline" onClick={()=>setShowShopifySettings(false)}>Cancelar</Btn>
+                  <Btn variant="primary" onClick={()=>{if(!manualDomain.trim()){show("Digite o dominio da loja","error");return;}connectShopifyOAuth(manualDomain.trim().replace(/^https?:\/\//,"").replace(/\/$/,""));setShowShopifySettings(false);}} icon="zap">Conectar com Shopify</Btn>
+                </div>
+              </>
+            )}
           </div>
         </Modal>
-      )}
+        );
+      })()}
 
       {/* MODAL GOOGLE ADS */}
       {showGadsSettings&&(
