@@ -175,6 +175,68 @@ const useIsMobile=()=>{
   return mobile;
 };
 
+// ─── SESSION TIME TRACKER ─────────────────────────────────────────────────────
+const useSessionTime=()=>{
+  const today=new Date().toISOString().slice(0,10);
+  const key=`ws_time_${today}`;
+  const [secs,setSecs]=useState(()=>{
+    try{return parseInt(localStorage.getItem(key)||"0");}catch{return 0;}
+  });
+  const startRef=useRef(null);
+  const secsRef=useRef(secs);
+  secsRef.current=secs;
+
+  useEffect(()=>{
+    // Limpar dias antigos
+    try{Object.keys(localStorage).forEach(k=>{if(k.startsWith("ws_time_")&&k!==key)localStorage.removeItem(k);});}catch{}
+
+    const start=()=>{if(!startRef.current)startRef.current=Date.now();};
+    const stop=()=>{
+      if(startRef.current){
+        const elapsed=Math.floor((Date.now()-startRef.current)/1000);
+        const next=secsRef.current+elapsed;
+        setSecs(next);
+        try{localStorage.setItem(key,String(next));}catch{}
+        startRef.current=null;
+      }
+    };
+    if(!document.hidden)start();
+    const onVis=()=>document.hidden?stop():start();
+    const onFocus=()=>start();
+    const onBlur=()=>stop();
+    document.addEventListener("visibilitychange",onVis);
+    window.addEventListener("focus",onFocus);
+    window.addEventListener("blur",onBlur);
+    // Salva a cada 10s sem precisar sair da aba
+    const tick=setInterval(()=>{
+      if(startRef.current){
+        const elapsed=Math.floor((Date.now()-startRef.current)/1000);
+        const next=secsRef.current+elapsed;
+        setSecs(next);
+        try{localStorage.setItem(key,String(next));}catch{}
+        startRef.current=Date.now();
+      }
+    },10000);
+    return()=>{
+      stop();
+      document.removeEventListener("visibilitychange",onVis);
+      window.removeEventListener("focus",onFocus);
+      window.removeEventListener("blur",onBlur);
+      clearInterval(tick);
+    };
+  },[key]);
+
+  const fmt=(s)=>{
+    const h=Math.floor(s/3600);
+    const m=Math.floor((s%3600)/60);
+    const sec=s%60;
+    if(h>0)return`${h}h ${m}min`;
+    if(m>0)return`${m}min ${sec}s`;
+    return`${sec}s`;
+  };
+  return{secs,formatted:fmt(secs)};
+};
+
 // ─── BOTTOM NAV (mobile) ──────────────────────────────────────────────────────
 const BottomNav=({page,setPage,sb})=>{
   const nav=[
@@ -468,6 +530,7 @@ const LineChart=({data})=>{
 const SUPA_FUNCTIONS_URL="https://vvdhnwknluxsaxcqvlyh.supabase.co/functions/v1";
 
 const PainelPage=({sb,user,setPage})=>{
+  const {formatted:tempoHoje,secs:tempoSecs}=useSessionTime();
   const [tasks,setTasks]=useState([]);
   const [links,setLinks]=useState([]);
   const [payments,setPayments]=useState([]);
@@ -960,6 +1023,30 @@ function main() {
           onMouseEnter={e=>e.currentTarget.style.background="#6c5ce7"} onMouseLeave={e=>e.currentTarget.style.background=C.accent}>
           <Icon name="plus" size={14}/> Registrar
         </button>
+      </div>
+
+      {/* TEMPO NO PC */}
+      <div style={{display:"flex",alignItems:"center",gap:10,padding:"12px 16px",background:C.surface,border:`0.5px solid ${C.border}`,borderRadius:12,marginBottom:20,flexWrap:"wrap"}}>
+        <div style={{display:"flex",alignItems:"center",gap:8,flex:1,minWidth:180}}>
+          <div style={{width:32,height:32,borderRadius:8,background:"rgba(124,107,255,0.12)",border:"0.5px solid rgba(124,107,255,0.2)",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={C.accent} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          </div>
+          <div>
+            <div style={{fontSize:11,color:C.textMuted,textTransform:"uppercase",letterSpacing:"0.05em",marginBottom:1}}>Tempo no app hoje</div>
+            <div style={{fontSize:18,fontWeight:600,color:C.accent,fontFamily:"'Geist Mono',monospace",letterSpacing:"-0.02em"}}>{tempoHoje}</div>
+          </div>
+        </div>
+        {/* Barra de progresso (meta 8h = 28800s) */}
+        <div style={{flex:2,minWidth:120}}>
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:5}}>
+            <span style={{fontSize:10,color:C.textMuted}}>meta: 8h</span>
+            <span style={{fontSize:10,color:C.textMuted,fontFamily:"'Geist Mono',monospace"}}>{Math.min(100,Math.round(tempoSecs/288))}%</span>
+          </div>
+          <div style={{height:4,background:"#1a1a1a",borderRadius:2,overflow:"hidden"}}>
+            <div style={{height:"100%",width:`${Math.min(100,tempoSecs/288)}%`,background:`linear-gradient(90deg,${C.accent},#a78bfa)`,borderRadius:2,transition:"width 1s ease"}}/>
+          </div>
+        </div>
+        <div style={{fontSize:10,color:C.textDim,flexShrink:0}}>● ativo agora</div>
       </div>
 
       {/* INTEGRAÇÕES */}
