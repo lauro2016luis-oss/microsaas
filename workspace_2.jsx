@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { createClient } from "@supabase/supabase-js";
 
 // ─── SUPABASE ─────────────────────────────────────────────────────────────────
@@ -179,83 +179,85 @@ const useIsMobile=()=>{
 const useSessionTime=({sb,user})=>{
   const today=new Date().toISOString().slice(0,10);
   const lsKey=`ws_time_${today}`;
-  const [secs,setSecs]=useState(()=>{try{return parseInt(localStorage.getItem(lsKey)||"0");}catch{return 0;}});
-  const [synced,setSynced]=useState(false);
+  // base = segundos salvos/confirmados; display = base + elapsed ao vivo
+  const baseRef=useRef(()=>{try{return parseInt(localStorage.getItem(lsKey)||"0");}catch{return 0;}});
+  const [display,setDisplay]=useState(baseRef.current);
   const startRef=useRef(null);
-  const secsRef=useRef(secs);
-  secsRef.current=secs;
+  const syncedRef=useRef(false);
 
-  // Carrega do Supabase ao montar (sincroniza entre dispositivos)
+  // Carrega do Supabase ao montar
   useEffect(()=>{
     if(!sb||!user)return;
+    try{Object.keys(localStorage).forEach(k=>{if(k.startsWith("ws_time_")&&k!==lsKey)localStorage.removeItem(k);});}catch{}
     sb.from("session_time").select("seconds").eq("user_id",user.id).eq("date",today).single()
       .then(({data})=>{
-        if(data){
-          // Usa o maior valor entre local e remoto (evita perder tempo de outro dispositivo)
-          const remote=data.seconds||0;
-          const local=parseInt(localStorage.getItem(lsKey)||"0");
-          const best=Math.max(remote,local);
-          setSecs(best);
-          secsRef.current=best;
-          try{localStorage.setItem(lsKey,String(best));}catch{}
-        }
-        setSynced(true);
+        const remote=data?.seconds||0;
+        const local=parseInt(localStorage.getItem(lsKey)||"0");
+        const best=Math.max(remote,local);
+        baseRef.current=best;
+        setDisplay(best+(startRef.current?Math.floor((Date.now()-startRef.current)/1000):0));
+        try{localStorage.setItem(lsKey,String(best));}catch{}
+        syncedRef.current=true;
       });
-    // Limpa localStorage de dias antigos
-    try{Object.keys(localStorage).forEach(k=>{if(k.startsWith("ws_time_")&&k!==lsKey)localStorage.removeItem(k);});}catch{}
   },[user?.id,today]);
 
-  // Salva no Supabase
-  const saveRemote=useRef(null);
-  saveRemote.current=async(total)=>{
-    if(!sb||!user||!synced)return;
+  const saveRemote=useCallback(async(total)=>{
+    if(!sb||!user||!syncedRef.current)return;
     await sb.from("session_time").upsert({user_id:user.id,date:today,seconds:total,updated_at:new Date().toISOString()},{onConflict:"user_id,date"});
-  };
+  },[sb,user?.id,today]);
 
   useEffect(()=>{
     const start=()=>{if(!startRef.current)startRef.current=Date.now();};
-    const stop=()=>{
+    const commit=()=>{
       if(startRef.current){
         const elapsed=Math.floor((Date.now()-startRef.current)/1000);
-        const next=secsRef.current+elapsed;
-        setSecs(next);secsRef.current=next;
-        try{localStorage.setItem(lsKey,String(next));}catch{}
-        saveRemote.current(next);
+        baseRef.current+=elapsed;
+        try{localStorage.setItem(lsKey,String(baseRef.current));}catch{}
+        saveRemote(baseRef.current);
         startRef.current=null;
       }
     };
     if(!document.hidden)start();
-    const onVis=()=>document.hidden?stop():start();
+    const onVis=()=>document.hidden?commit():start();
     const onFocus=()=>start();
-    const onBlur=()=>stop();
+    const onBlur=()=>commit();
     document.addEventListener("visibilitychange",onVis);
     window.addEventListener("focus",onFocus);
     window.addEventListener("blur",onBlur);
-    // Sincroniza com Supabase a cada 30s
-    const tick=setInterval(()=>{
+
+    // Tick a cada 1s — atualiza display em tempo real
+    const display=setInterval(()=>{
+      const live=startRef.current?Math.floor((Date.now()-startRef.current)/1000):0;
+      setDisplay(baseRef.current+live);
+    },1000);
+
+    // Salva no Supabase a cada 60s
+    const sync=setInterval(()=>{
       if(startRef.current){
         const elapsed=Math.floor((Date.now()-startRef.current)/1000);
-        const next=secsRef.current+elapsed;
-        setSecs(next);secsRef.current=next;
-        try{localStorage.setItem(lsKey,String(next));}catch{}
-        saveRemote.current(next);
-        startRef.current=Date.now();
+        const total=baseRef.current+elapsed;
+        try{localStorage.setItem(lsKey,String(total));}catch{}
+        saveRemote(total);
       }
-    },30000);
+    },60000);
+
     return()=>{
-      stop();
+      commit();
       document.removeEventListener("visibilitychange",onVis);
       window.removeEventListener("focus",onFocus);
       window.removeEventListener("blur",onBlur);
-      clearInterval(tick);
+      clearInterval(display);
+      clearInterval(sync);
     };
-  },[lsKey]);
+  },[lsKey,saveRemote]);
 
   const fmt=(s)=>{
     const h=Math.floor(s/3600);const m=Math.floor((s%3600)/60);const sec=s%60;
-    if(h>0)return`${h}h ${m}min`;if(m>0)return`${m}min ${sec}s`;return`${sec}s`;
+    if(h>0)return`${h}h ${String(m).padStart(2,"0")}min`;
+    if(m>0)return`${m}min ${String(sec).padStart(2,"0")}s`;
+    return`${sec}s`;
   };
-  return{secs,formatted:fmt(secs)};
+  return{secs:display,formatted:fmt(display)};
 };
 
 // ─── BOTTOM NAV (mobile) ──────────────────────────────────────────────────────
