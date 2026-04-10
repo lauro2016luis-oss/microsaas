@@ -41,20 +41,34 @@ input[type=date]::-webkit-calendar-picker-indicator{filter:invert(0.5);}
 .grid-chart{display:grid;grid-template-columns:1fr 300px;gap:16px;margin-bottom:20px;}
 .grid-tasks-4{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;align-items:start;}
 .topbar-date{display:block;}
+.grid-integ{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;border-radius:8px;}
+.preview-grid{display:grid;grid-template-columns:200px 1fr;gap:20px;}
+.modal-grid-2{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.page-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:28px;gap:12px;}
+.page-header-actions{display:flex;gap:8px;align-items:center;flex-shrink:0;}
 @media(max-width:768px){
   .sidebar{display:none!important;}
   .bottom-nav{display:flex!important;position:fixed;bottom:0;left:0;right:0;background:#111;border-top:0.5px solid #1e1e1e;z-index:100;padding:8px 4px 12px;justify-content:space-around;align-items:center;}
-  .page-pad{padding:20px 16px 90px!important;}
+  .page-pad{padding:16px 14px 90px!important;}
   .grid-kpi-4{grid-template-columns:repeat(2,1fr)!important;}
   .grid-pay-4{grid-template-columns:repeat(2,1fr)!important;}
   .grid-chart{grid-template-columns:1fr!important;}
   .grid-tasks-4{grid-template-columns:repeat(2,1fr)!important;}
   .topbar-date{display:none!important;}
-  .main-topbar{padding:10px 16px!important;}
+  .main-topbar{padding:10px 14px!important;}
+  .grid-integ{grid-template-columns:1fr!important;}
+  .preview-grid{grid-template-columns:1fr!important;}
+  .modal-grid-2{grid-template-columns:1fr!important;}
+  .page-header{flex-wrap:wrap!important;}
+  .page-header-actions{width:100%;justify-content:flex-end;}
+  .hide-mobile{display:none!important;}
 }
 @media(max-width:480px){
   .grid-tasks-4{grid-template-columns:1fr!important;}
   .grid-kpi-4{grid-template-columns:repeat(2,1fr)!important;}
+  .modal-grid-2{grid-template-columns:1fr!important;}
+  .page-pad{padding:12px 10px 90px!important;}
 }
 `;
 
@@ -126,8 +140,8 @@ const Input=({value,onChange,placeholder,style={},type="text",onKeyDown})=>(
 );
 
 const Modal=({title,onClose,children})=>(
-  <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.85)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:1000,padding:24}} onClick={onClose}>
-    <div className="fade-in" style={{background:"#111",border:`0.5px solid ${C.border}`,borderRadius:16,padding:24,maxWidth:520,width:"100%",maxHeight:"85vh",overflowY:"auto"}} onClick={e=>e.stopPropagation()}>
+  <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.85)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:1000,padding:"16px 12px"}} onClick={onClose}>
+    <div className="fade-in" style={{background:"#111",border:`0.5px solid ${C.border}`,borderRadius:16,padding:20,maxWidth:520,width:"100%",maxHeight:"92vh",overflowY:"auto"}} onClick={e=>e.stopPropagation()}>
       <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:20}}>
         <h3 style={{fontSize:16,fontWeight:500,color:C.text}}>{title}</h3>
         <button onClick={onClose} style={{background:"none",border:"none",color:C.textMuted,cursor:"pointer",padding:4}}><Icon name="x"/></button>
@@ -940,7 +954,7 @@ function main() {
       {El}
 
       {/* HEADER */}
-      <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:28}}>
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:28,flexWrap:"wrap",gap:12}}>
         <div><h1 style={{fontSize:24,fontWeight:600,color:C.text,letterSpacing:"-0.03em"}}>{(()=>{const h=new Date().getHours();if(h>=5&&h<12)return"Bom dia, chefe!";if(h>=12&&h<18)return"Boa tarde, chefe!";if(h>=18&&h<24)return"Boa noite, chefe!";return"Boa madrugada, chefe!";})()}</h1><p style={{fontSize:14,color:C.textMuted,marginTop:4}}>Seu espaco de trabalho.</p></div>
         <button onClick={()=>setModalResultado(true)} style={{display:"flex",alignItems:"center",gap:7,padding:"9px 16px",borderRadius:9,background:C.accent,color:"#fff",border:"none",fontSize:13,fontWeight:500,cursor:"pointer",fontFamily:"'Geist',sans-serif"}}
           onMouseEnter={e=>e.currentTarget.style.background="#6c5ce7"} onMouseLeave={e=>e.currentTarget.style.background=C.accent}>
@@ -951,7 +965,7 @@ function main() {
       {/* INTEGRAÇÕES */}
       <div style={{marginBottom:20}}>
         <div style={{fontSize:12,color:C.textMuted,marginBottom:10,textTransform:"uppercase",letterSpacing:"0.06em"}}>Integrações</div>
-        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12}}>
+        <div className="grid-integ">
 
           {/* ── COLUNA SHOPIFY ── */}
           <div style={{background:C.surface,border:`0.5px solid ${C.border}`,borderRadius:12,overflow:"hidden"}}>
@@ -1214,7 +1228,7 @@ function main() {
         ].map((s,i)=>(
           <div key={i} style={{background:C.surface,border:`0.5px solid ${C.border}`,borderRadius:12,padding:"18px 20px"}}>
             <div style={{fontSize:11,color:C.textMuted,marginBottom:10,textTransform:"uppercase",letterSpacing:"0.05em"}}>{s.l}</div>
-            <div style={{fontSize:24,fontWeight:600,color:s.c,letterSpacing:"-0.02em",fontFamily:"'Geist Mono',monospace"}}>{fmtVal(s.v)}</div>
+            <div style={{fontSize:"clamp(16px,3vw,24px)",fontWeight:600,color:s.c,letterSpacing:"-0.02em",fontFamily:"'Geist Mono',monospace",wordBreak:"break-all"}}>{fmtVal(s.v)}</div>
           </div>
         ))}
       </div>
@@ -1314,7 +1328,7 @@ function main() {
         {recentes.length===0?(
           <div style={{textAlign:"center",padding:"24px 0",color:C.textDim,fontSize:13}}>Nenhum resultado ainda. Clique em "Registrar Resultado" para começar.</div>
         ):(
-          <table style={{width:"100%",borderCollapse:"collapse",fontSize:12}}>
+          <div className="table-wrap"><table style={{width:"100%",borderCollapse:"collapse",fontSize:12,minWidth:520}}>
             <thead>
               <tr style={{borderBottom:`0.5px solid ${C.border}`}}>
                 {["Data","Loja","Moeda","Faturamento","Ads","Lucro",""].map((h,i)=>(
@@ -1348,7 +1362,7 @@ function main() {
                 </tr>
               ))}
             </tbody>
-          </table>
+          </table></div>
         )}
       </div>
 
@@ -1397,7 +1411,7 @@ function main() {
                 </select>
               )}
             </div>
-            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12}}>
+            <div className="modal-grid-2">
               <div>
                 <label style={{fontSize:12,color:C.textMuted,display:"block",marginBottom:6}}>Data</label>
                 <Input type="date" value={form.date} onChange={v=>setForm(p=>({...p,date:v}))}/>
@@ -1678,7 +1692,7 @@ const TarefasPage=({sb,user})=>{
           <div style={{display:"flex",flexDirection:"column",gap:12}}>
             <Input value={form.title} onChange={v=>setForm(p=>({...p,title:v}))} placeholder="Título da tarefa..."/>
             <textarea value={form.description} onChange={e=>setForm(p=>({...p,description:e.target.value}))} placeholder="Descrição..." rows={2} style={{background:"#0d0d0d",border:`0.5px solid ${C.border}`,color:C.text,fontFamily:"'Geist',sans-serif",fontSize:13,padding:"8px 12px",borderRadius:8,outline:"none",resize:"none"}}/>
-            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
+            <div className="modal-grid-2">
               <select value={form.status} onChange={e=>setForm(p=>({...p,status:e.target.value}))} style={{background:"#0d0d0d",border:`0.5px solid ${C.border}`,color:C.text,fontFamily:"'Geist',sans-serif",fontSize:13,padding:"8px 12px",borderRadius:8,outline:"none"}}>{["A fazer","Hoje","Atrasado","Concluído"].map(s=><option key={s}>{s}</option>)}</select>
               <select value={form.priority} onChange={e=>setForm(p=>({...p,priority:e.target.value}))} style={{background:"#0d0d0d",border:`0.5px solid ${C.border}`,color:C.text,fontFamily:"'Geist',sans-serif",fontSize:13,padding:"8px 12px",borderRadius:8,outline:"none"}}>{["Baixa","Média","Alta"].map(s=><option key={s}>{s}</option>)}</select>
             </div>
@@ -2066,7 +2080,7 @@ const ProdutosPage=({sb,user})=>{
   return(
     <div className="page-pad" style={{overflowY:"auto",flex:1}}>
       {El}
-      <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:28}}>
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:28,flexWrap:"wrap",gap:12}}>
         <div>
           <h1 style={{fontSize:24,fontWeight:600,color:C.text,letterSpacing:"-0.03em"}}>Importar Produtos</h1>
           <p style={{fontSize:14,color:C.textMuted,marginTop:4}}>Cole a URL de qualquer produto Shopify e importe com tudo para a sua loja.</p>
@@ -2102,7 +2116,7 @@ const ProdutosPage=({sb,user})=>{
             <button onClick={()=>setPreview(null)} style={{background:"none",border:"none",color:C.textMuted,cursor:"pointer"}}><Icon name="x"/></button>
           </div>
 
-          <div style={{display:"grid",gridTemplateColumns:"200px 1fr",gap:20}}>
+          <div className="preview-grid">
             {/* Imagens */}
             <div>
               {preview.images?.length>0?(
@@ -2382,9 +2396,9 @@ export default function App() {
           <Sidebar page={page} setPage={setPage} storeName={storeName} setStoreName={setStoreName} sb={sb} user={user}/>
         </div>
         <main style={{flex:1,display:"flex",flexDirection:"column",overflow:"hidden"}}>
-          <div className="main-topbar" style={{borderBottom:`0.5px solid ${C.border}`,padding:"11px 36px",display:"flex",alignItems:"center",justifyContent:"space-between",background:C.bg,flexShrink:0}}>
-            <div className="topbar-date" style={{fontSize:12,color:C.textMuted,fontFamily:"'Geist Mono',monospace"}}>{new Date().toLocaleDateString("pt-BR",{weekday:"long",year:"numeric",month:"long",day:"numeric"})}</div>
-            <div style={{fontSize:11,padding:"3px 10px",borderRadius:6,background:C.greenDim,color:C.green,border:"0.5px solid rgba(34,197,94,0.3)",fontFamily:"'Geist Mono',monospace"}}>● online</div>
+          <div className="main-topbar" style={{borderBottom:`0.5px solid ${C.border}`,padding:"11px 36px",display:"flex",alignItems:"center",justifyContent:"space-between",background:C.bg,flexShrink:0,gap:8}}>
+            <div className="topbar-date" style={{fontSize:12,color:C.textMuted,fontFamily:"'Geist Mono',monospace",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{new Date().toLocaleDateString("pt-BR",{weekday:"long",year:"numeric",month:"long",day:"numeric"})}</div>
+            <div style={{fontSize:11,padding:"3px 10px",borderRadius:6,background:C.greenDim,color:C.green,border:"0.5px solid rgba(34,197,94,0.3)",fontFamily:"'Geist Mono',monospace",flexShrink:0}}>● online</div>
           </div>
           {pages[page]}
         </main>
