@@ -18,7 +18,12 @@
       "Bash(/opt/homebrew/bin/gh repo:*)",
       "WebFetch(domain:microsaas-qy8v-ikksybzzb-lauro2016luis-9467s-projects.vercel.app)",
       "WebSearch",
-      "mcp__6e2a353a-6861-407a-8da6-fdb034188deb__deploy_edge_function"
+      "mcp__6e2a353a-6861-407a-8da6-fdb034188deb__deploy_edge_function",
+      "mcp__6e2a353a-6861-407a-8da6-fdb034188deb__get_logs",
+      "mcp__6e2a353a-6861-407a-8da6-fdb034188deb__list_edge_functions",
+      "mcp__6e2a353a-6861-407a-8da6-fdb034188deb__get_edge_function",
+      "mcp__6e2a353a-6861-407a-8da6-fdb034188deb__execute_sql",
+      "mcp__Claude_Preview__preview_start"
     ]
   }
 }

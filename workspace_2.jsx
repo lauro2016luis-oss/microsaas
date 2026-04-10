@@ -472,8 +472,11 @@ const PainelPage=({sb,user,setPage})=>{
   const [syncingId,setSyncingId]=useState(null);
   const [showShopifySettings,setShowShopifySettings]=useState(false);
   const [manualDomain,setManualDomain]=useState("");
+  const [manualStoreName,setManualStoreName]=useState("");
   const [manualToken,setManualToken]=useState("");
   const [manualSaving,setManualSaving]=useState(false);
+  const [editingStoreNameId,setEditingStoreNameId]=useState(null);
+  const [editingStoreNameVal,setEditingStoreNameVal]=useState("");
   // Google Ads
   const [googleAdsConfigs,setGoogleAdsConfigs]=useState([]);
   const [showGadsSettings,setShowGadsSettings]=useState(false);
@@ -571,18 +574,25 @@ const PainelPage=({sb,user,setPage})=>{
     setManualSaving(false);
   };
 
-  const connectShopifyOAuth=async(domain)=>{
+  const connectShopifyOAuth=async(domain,storeName)=>{
     try{
       const{data:{session}}=await sb.auth.getSession();
       const res=await fetch(`${SUPA_FUNCTIONS_URL}/shopify-auth`,{
         method:"POST",
         headers:{Authorization:`Bearer ${session.access_token}`,"Content-Type":"application/json"},
-        body:JSON.stringify({shop_domain:domain||""}),
+        body:JSON.stringify({shop_domain:domain||"",store_name:storeName||""}),
       });
       const data=await res.json();
       if(data.url){window.location.href=data.url;}
       else{show("Erro ao iniciar OAuth: "+(data.error||"desconhecido"),"error");}
     }catch(e){show("Erro: "+String(e),"error");}
+  };
+
+  const saveStoreNameInline=async(id,newName)=>{
+    const{error}=await sb.from("shopify_configs").update({store_name:newName.trim()||null}).eq("id",id).eq("user_id",user.id);
+    if(error){show("Erro ao salvar: "+error.message,"error");}
+    else{setShopifyConfigs(prev=>prev.map(c=>c.id===id?{...c,store_name:newName.trim()||null}:c));show("Nome atualizado ✅");}
+    setEditingStoreNameId(null);setEditingStoreNameVal("");
   };
 
   const loadSysSettings=async()=>{
@@ -949,7 +959,28 @@ function main() {
             {shopifyConfigs.map(cfg=>(
               <div key={cfg.id} style={{padding:"10px 16px",borderBottom:`0.5px solid ${C.border}`,display:"flex",alignItems:"center",gap:8}}>
                 <div style={{flex:1,minWidth:0}}>
-                  <div style={{fontSize:12,fontWeight:500,color:C.green,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>● {cfg.shop_domain}</div>
+                  {editingStoreNameId===cfg.id?(
+                    <div style={{display:"flex",gap:6,alignItems:"center",marginBottom:2}}>
+                      <input
+                        autoFocus
+                        value={editingStoreNameVal}
+                        onChange={e=>setEditingStoreNameVal(e.target.value)}
+                        onKeyDown={e=>{if(e.key==="Enter")saveStoreNameInline(cfg.id,editingStoreNameVal);if(e.key==="Escape"){setEditingStoreNameId(null);setEditingStoreNameVal("");}}}
+                        style={{background:"#111",border:`1px solid ${C.accentBorder}`,borderRadius:6,padding:"3px 8px",fontSize:12,color:C.text,fontFamily:"'Geist',sans-serif",outline:"none",width:"100%",maxWidth:140}}
+                        placeholder="Nome da loja"
+                      />
+                      <button onClick={()=>saveStoreNameInline(cfg.id,editingStoreNameVal)} style={{background:C.accent,border:"none",borderRadius:5,padding:"3px 8px",fontSize:11,color:"#000",cursor:"pointer",fontWeight:600}}>✓</button>
+                      <button onClick={()=>{setEditingStoreNameId(null);setEditingStoreNameVal("");}} style={{background:"transparent",border:"none",color:C.textMuted,cursor:"pointer",fontSize:13,padding:"2px 4px"}}>✕</button>
+                    </div>
+                  ):(
+                    <div style={{display:"flex",alignItems:"center",gap:5,marginBottom:1}}>
+                      <div style={{fontSize:12,fontWeight:600,color:C.green,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>● {cfg.store_name||cfg.shop_domain}</div>
+                      <button title="Editar nome" onClick={()=>{setEditingStoreNameId(cfg.id);setEditingStoreNameVal(cfg.store_name||"");}} style={{background:"transparent",border:"none",cursor:"pointer",padding:"1px 3px",color:C.textMuted,display:"flex",alignItems:"center",lineHeight:1,opacity:0.6}} onMouseEnter={e=>e.currentTarget.style.opacity=1} onMouseLeave={e=>e.currentTarget.style.opacity=0.6}>
+                        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                      </button>
+                    </div>
+                  )}
+                  {cfg.store_name&&<div style={{fontSize:10,color:C.textMuted,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{cfg.shop_domain}</div>}
                   <div style={{fontSize:10,color:C.textMuted}}>sync: {cfg.last_sync_at?new Date(cfg.last_sync_at).toLocaleString("pt-BR",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"}):"nunca"}</div>
                 </div>
                 <Btn variant="outline" small onClick={()=>syncShopify(cfg.shop_domain)} loading={syncingId===cfg.shop_domain} icon="zap">Sync</Btn>
@@ -1026,17 +1057,22 @@ function main() {
               <div style={{display:"flex",gap:8}}><span style={{color:C.green,fontWeight:700}}>3.</span> Voce sera redirecionado para o Shopify — clique em <strong style={{color:C.text}}>Instalar</strong></div>
             </div>
             <div>
+              <label style={{fontSize:12,color:C.textMuted,display:"block",marginBottom:6}}>Nome da loja <span style={{color:C.textMuted,fontStyle:"italic"}}>(opcional — para identificar)</span></label>
+              <Input value={manualStoreName} onChange={setManualStoreName} placeholder="Ex: Loja Principal, Loja 2..."/>
+            </div>
+            <div>
               <label style={{fontSize:12,color:C.textMuted,display:"block",marginBottom:6}}>Dominio da loja <span style={{color:C.red}}>*</span></label>
               <Input value={manualDomain} onChange={setManualDomain} placeholder="minhaloja.myshopify.com"/>
               <div style={{fontSize:11,color:C.textMuted,marginTop:4}}>Ex: minha-loja.myshopify.com — sem https://</div>
             </div>
             <div style={{display:"flex",gap:8,justifyContent:"flex-end"}}>
-              <Btn variant="outline" onClick={()=>setShowShopifySettings(false)}>Cancelar</Btn>
+              <Btn variant="outline" onClick={()=>{setShowShopifySettings(false);setManualDomain("");setManualStoreName("");}}>Cancelar</Btn>
               <Btn variant="primary" onClick={()=>{
                 if(!manualDomain.trim()){show("Digite o dominio da loja","error");return;}
                 const d=manualDomain.trim().replace(/^https?:\/\//,"").replace(/\/$/,"");
-                connectShopifyOAuth(d);
-                setShowShopifySettings(false);
+                const n=manualStoreName.trim();
+                connectShopifyOAuth(d,n);
+                setShowShopifySettings(false);setManualDomain("");setManualStoreName("");
               }} icon="zap">Conectar com Shopify</Btn>
             </div>
           </div>
@@ -2117,7 +2153,7 @@ const ProdutosPage=({sb,user})=>{
                 {shopifyConfigs.length>0&&(
                   <select value={targetDomain} onChange={e=>setTargetDomain(e.target.value)}
                     style={{background:"#0d0d0d",border:`0.5px solid ${C.border}`,color:C.text,fontFamily:"'Geist',sans-serif",fontSize:12,padding:"8px 12px",borderRadius:8,outline:"none",cursor:"pointer"}}>
-                    {shopifyConfigs.map(c=><option key={c.shop_domain} value={c.shop_domain}>{c.shop_domain}</option>)}
+                    {shopifyConfigs.map(c=><option key={c.shop_domain} value={c.shop_domain}>{c.store_name||c.shop_domain}</option>)}
                   </select>
                 )}
                 {shopifyConfigs.length===0?(
