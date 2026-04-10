@@ -229,11 +229,11 @@ const LoginPage=({sb})=>{
       <div className="fade-in" style={{width:"100%",maxWidth:380}}>
         {/* Logo */}
         <div style={{textAlign:"center",marginBottom:32}}>
-          <div style={{width:44,height:44,borderRadius:12,background:C.accentDim,border:`0.5px solid ${C.accentBorder}`,display:"flex",alignItems:"center",justifyContent:"center",margin:"0 auto 14px",color:C.accent}}>
-            <Icon name="zap" size={20}/>
+          <div style={{width:52,height:52,borderRadius:14,background:"linear-gradient(135deg,#22c55e 0%,#16a34a 100%)",display:"flex",alignItems:"center",justifyContent:"center",margin:"0 auto 16px",boxShadow:"0 4px 20px rgba(34,197,94,0.4)"}}>
+            <svg width="26" height="26" viewBox="0 0 24 24" fill="none"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" fill="white"/></svg>
           </div>
-          <h1 style={{fontSize:22,fontWeight:600,color:C.text,letterSpacing:"-0.03em"}}>Workspace</h1>
-          <p style={{fontSize:13,color:C.textMuted,marginTop:4}}>{titles[mode]}</p>
+          <h1 style={{fontSize:24,fontWeight:700,color:C.text,letterSpacing:"-0.04em",lineHeight:1}}>Workspace<span style={{color:C.accent}}>.</span></h1>
+          <p style={{fontSize:13,color:C.textMuted,marginTop:6}}>{titles[mode]}</p>
         </div>
 
         {/* Card */}
@@ -312,9 +312,14 @@ const Sidebar=({page,setPage,storeName,setStoreName,sb,user})=>{
   const save=()=>{if(inp.trim())setStoreName(inp.trim());setEditing(false);};
   return (
     <div style={{width:220,minWidth:220,background:C.surface,borderRight:`0.5px solid ${C.border}`,display:"flex",flexDirection:"column",padding:"20px 12px"}}>
-      <div style={{padding:"4px 12px",marginBottom:28}}>
-        <div style={{fontSize:15,fontWeight:600,color:C.text,letterSpacing:"-0.02em"}}>workspace</div>
-        <div style={{fontSize:11,color:C.textMuted,fontFamily:"'Geist Mono',monospace",marginTop:2}}>espaço pessoal</div>
+      <div style={{padding:"4px 12px",marginBottom:28,display:"flex",alignItems:"center",gap:10}}>
+        <div style={{width:30,height:30,borderRadius:8,background:"linear-gradient(135deg,#22c55e 0%,#16a34a 100%)",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,boxShadow:"0 2px 8px rgba(34,197,94,0.35)"}}>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" fill="white"/></svg>
+        </div>
+        <div>
+          <div style={{fontSize:14,fontWeight:700,color:C.text,letterSpacing:"-0.03em",lineHeight:1}}>Workspace</div>
+          <div style={{fontSize:10,color:C.textMuted,marginTop:2,letterSpacing:"0.04em",textTransform:"uppercase",fontWeight:500}}>Pro</div>
+        </div>
       </div>
       <nav style={{display:"flex",flexDirection:"column",gap:2}}>
         {nav.map(n=>{
