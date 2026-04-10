@@ -176,27 +176,51 @@ const useIsMobile=()=>{
 };
 
 // ─── SESSION TIME TRACKER ─────────────────────────────────────────────────────
-const useSessionTime=()=>{
+const useSessionTime=({sb,user})=>{
   const today=new Date().toISOString().slice(0,10);
-  const key=`ws_time_${today}`;
-  const [secs,setSecs]=useState(()=>{
-    try{return parseInt(localStorage.getItem(key)||"0");}catch{return 0;}
-  });
+  const lsKey=`ws_time_${today}`;
+  const [secs,setSecs]=useState(()=>{try{return parseInt(localStorage.getItem(lsKey)||"0");}catch{return 0;}});
+  const [synced,setSynced]=useState(false);
   const startRef=useRef(null);
   const secsRef=useRef(secs);
   secsRef.current=secs;
 
+  // Carrega do Supabase ao montar (sincroniza entre dispositivos)
   useEffect(()=>{
-    // Limpar dias antigos
-    try{Object.keys(localStorage).forEach(k=>{if(k.startsWith("ws_time_")&&k!==key)localStorage.removeItem(k);});}catch{}
+    if(!sb||!user)return;
+    sb.from("session_time").select("seconds").eq("user_id",user.id).eq("date",today).single()
+      .then(({data})=>{
+        if(data){
+          // Usa o maior valor entre local e remoto (evita perder tempo de outro dispositivo)
+          const remote=data.seconds||0;
+          const local=parseInt(localStorage.getItem(lsKey)||"0");
+          const best=Math.max(remote,local);
+          setSecs(best);
+          secsRef.current=best;
+          try{localStorage.setItem(lsKey,String(best));}catch{}
+        }
+        setSynced(true);
+      });
+    // Limpa localStorage de dias antigos
+    try{Object.keys(localStorage).forEach(k=>{if(k.startsWith("ws_time_")&&k!==lsKey)localStorage.removeItem(k);});}catch{}
+  },[user?.id,today]);
 
+  // Salva no Supabase
+  const saveRemote=useRef(null);
+  saveRemote.current=async(total)=>{
+    if(!sb||!user||!synced)return;
+    await sb.from("session_time").upsert({user_id:user.id,date:today,seconds:total,updated_at:new Date().toISOString()},{onConflict:"user_id,date"});
+  };
+
+  useEffect(()=>{
     const start=()=>{if(!startRef.current)startRef.current=Date.now();};
     const stop=()=>{
       if(startRef.current){
         const elapsed=Math.floor((Date.now()-startRef.current)/1000);
         const next=secsRef.current+elapsed;
-        setSecs(next);
-        try{localStorage.setItem(key,String(next));}catch{}
+        setSecs(next);secsRef.current=next;
+        try{localStorage.setItem(lsKey,String(next));}catch{}
+        saveRemote.current(next);
         startRef.current=null;
       }
     };
@@ -207,16 +231,17 @@ const useSessionTime=()=>{
     document.addEventListener("visibilitychange",onVis);
     window.addEventListener("focus",onFocus);
     window.addEventListener("blur",onBlur);
-    // Salva a cada 10s sem precisar sair da aba
+    // Sincroniza com Supabase a cada 30s
     const tick=setInterval(()=>{
       if(startRef.current){
         const elapsed=Math.floor((Date.now()-startRef.current)/1000);
         const next=secsRef.current+elapsed;
-        setSecs(next);
-        try{localStorage.setItem(key,String(next));}catch{}
+        setSecs(next);secsRef.current=next;
+        try{localStorage.setItem(lsKey,String(next));}catch{}
+        saveRemote.current(next);
         startRef.current=Date.now();
       }
-    },10000);
+    },30000);
     return()=>{
       stop();
       document.removeEventListener("visibilitychange",onVis);
@@ -224,15 +249,11 @@ const useSessionTime=()=>{
       window.removeEventListener("blur",onBlur);
       clearInterval(tick);
     };
-  },[key]);
+  },[lsKey]);
 
   const fmt=(s)=>{
-    const h=Math.floor(s/3600);
-    const m=Math.floor((s%3600)/60);
-    const sec=s%60;
-    if(h>0)return`${h}h ${m}min`;
-    if(m>0)return`${m}min ${sec}s`;
-    return`${sec}s`;
+    const h=Math.floor(s/3600);const m=Math.floor((s%3600)/60);const sec=s%60;
+    if(h>0)return`${h}h ${m}min`;if(m>0)return`${m}min ${sec}s`;return`${sec}s`;
   };
   return{secs,formatted:fmt(secs)};
 };
@@ -530,7 +551,7 @@ const LineChart=({data})=>{
 const SUPA_FUNCTIONS_URL="https://vvdhnwknluxsaxcqvlyh.supabase.co/functions/v1";
 
 const PainelPage=({sb,user,setPage})=>{
-  const {formatted:tempoHoje,secs:tempoSecs}=useSessionTime();
+  const {formatted:tempoHoje,secs:tempoSecs}=useSessionTime({sb,user});
   const [tasks,setTasks]=useState([]);
   const [links,setLinks]=useState([]);
   const [payments,setPayments]=useState([]);
