@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useCallback } from "react";
+import { useState, useRef, useEffect } from "react";
 import { createClient } from "@supabase/supabase-js";
 
 // ─── SUPABASE ─────────────────────────────────────────────────────────────────
@@ -173,91 +173,6 @@ const useIsMobile=()=>{
     return()=>window.removeEventListener("resize",fn);
   },[]);
   return mobile;
-};
-
-// ─── SESSION TIME TRACKER ─────────────────────────────────────────────────────
-const useSessionTime=({sb,user})=>{
-  const today=new Date().toISOString().slice(0,10);
-  const lsKey=`ws_time_${today}`;
-  // base = segundos salvos/confirmados; display = base + elapsed ao vivo
-  const baseRef=useRef(()=>{try{return parseInt(localStorage.getItem(lsKey)||"0");}catch{return 0;}});
-  const [display,setDisplay]=useState(baseRef.current);
-  const startRef=useRef(null);
-  const syncedRef=useRef(false);
-
-  // Carrega do Supabase ao montar
-  useEffect(()=>{
-    if(!sb||!user)return;
-    try{Object.keys(localStorage).forEach(k=>{if(k.startsWith("ws_time_")&&k!==lsKey)localStorage.removeItem(k);});}catch{}
-    sb.from("session_time").select("seconds").eq("user_id",user.id).eq("date",today).single()
-      .then(({data})=>{
-        const remote=data?.seconds||0;
-        const local=parseInt(localStorage.getItem(lsKey)||"0");
-        const best=Math.max(remote,local);
-        baseRef.current=best;
-        setDisplay(best+(startRef.current?Math.floor((Date.now()-startRef.current)/1000):0));
-        try{localStorage.setItem(lsKey,String(best));}catch{}
-        syncedRef.current=true;
-      });
-  },[user?.id,today]);
-
-  const saveRemote=useCallback(async(total)=>{
-    if(!sb||!user||!syncedRef.current)return;
-    await sb.from("session_time").upsert({user_id:user.id,date:today,seconds:total,updated_at:new Date().toISOString()},{onConflict:"user_id,date"});
-  },[sb,user?.id,today]);
-
-  useEffect(()=>{
-    const start=()=>{if(!startRef.current)startRef.current=Date.now();};
-    const commit=()=>{
-      if(startRef.current){
-        const elapsed=Math.floor((Date.now()-startRef.current)/1000);
-        baseRef.current+=elapsed;
-        try{localStorage.setItem(lsKey,String(baseRef.current));}catch{}
-        saveRemote(baseRef.current);
-        startRef.current=null;
-      }
-    };
-    if(!document.hidden)start();
-    const onVis=()=>document.hidden?commit():start();
-    const onFocus=()=>start();
-    const onBlur=()=>commit();
-    document.addEventListener("visibilitychange",onVis);
-    window.addEventListener("focus",onFocus);
-    window.addEventListener("blur",onBlur);
-
-    // Tick a cada 1s — atualiza display em tempo real
-    const display=setInterval(()=>{
-      const live=startRef.current?Math.floor((Date.now()-startRef.current)/1000):0;
-      setDisplay(baseRef.current+live);
-    },1000);
-
-    // Salva no Supabase a cada 60s
-    const sync=setInterval(()=>{
-      if(startRef.current){
-        const elapsed=Math.floor((Date.now()-startRef.current)/1000);
-        const total=baseRef.current+elapsed;
-        try{localStorage.setItem(lsKey,String(total));}catch{}
-        saveRemote(total);
-      }
-    },60000);
-
-    return()=>{
-      commit();
-      document.removeEventListener("visibilitychange",onVis);
-      window.removeEventListener("focus",onFocus);
-      window.removeEventListener("blur",onBlur);
-      clearInterval(display);
-      clearInterval(sync);
-    };
-  },[lsKey,saveRemote]);
-
-  const fmt=(s)=>{
-    const h=Math.floor(s/3600);const m=Math.floor((s%3600)/60);const sec=s%60;
-    if(h>0)return`${h}h ${String(m).padStart(2,"0")}min`;
-    if(m>0)return`${m}min ${String(sec).padStart(2,"0")}s`;
-    return`${sec}s`;
-  };
-  return{secs:display,formatted:fmt(display)};
 };
 
 // ─── BOTTOM NAV (mobile) ──────────────────────────────────────────────────────
@@ -553,7 +468,6 @@ const LineChart=({data})=>{
 const SUPA_FUNCTIONS_URL="https://vvdhnwknluxsaxcqvlyh.supabase.co/functions/v1";
 
 const PainelPage=({sb,user,setPage})=>{
-  const {formatted:tempoHoje,secs:tempoSecs}=useSessionTime({sb,user});
   const [tasks,setTasks]=useState([]);
   const [links,setLinks]=useState([]);
   const [payments,setPayments]=useState([]);
@@ -1046,30 +960,6 @@ function main() {
           onMouseEnter={e=>e.currentTarget.style.background="#6c5ce7"} onMouseLeave={e=>e.currentTarget.style.background=C.accent}>
           <Icon name="plus" size={14}/> Registrar
         </button>
-      </div>
-
-      {/* TEMPO NO PC */}
-      <div style={{display:"flex",alignItems:"center",gap:10,padding:"12px 16px",background:C.surface,border:`0.5px solid ${C.border}`,borderRadius:12,marginBottom:20,flexWrap:"wrap"}}>
-        <div style={{display:"flex",alignItems:"center",gap:8,flex:1,minWidth:180}}>
-          <div style={{width:32,height:32,borderRadius:8,background:"rgba(124,107,255,0.12)",border:"0.5px solid rgba(124,107,255,0.2)",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={C.accent} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-          </div>
-          <div>
-            <div style={{fontSize:11,color:C.textMuted,textTransform:"uppercase",letterSpacing:"0.05em",marginBottom:1}}>Tempo no app hoje</div>
-            <div style={{fontSize:18,fontWeight:600,color:C.accent,fontFamily:"'Geist Mono',monospace",letterSpacing:"-0.02em"}}>{tempoHoje}</div>
-          </div>
-        </div>
-        {/* Barra de progresso (meta 8h = 28800s) */}
-        <div style={{flex:2,minWidth:120}}>
-          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:5}}>
-            <span style={{fontSize:10,color:C.textMuted}}>meta: 8h</span>
-            <span style={{fontSize:10,color:C.textMuted,fontFamily:"'Geist Mono',monospace"}}>{Math.min(100,Math.round(tempoSecs/288))}%</span>
-          </div>
-          <div style={{height:4,background:"#1a1a1a",borderRadius:2,overflow:"hidden"}}>
-            <div style={{height:"100%",width:`${Math.min(100,tempoSecs/288)}%`,background:`linear-gradient(90deg,${C.accent},#a78bfa)`,borderRadius:2,transition:"width 1s ease"}}/>
-          </div>
-        </div>
-        <div style={{fontSize:10,color:C.textDim,flexShrink:0}}>● ativo agora</div>
       </div>
 
       {/* INTEGRAÇÕES */}
