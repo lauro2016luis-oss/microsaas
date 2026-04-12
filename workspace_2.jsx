@@ -467,7 +467,8 @@ const LineChart=({data})=>{
 // ─── PAINEL ───────────────────────────────────────────────────────────────────
 const SUPA_FUNCTIONS_URL="https://vvdhnwknluxsaxcqvlyh.supabase.co/functions/v1";
 
-const PainelPage=({sb,user,setPage})=>{
+const PainelPage=({sb,user,setPage,privacyMode})=>{
+  const pv=privacyMode?{filter:"blur(7px)",userSelect:"none",transition:"filter 0.2s",pointerEvents:"none"}:{};
   const [tasks,setTasks]=useState([]);
   const [links,setLinks]=useState([]);
   const [payments,setPayments]=useState([]);
@@ -993,13 +994,13 @@ function main() {
                     </div>
                   ):(
                     <div style={{display:"flex",alignItems:"center",gap:5,marginBottom:1}}>
-                      <div style={{fontSize:12,fontWeight:600,color:C.green,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>● {cfg.store_name||cfg.shop_domain}</div>
+                      <div style={{fontSize:12,fontWeight:600,color:C.green,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",...pv}}>● {cfg.store_name||cfg.shop_domain}</div>
                       <button title="Editar nome" onClick={()=>{setEditingStoreNameId(cfg.id);setEditingStoreNameVal(cfg.store_name||"");}} style={{background:"transparent",border:"none",cursor:"pointer",padding:"1px 3px",color:C.textMuted,display:"flex",alignItems:"center",lineHeight:1,opacity:0.6}} onMouseEnter={e=>e.currentTarget.style.opacity=1} onMouseLeave={e=>e.currentTarget.style.opacity=0.6}>
                         <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
                       </button>
                     </div>
                   )}
-                  {cfg.store_name&&<div style={{fontSize:10,color:C.textMuted,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{cfg.shop_domain}</div>}
+                  {cfg.store_name&&<div style={{fontSize:10,color:C.textMuted,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",...pv}}>{cfg.shop_domain}</div>}
                   <div style={{fontSize:10,color:C.textMuted}}>sync: {cfg.last_sync_at?new Date(cfg.last_sync_at).toLocaleString("pt-BR",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"}):"nunca"}</div>
                 </div>
                 <Btn variant="outline" small onClick={()=>syncShopify(cfg.shop_domain)} loading={syncingId===cfg.shop_domain} icon="zap">Sync</Btn>
@@ -1228,7 +1229,7 @@ function main() {
         ].map((s,i)=>(
           <div key={i} style={{background:C.surface,border:`0.5px solid ${C.border}`,borderRadius:12,padding:"18px 20px"}}>
             <div style={{fontSize:11,color:C.textMuted,marginBottom:10,textTransform:"uppercase",letterSpacing:"0.05em"}}>{s.l}</div>
-            <div style={{fontSize:"clamp(16px,3vw,24px)",fontWeight:600,color:s.c,letterSpacing:"-0.02em",fontFamily:"'Geist Mono',monospace",wordBreak:"break-all"}}>{fmtVal(s.v)}</div>
+            <div style={{fontSize:"clamp(16px,3vw,24px)",fontWeight:600,color:s.c,letterSpacing:"-0.02em",fontFamily:"'Geist Mono',monospace",wordBreak:"break-all",...pv}}>{fmtVal(s.v)}</div>
           </div>
         ))}
       </div>
@@ -1299,8 +1300,8 @@ function main() {
               ?<div style={{fontSize:12,color:C.textMuted}}>Nenhum dado ainda</div>
               :lucroPorLoja.map(({loja,lucro})=>(
                 <div key={loja} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"9px 0",borderBottom:`0.5px solid ${C.border}`}}>
-                  <span style={{fontSize:12,color:C.text,fontWeight:500}}>{loja}</span>
-                  <span style={{fontSize:12,fontWeight:600,color:lucro>=0?C.green:C.red,fontFamily:"'Geist Mono',monospace"}}>{fmtVal(lucro)}</span>
+                  <span style={{fontSize:12,color:C.text,fontWeight:500,...pv}}>{loja}</span>
+                  <span style={{fontSize:12,fontWeight:600,color:lucro>=0?C.green:C.red,fontFamily:"'Geist Mono',monospace",...pv}}>{fmtVal(lucro)}</span>
                 </div>
               ))
             }
@@ -1342,11 +1343,11 @@ function main() {
                   onMouseEnter={e=>e.currentTarget.style.background="#161616"}
                   onMouseLeave={e=>e.currentTarget.style.background="transparent"}>
                   <td style={{padding:"10px 10px",color:C.textMuted,fontFamily:"'Geist Mono',monospace"}}>{r.date?.slice(0,10)}</td>
-                  <td style={{padding:"10px 10px",color:C.text,fontWeight:500}}>{r.store_name}</td>
+                  <td style={{padding:"10px 10px",color:C.text,fontWeight:500,...pv}}>{r.store_name}</td>
                   <td style={{padding:"10px 10px"}}><Badge label={r.currency}/></td>
-                  <td style={{padding:"10px 10px",color:C.textMuted,fontFamily:"'Geist Mono',monospace"}}>{(r.revenue||0).toLocaleString("pt-BR",{minimumFractionDigits:2})}</td>
-                  <td style={{padding:"10px 10px",color:C.red,fontFamily:"'Geist Mono',monospace"}}>{(r.ad_spend||0).toLocaleString("pt-BR",{minimumFractionDigits:2})}</td>
-                  <td style={{padding:"10px 10px",color:(r.profit||0)>=0?C.green:C.red,fontWeight:600,fontFamily:"'Geist Mono',monospace"}}>{fmtVal(converter(r.profit,r.currency))}</td>
+                  <td style={{padding:"10px 10px",color:C.textMuted,fontFamily:"'Geist Mono',monospace",...pv}}>{(r.revenue||0).toLocaleString("pt-BR",{minimumFractionDigits:2})}</td>
+                  <td style={{padding:"10px 10px",color:C.red,fontFamily:"'Geist Mono',monospace",...pv}}>{(r.ad_spend||0).toLocaleString("pt-BR",{minimumFractionDigits:2})}</td>
+                  <td style={{padding:"10px 10px",color:(r.profit||0)>=0?C.green:C.red,fontWeight:600,fontFamily:"'Geist Mono',monospace",...pv}}>{fmtVal(converter(r.profit,r.currency))}</td>
                   <td style={{padding:"10px 10px"}}>
                     <div style={{display:"flex",gap:4,justifyContent:"flex-end"}}>
                       <button onClick={()=>openEditProfit(r)} title="Editar" style={{background:"none",border:"none",color:C.textDim,cursor:"pointer",padding:5,borderRadius:5,transition:"color 0.15s"}}
@@ -1833,7 +1834,8 @@ const ArquivosPage=({sb,user})=>{
 };
 
 // ─── PAYMENTS ─────────────────────────────────────────────────────────────────
-const PaymentsPage=({sb,user})=>{
+const PaymentsPage=({sb,user,privacyMode})=>{
+  const pv=privacyMode?{filter:"blur(7px)",userSelect:"none",transition:"filter 0.2s",pointerEvents:"none"}:{};
   const [payments,setPayments]=useState([]);
   const [loading,setLoading]=useState(true);
   const [modal,setModal]=useState(false);
@@ -1893,8 +1895,8 @@ const PaymentsPage=({sb,user})=>{
       <div style={{background:C.surface,border:`0.5px solid ${expirada?"rgba(239,68,68,0.35)":hov?C.borderHover:C.border}`,borderRadius:14,padding:"16px 18px",transition:"all 0.15s"}} onMouseEnter={()=>setHov(true)} onMouseLeave={()=>setHov(false)}>
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:12}}>
           <div style={{flex:1,minWidth:0}}>
-            <div style={{fontSize:14,fontWeight:500,color:C.text,marginBottom:3}}>{p.nome}</div>
-            {p.loja&&<div style={{fontSize:12,color:C.textMuted,display:"flex",alignItems:"center",gap:5}}><Icon name="store" size={11}/>{p.loja}</div>}
+            <div style={{fontSize:14,fontWeight:500,color:C.text,marginBottom:3,...pv}}>{p.nome}</div>
+            {p.loja&&<div style={{fontSize:12,color:C.textMuted,display:"flex",alignItems:"center",gap:5,...pv}}><Icon name="store" size={11}/>{p.loja}</div>}
           </div>
           <span style={{fontSize:12,fontFamily:"'Geist Mono',monospace",padding:"3px 10px",borderRadius:6,background:cicloColorDim(p.ciclo),color:cicloColor(p.ciclo),fontWeight:600,flexShrink:0,marginLeft:10}}>{p.ciclo}</span>
         </div>
@@ -2359,6 +2361,7 @@ export default function App() {
   const [user,setUser]=useState(undefined);
   const [page,setPage]=useState("dashboard");
   const [storeName,setStoreName]=useState("Minha Loja");
+  const [privacyMode,setPrivacyMode]=useState(false);
 
   useEffect(()=>{
     sb.auth.getSession().then(({data:{session}})=>setUser(session?.user??null));
@@ -2379,12 +2382,12 @@ export default function App() {
   if(!user) return <LoginPage sb={sb}/>;
 
   const pages={
-    dashboard:<PainelPage sb={sb} user={user} setPage={setPage}/>,
+    dashboard:<PainelPage sb={sb} user={user} setPage={setPage} privacyMode={privacyMode}/>,
     produtos:<ProdutosPage sb={sb} user={user}/>,
     links:<LinksPage sb={sb} user={user}/>,
     tarefas:<TarefasPage sb={sb} user={user}/>,
     arquivos:<ArquivosPage sb={sb} user={user}/>,
-    payments:<PaymentsPage sb={sb} user={user}/>,
+    payments:<PaymentsPage sb={sb} user={user} privacyMode={privacyMode}/>,
     lojas:<LojasPage sb={sb} user={user}/>,
   };
 
@@ -2398,7 +2401,14 @@ export default function App() {
         <main style={{flex:1,display:"flex",flexDirection:"column",overflow:"hidden"}}>
           <div className="main-topbar" style={{borderBottom:`0.5px solid ${C.border}`,padding:"11px 36px",display:"flex",alignItems:"center",justifyContent:"space-between",background:C.bg,flexShrink:0,gap:8}}>
             <div className="topbar-date" style={{fontSize:12,color:C.textMuted,fontFamily:"'Geist Mono',monospace",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{new Date().toLocaleDateString("pt-BR",{weekday:"long",year:"numeric",month:"long",day:"numeric"})}</div>
-            <div style={{fontSize:11,padding:"3px 10px",borderRadius:6,background:C.greenDim,color:C.green,border:"0.5px solid rgba(34,197,94,0.3)",fontFamily:"'Geist Mono',monospace",flexShrink:0}}>● online</div>
+            <div style={{display:"flex",alignItems:"center",gap:8,flexShrink:0}}>
+              <button title={privacyMode?"Mostrar informações":"Ocultar informações"} onClick={()=>setPrivacyMode(p=>!p)}
+                style={{display:"flex",alignItems:"center",gap:6,padding:"4px 10px",borderRadius:7,background:privacyMode?"rgba(124,107,255,0.15)":"transparent",border:`0.5px solid ${privacyMode?C.accentBorder:C.border}`,color:privacyMode?C.accent:C.textMuted,cursor:"pointer",fontSize:11,fontFamily:"'Geist',sans-serif",transition:"all 0.15s"}}>
+                <Icon name={privacyMode?"eyeOff":"eye"} size={13}/>
+                <span className="topbar-date">{privacyMode?"visível":"ocultar"}</span>
+              </button>
+              <div style={{fontSize:11,padding:"3px 10px",borderRadius:6,background:C.greenDim,color:C.green,border:"0.5px solid rgba(34,197,94,0.3)",fontFamily:"'Geist Mono',monospace"}}>● online</div>
+            </div>
           </div>
           {pages[page]}
         </main>
