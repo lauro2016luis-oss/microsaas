@@ -1072,7 +1072,7 @@ function main() {
         const copy=(txt)=>{navigator.clipboard.writeText(txt).then(()=>show("Copiado! ✅"));};
         const CopyRow=({label,value})=>(
           <div style={{display:"flex",alignItems:"center",gap:6,background:"#0d0d0d",border:`0.5px solid ${C.border}`,borderRadius:8,padding:"7px 10px"}}>
-            <code style={{flex:1,fontSize:11,color:C.accent,fontFamily:"'Geist Mono',monospace",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{value}</code>
+            <code style={{flex:1,fontSize:11,color:C.accent,fontFamily:"'Geist Mono',monospace",wordBreak:"break-all",lineHeight:"1.5"}}>{value}</code>
             <button onClick={()=>copy(value)} title="Copiar" style={{background:"transparent",border:"none",cursor:"pointer",color:C.textMuted,padding:"2px 4px",borderRadius:4,flexShrink:0,display:"flex",alignItems:"center"}} onMouseEnter={e=>e.currentTarget.style.color=C.text} onMouseLeave={e=>e.currentTarget.style.color=C.textMuted}>
               <Icon name="copy" size={13}/>
             </button>
