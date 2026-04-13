@@ -183,7 +183,6 @@ const BottomNav=({page,setPage,sb})=>{
     {id:"tarefas",icon:"task",label:"Tarefas"},
     {id:"links",icon:"link",label:"Links"},
     {id:"payments",icon:"payment",label:"Payments"},
-    {id:"lojas",icon:"store",label:"Lojas"},
   ];
   return(
     <div className="bottom-nav">
@@ -321,7 +320,6 @@ const Sidebar=({page,setPage,storeName,setStoreName,sb,user})=>{
     {id:"tarefas",label:"Tarefas",icon:"task"},
     {id:"arquivos",label:"Arquivos",icon:"file"},
     {id:"payments",label:"Payments",icon:"payment"},
-    {id:"lojas",label:"Lojas",icon:"store"},
   ];
   const save=()=>{if(inp.trim())setStoreName(inp.trim());setEditing(false);};
   return (
