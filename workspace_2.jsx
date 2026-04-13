@@ -1067,17 +1067,62 @@ function main() {
       </div>
 
       {/* MODAL SHOPIFY */}
-      {showShopifySettings&&(
+      {showShopifySettings&&(()=>{
+        const CALLBACK_URL="https://vvdhnwknluxsaxcqvlyh.supabase.co/functions/v1/shopify-callback";
+        const copy=(txt)=>{navigator.clipboard.writeText(txt).then(()=>show("Copiado! ✅"));};
+        const CopyRow=({label,value})=>(
+          <div style={{display:"flex",alignItems:"center",gap:6,background:"#0d0d0d",border:`0.5px solid ${C.border}`,borderRadius:8,padding:"7px 10px"}}>
+            <code style={{flex:1,fontSize:11,color:C.accent,fontFamily:"'Geist Mono',monospace",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{value}</code>
+            <button onClick={()=>copy(value)} title="Copiar" style={{background:"transparent",border:"none",cursor:"pointer",color:C.textMuted,padding:"2px 4px",borderRadius:4,flexShrink:0,display:"flex",alignItems:"center"}} onMouseEnter={e=>e.currentTarget.style.color=C.text} onMouseLeave={e=>e.currentTarget.style.color=C.textMuted}>
+              <Icon name="copy" size={13}/>
+            </button>
+          </div>
+        );
+        const Step=({n,children})=>(
+          <div style={{display:"flex",gap:10,marginBottom:10}}>
+            <div style={{width:20,height:20,borderRadius:"50%",background:C.accentDim,border:`0.5px solid ${C.accentBorder}`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:10,fontWeight:700,color:C.accent,flexShrink:0,marginTop:1}}>{n}</div>
+            <div style={{fontSize:12,color:C.textMuted,lineHeight:"1.65",flex:1}}>{children}</div>
+          </div>
+        );
+        return(
         <Modal title="Adicionar Loja Shopify" onClose={()=>setShowShopifySettings(false)}>
           <div style={{display:"flex",flexDirection:"column",gap:16}}>
-            <div style={{padding:"12px 14px",background:"rgba(34,197,94,0.07)",borderRadius:10,border:"0.5px solid rgba(34,197,94,0.2)",fontSize:12,color:C.textMuted,lineHeight:"1.7"}}>
-              <strong style={{color:C.text,display:"block",marginBottom:6}}>Como conectar:</strong>
-              <div style={{display:"flex",gap:8,marginBottom:4}}><span style={{color:C.green,fontWeight:700}}>1.</span> Digite o dominio da sua loja abaixo</div>
-              <div style={{display:"flex",gap:8,marginBottom:4}}><span style={{color:C.green,fontWeight:700}}>2.</span> Clique em <strong style={{color:C.text}}>Conectar com Shopify</strong></div>
-              <div style={{display:"flex",gap:8}}><span style={{color:C.green,fontWeight:700}}>3.</span> Voce sera redirecionado para o Shopify — clique em <strong style={{color:C.text}}>Instalar</strong></div>
+
+            {/* TUTORIAL */}
+            <div style={{background:"#0a0a0a",border:`0.5px solid ${C.border}`,borderRadius:12,overflow:"hidden"}}>
+              <div style={{padding:"10px 14px",borderBottom:`0.5px solid ${C.border}`,display:"flex",alignItems:"center",gap:8}}>
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke={C.amber} strokeWidth="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                <span style={{fontSize:12,fontWeight:600,color:C.text}}>Primeira vez? Siga o tutorial abaixo</span>
+                <span style={{fontSize:10,color:C.textMuted,marginLeft:"auto"}}>Shopify Partners</span>
+              </div>
+              <div style={{padding:"14px 14px 10px"}}>
+                <Step n="1">Acesse <strong style={{color:C.text}}>partners.shopify.com</strong> e faça login (ou crie uma conta grátis).</Step>
+                <Step n="2">No menu lateral clique em <strong style={{color:C.text}}>Apps</strong> → <strong style={{color:C.text}}>Criar app</strong> → <strong style={{color:C.text}}>Criar app manualmente</strong>.</Step>
+                <Step n="3">Dê um nome ao app (ex: <em style={{color:C.text}}>Workspace</em>) e confirme.</Step>
+                <Step n="4">
+                  Na aba <strong style={{color:C.text}}>Configuração do app</strong>, cole esta URL nos dois campos <strong style={{color:C.text}}>App URL</strong> e <strong style={{color:C.text}}>URL de redirecionamento</strong>:
+                  <div style={{marginTop:8}}><CopyRow value={CALLBACK_URL}/></div>
+                </Step>
+                <Step n="5">
+                  Ainda na configuração, vá em <strong style={{color:C.text}}>Escopos da API</strong> e adicione exatamente estes:
+                  <div style={{display:"flex",flexWrap:"wrap",gap:5,marginTop:8}}>
+                    {["read_orders","write_orders","read_products","write_products"].map(s=>(
+                      <span key={s} style={{fontSize:10,padding:"3px 8px",borderRadius:5,background:C.accentDim,color:C.accent,border:`0.5px solid ${C.accentBorder}`,fontFamily:"'Geist Mono',monospace"}}>{s}</span>
+                    ))}
+                  </div>
+                </Step>
+                <Step n="6">Salve. Copie o <strong style={{color:C.text}}>Client ID</strong> e o <strong style={{color:C.text}}>Client Secret</strong> e cole em <strong style={{color:C.green}}>Configurações do Sistema</strong> (botão abaixo das integrações).</Step>
+                <Step n="7">Preencha os campos abaixo e clique em <strong style={{color:C.text}}>Conectar com Shopify</strong>. Você será redirecionado para a loja — clique em <strong style={{color:C.text}}>Instalar</strong>.</Step>
+                <div style={{display:"flex",gap:8,padding:"10px 12px",background:"rgba(245,158,11,0.08)",border:"0.5px solid rgba(245,158,11,0.25)",borderRadius:8,marginBottom:4}}>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={C.amber} strokeWidth="2" strokeLinecap="round" style={{flexShrink:0,marginTop:1}}><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                  <span style={{fontSize:11,color:C.amber,lineHeight:"1.6"}}>Para o <strong>Sync funcionar</strong>, você precisa estar <strong>logado no painel admin da loja</strong> (admin.shopify.com) no mesmo navegador na hora de sincronizar.</span>
+                </div>
+              </div>
             </div>
+
+            {/* CAMPOS */}
             <div>
-              <label style={{fontSize:12,color:C.textMuted,display:"block",marginBottom:6}}>Nome da loja <span style={{color:C.textMuted,fontStyle:"italic"}}>(opcional — para identificar)</span></label>
+              <label style={{fontSize:12,color:C.textMuted,display:"block",marginBottom:6}}>Nome da loja <span style={{color:C.textMuted,fontStyle:"italic"}}>(opcional)</span></label>
               <Input value={manualStoreName} onChange={setManualStoreName} placeholder="Ex: Loja Principal, Loja 2..."/>
             </div>
             <div>
@@ -1097,7 +1142,8 @@ function main() {
             </div>
           </div>
         </Modal>
-      )}
+        );
+      })()}
 
       {/* MODAL GOOGLE ADS */}
       {showGadsSettings&&(
