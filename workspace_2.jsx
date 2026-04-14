@@ -2226,7 +2226,7 @@ const ProdutosPage=({sb,user})=>{
                 {shopifyConfigs.length>0&&(
                   <select value={targetDomain} onChange={e=>setTargetDomain(e.target.value)}
                     style={{background:"#0d0d0d",border:`0.5px solid ${C.border}`,color:C.text,fontFamily:"'Geist',sans-serif",fontSize:12,padding:"8px 12px",borderRadius:8,outline:"none",cursor:"pointer"}}>
-                    {shopifyConfigs.map(c=><option key={c.shop_domain} value={c.shop_domain}>{c.store_name||c.shop_domain}</option>)}
+                    {shopifyConfigs.map(c=><option key={c.shop_domain} value={c.shop_domain}>{c.store_name?`${c.store_name} (${c.shop_domain})`:c.shop_domain}</option>)}
                   </select>
                 )}
                 {shopifyConfigs.length===0?(
