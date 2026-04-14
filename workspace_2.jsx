@@ -1098,8 +1098,16 @@ function main() {
                 <Step n="2">No menu lateral clique em <strong style={{color:C.text}}>Apps</strong> → <strong style={{color:C.text}}>Criar app</strong> → <strong style={{color:C.text}}>Criar app manualmente</strong>.</Step>
                 <Step n="3">Dê um nome ao app (ex: <em style={{color:C.text}}>Workspace</em>) e confirme.</Step>
                 <Step n="4">
-                  Na aba <strong style={{color:C.text}}>Configuração do app</strong>, cole esta URL nos dois campos <strong style={{color:C.text}}>App URL</strong> e <strong style={{color:C.text}}>URL de redirecionamento</strong>:
-                  <div style={{marginTop:8}}><CopyRow value={CALLBACK_URL}/></div>
+                  Na aba <strong style={{color:C.text}}>Configuração do app</strong>, preencha os <strong style={{color:C.red}}>dois campos obrigatórios</strong> com a mesma URL abaixo:
+                  <div style={{marginTop:8,display:"flex",flexDirection:"column",gap:6}}>
+                    <div style={{fontSize:11,color:C.textMuted}}>① <strong style={{color:C.text}}>App URL</strong> — cole aqui:</div>
+                    <CopyRow value={CALLBACK_URL}/>
+                    <div style={{fontSize:11,color:C.textMuted}}>② <strong style={{color:C.text}}>URL de redirecionamento</strong> — cole a mesma aqui:</div>
+                    <CopyRow value={CALLBACK_URL}/>
+                    <div style={{fontSize:11,color:C.red,background:"rgba(239,68,68,0.08)",border:"0.5px solid rgba(239,68,68,0.25)",borderRadius:6,padding:"6px 8px"}}>
+                      ⚠️ Os dois campos <strong>devem ter o mesmo host</strong>, caso contrário o Shopify retorna erro.
+                    </div>
+                  </div>
                 </Step>
                 <Step n="5">
                   Ainda na configuração, vá em <strong style={{color:C.text}}>Escopos da API</strong> e adicione exatamente estes:
