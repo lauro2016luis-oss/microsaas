@@ -55,6 +55,7 @@ input[type=date]::-webkit-calendar-picker-indicator{filter:invert(0.5);}
   .grid-pay-4{grid-template-columns:repeat(2,1fr)!important;}
   .grid-chart{grid-template-columns:1fr!important;}
   .grid-tasks-4{grid-template-columns:repeat(2,1fr)!important;}
+  .min-kanban-grid{grid-template-columns:1fr!important;}
   .topbar-date{display:none!important;}
   .main-topbar{padding:10px 14px!important;}
   .grid-integ{grid-template-columns:1fr!important;}
@@ -1674,8 +1675,157 @@ const LinksPage=({sb,user})=>{
   );
 };
 
+// ─── MINERAÇÃO DE PRODUTOS (Kanban) ───────────────────────────────────────────
+const MineracaoKanban=({sb,user})=>{
+  const [items,setItems]=useState([]);
+  const [loading,setLoading]=useState(true);
+  const [modal,setModal]=useState(false);
+  const [saving,setSaving]=useState(false);
+  const [detail,setDetail]=useState(null);
+  const [form,setForm]=useState({name:"",status:"testar",store_url:"",notes:"",image_url:""});
+  const dragging=useRef(null);
+  const colRefs=useRef({});
+  const {show,El}=useToast();
+
+  useEffect(()=>{sb.from("mineracao_produtos").select("*").eq("user_id",user.id).order("created_at",{ascending:false}).then(({data})=>{setItems(data||[]);setLoading(false);});},[]);
+
+  const add=async()=>{
+    if(!form.name.trim()){show("Nome é obrigatório","error");return;}
+    setSaving(true);
+    const{data,error}=await sb.from("mineracao_produtos").insert({user_id:user.id,...form,store_url:form.store_url||null,notes:form.notes||null,image_url:form.image_url||null}).select().single();
+    if(error){show("Erro: "+error.message,"error");}else{setItems(p=>[data,...p]);show("Produto adicionado!");setModal(false);setForm({name:"",status:"testar",store_url:"",notes:"",image_url:""});}
+    setSaving(false);
+  };
+  const del=async(id)=>{await sb.from("mineracao_produtos").delete().eq("id",id);setItems(p=>p.filter(x=>x.id!==id));setDetail(null);show("Removido");};
+  const move=async(id,status)=>{await sb.from("mineracao_produtos").update({status}).eq("id",id);setItems(p=>p.map(t=>t.id===id?{...t,status}:t));};
+  const saveDetail=async()=>{if(!detail)return;await sb.from("mineracao_produtos").update({name:detail.name,store_url:detail.store_url,notes:detail.notes,image_url:detail.image_url}).eq("id",detail.id);setItems(p=>p.map(x=>x.id===detail.id?{...x,...detail}:x));show("Salvo!");};
+
+  const onDS=(e,t)=>{dragging.current=t;setTimeout(()=>e.target.classList.add("dragging-card"),0);e.dataTransfer.effectAllowed="move";};
+  const onDE=(e)=>{e.target.classList.remove("dragging-card");document.querySelectorAll(".drag-over-col").forEach(el=>el.classList.remove("drag-over-col"));};
+  const onDO=(e,el)=>{e.preventDefault();document.querySelectorAll(".drag-over-col").forEach(x=>x.classList.remove("drag-over-col"));el.classList.add("drag-over-col");};
+  const onDrop=(e,colId,el)=>{e.preventDefault();el.classList.remove("drag-over-col");if(dragging.current){move(dragging.current.id,colId);dragging.current=null;}};
+
+  const cols=[
+    {id:"testar",label:"Testar",color:C.accent,icon:"🔍",desc:"Produtos para testar"},
+    {id:"validado",label:"Validado",color:C.green,icon:"✅",desc:"Produtos que funcionaram"},
+    {id:"deu_ruim",label:"Deu Ruim",color:C.red,icon:"❌",desc:"Produtos que não funcionaram"},
+  ];
+
+  return(
+    <div>
+      {El}
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:20}}>
+        <div>
+          <p style={{fontSize:13,color:C.textMuted}}>
+            {items.filter(i=>i.status==="testar").length} testando · {items.filter(i=>i.status==="validado").length} validados · {items.filter(i=>i.status==="deu_ruim").length} descartados
+          </p>
+        </div>
+        <Btn variant="primary" icon="plus" onClick={()=>setModal(true)}>Adicionar Produto</Btn>
+      </div>
+
+      {loading?<div style={{textAlign:"center",padding:40}}><Spinner size={24}/></div>:(
+        <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:16}} className="min-kanban-grid">
+          {cols.map(col=>{
+            const ct=items.filter(t=>t.status===col.id);
+            return(
+              <div key={col.id}>
+                <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:10,padding:"8px 12px",background:C.surface,borderRadius:8,border:`0.5px solid ${C.border}`}}>
+                  <span style={{fontSize:14}}>{col.icon}</span>
+                  <span style={{fontSize:12,fontWeight:600,color:col.color,textTransform:"uppercase",letterSpacing:"0.06em",flex:1}}>{col.label}</span>
+                  <span style={{fontSize:11,color:C.textDim,background:"#1a1a1a",padding:"1px 7px",borderRadius:10,fontFamily:"'Geist Mono',monospace"}}>{ct.length}</span>
+                </div>
+                <div ref={el=>{if(el)colRefs.current[col.id]=el;}} onDragOver={e=>onDO(e,colRefs.current[col.id])} onDrop={e=>onDrop(e,col.id,colRefs.current[col.id])} style={{display:"flex",flexDirection:"column",gap:8,minHeight:120,borderRadius:10,padding:4,border:"1px solid transparent",transition:"all 0.15s"}}>
+                  {ct.map(t=>(
+                    <div key={t.id} draggable onDragStart={e=>onDS(e,t)} onDragEnd={onDE}
+                      onClick={()=>setDetail({...t})}
+                      style={{background:C.surface,border:`0.5px solid ${C.border}`,borderRadius:10,overflow:"hidden",cursor:"grab",userSelect:"none",transition:"border-color 0.15s"}}
+                      onMouseEnter={e=>e.currentTarget.style.borderColor=col.color+"66"}
+                      onMouseLeave={e=>e.currentTarget.style.borderColor=C.border}>
+                      {t.image_url&&<div style={{height:100,overflow:"hidden",borderBottom:`0.5px solid ${C.border}`}}>
+                        <img src={t.image_url} alt={t.name} style={{width:"100%",height:"100%",objectFit:"cover"}} onError={e=>e.target.style.display="none"}/>
+                      </div>}
+                      <div style={{padding:"10px 12px"}}>
+                        <div style={{display:"flex",alignItems:"flex-start",justifyContent:"space-between",gap:6,marginBottom:t.notes?6:0}}>
+                          <div style={{display:"flex",gap:6,flex:1}}>
+                            <span style={{color:C.textDim,marginTop:2,flexShrink:0}}><Icon name="grip" size={11}/></span>
+                            <span style={{fontSize:13,fontWeight:500,color:C.text,lineHeight:1.4}}>{t.name}</span>
+                          </div>
+                          <button onClick={e=>{e.stopPropagation();del(t.id);}} style={{background:"none",border:"none",color:C.textDim,cursor:"pointer",padding:2,flexShrink:0}}><Icon name="trash" size={12}/></button>
+                        </div>
+                        {t.notes&&<p style={{fontSize:11,color:C.textMuted,lineHeight:1.5,paddingLeft:17,marginBottom:6}}>{t.notes.slice(0,80)}{t.notes.length>80?"…":""}</p>}
+                        {t.store_url&&<a href={t.store_url} target="_blank" rel="noreferrer" onClick={e=>e.stopPropagation()} style={{display:"inline-flex",alignItems:"center",gap:4,fontSize:10,color:C.accent,paddingLeft:17,textDecoration:"none"}}><Icon name="externalLink" size={10}/>Ver loja</a>}
+                      </div>
+                    </div>
+                  ))}
+                  {ct.length===0&&<div style={{padding:"24px 0",textAlign:"center",color:C.textDim,fontSize:12,border:`0.5px dashed ${C.border}`,borderRadius:10}}>
+                    <div style={{fontSize:20,marginBottom:6}}>{col.icon}</div>
+                    {col.desc}
+                  </div>}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {/* MODAL NOVO */}
+      {modal&&(
+        <Modal title="Adicionar Produto" onClose={()=>setModal(false)}>
+          <div style={{display:"flex",flexDirection:"column",gap:12}}>
+            <Input value={form.name} onChange={v=>setForm(p=>({...p,name:v}))} placeholder="Nome do produto..."/>
+            <Input value={form.store_url} onChange={v=>setForm(p=>({...p,store_url:v}))} placeholder="Link da loja / produto (opcional)"/>
+            <Input value={form.image_url} onChange={v=>setForm(p=>({...p,image_url:v}))} placeholder="URL da imagem (opcional)"/>
+            <textarea value={form.notes} onChange={e=>setForm(p=>({...p,notes:e.target.value}))} placeholder="Observações..." rows={3} style={{background:"#0d0d0d",border:`0.5px solid ${C.border}`,color:C.text,fontFamily:"'Geist',sans-serif",fontSize:13,padding:"8px 12px",borderRadius:8,outline:"none",resize:"none"}}/>
+            <div>
+              <label style={{fontSize:12,color:C.textMuted,display:"block",marginBottom:6}}>Status inicial</label>
+              <div style={{display:"flex",gap:8}}>
+                {[{id:"testar",label:"🔍 Testar",c:C.accent},{id:"validado",label:"✅ Validado",c:C.green},{id:"deu_ruim",label:"❌ Deu Ruim",c:C.red}].map(s=>(
+                  <button key={s.id} onClick={()=>setForm(p=>({...p,status:s.id}))}
+                    style={{flex:1,padding:"8px 4px",borderRadius:8,border:`0.5px solid ${form.status===s.id?s.c:C.border}`,background:form.status===s.id?s.c+"22":"transparent",color:form.status===s.id?s.c:C.textMuted,fontSize:11,fontWeight:500,cursor:"pointer",fontFamily:"'Geist',sans-serif",transition:"all 0.15s"}}>
+                    {s.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div style={{display:"flex",gap:8,justifyContent:"flex-end"}}><Btn variant="outline" onClick={()=>setModal(false)}>Cancelar</Btn><Btn variant="primary" onClick={add} loading={saving}>Adicionar</Btn></div>
+          </div>
+        </Modal>
+      )}
+
+      {/* MODAL DETALHE */}
+      {detail&&(
+        <Modal title="Editar Produto" onClose={()=>setDetail(null)}>
+          <div style={{display:"flex",flexDirection:"column",gap:12}}>
+            {detail.image_url&&<img src={detail.image_url} alt={detail.name} style={{width:"100%",borderRadius:8,maxHeight:200,objectFit:"cover"}} onError={e=>e.target.style.display="none"}/>}
+            <Input value={detail.name} onChange={v=>setDetail(p=>({...p,name:v}))} placeholder="Nome do produto..."/>
+            <Input value={detail.store_url||""} onChange={v=>setDetail(p=>({...p,store_url:v}))} placeholder="Link da loja / produto"/>
+            <Input value={detail.image_url||""} onChange={v=>setDetail(p=>({...p,image_url:v}))} placeholder="URL da imagem"/>
+            <textarea value={detail.notes||""} onChange={e=>setDetail(p=>({...p,notes:e.target.value}))} placeholder="Observações..." rows={3} style={{background:"#0d0d0d",border:`0.5px solid ${C.border}`,color:C.text,fontFamily:"'Geist',sans-serif",fontSize:13,padding:"8px 12px",borderRadius:8,outline:"none",resize:"none"}}/>
+            <div>
+              <label style={{fontSize:12,color:C.textMuted,display:"block",marginBottom:6}}>Mover para</label>
+              <div style={{display:"flex",gap:8}}>
+                {[{id:"testar",label:"🔍 Testar",c:C.accent},{id:"validado",label:"✅ Validado",c:C.green},{id:"deu_ruim",label:"❌ Deu Ruim",c:C.red}].map(s=>(
+                  <button key={s.id} onClick={()=>{move(detail.id,s.id);setDetail(p=>({...p,status:s.id}));}}
+                    style={{flex:1,padding:"8px 4px",borderRadius:8,border:`0.5px solid ${detail.status===s.id?s.c:C.border}`,background:detail.status===s.id?s.c+"22":"transparent",color:detail.status===s.id?s.c:C.textMuted,fontSize:11,fontWeight:500,cursor:"pointer",fontFamily:"'Geist',sans-serif",transition:"all 0.15s"}}>
+                    {s.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div style={{display:"flex",gap:8,justifyContent:"space-between"}}>
+              <Btn variant="danger" icon="trash" small onClick={()=>del(detail.id)}>Excluir</Btn>
+              <div style={{display:"flex",gap:8}}><Btn variant="outline" onClick={()=>setDetail(null)}>Fechar</Btn><Btn variant="primary" onClick={saveDetail}>Salvar</Btn></div>
+            </div>
+          </div>
+        </Modal>
+      )}
+    </div>
+  );
+};
+
 // ─── TAREFAS ──────────────────────────────────────────────────────────────────
 const TarefasPage=({sb,user})=>{
+  const [tab,setTab]=useState("tarefas");
   const [tasks,setTasks]=useState([]);
   const [loading,setLoading]=useState(true);
   const [modal,setModal]=useState(false);
@@ -1702,14 +1852,36 @@ const TarefasPage=({sb,user})=>{
   const cols=[{id:"A fazer",label:"A fazer",color:C.textMuted},{id:"Hoje",label:"Hoje",color:C.accent},{id:"Atrasado",label:"Atrasado",color:C.red},{id:"Concluído",label:"Concluído",color:C.green}];
   const fmt=d=>{if(!d)return null;const[y,m,dd]=d.slice(0,10).split("-");return`${dd}/${m}/${y}`;};
   const late=t=>t.due_date&&t.status!=="Concluído"&&new Date(t.due_date)<new Date(new Date().toDateString());
+
+  const TABS=[
+    {id:"tarefas",label:"Tarefas",icon:"task"},
+    {id:"mineracao",label:"Mineração de Produtos",icon:"fire"},
+  ];
+
   return (
     <div className="page-pad" style={{overflowY:"auto",flex:1}}>
       {El}
-      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:24}}>
-        <div><h1 style={{fontSize:22,fontWeight:600,color:C.text,letterSpacing:"-0.03em"}}>Tarefas</h1><p style={{fontSize:13,color:C.textMuted,marginTop:2}}>{tasks.filter(t=>t.status!=="Concluído").length} ativas · arraste para mover</p></div>
-        <Btn variant="primary" icon="plus" onClick={()=>setModal(true)}>Nova Tarefa</Btn>
+      {/* HEADER */}
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:20}}>
+        <div>
+          <h1 style={{fontSize:22,fontWeight:600,color:C.text,letterSpacing:"-0.03em"}}>{tab==="tarefas"?"Tarefas":"Mineração de Produtos"}</h1>
+          {tab==="tarefas"&&<p style={{fontSize:13,color:C.textMuted,marginTop:2}}>{tasks.filter(t=>t.status!=="Concluído").length} ativas · arraste para mover</p>}
+          {tab==="mineracao"&&<p style={{fontSize:13,color:C.textMuted,marginTop:2}}>Gerencie seus produtos em teste no estilo Kanban</p>}
+        </div>
+        {tab==="tarefas"&&<Btn variant="primary" icon="plus" onClick={()=>setModal(true)}>Nova Tarefa</Btn>}
       </div>
-      {loading?<div style={{textAlign:"center",padding:40}}><Spinner size={24}/></div>:(
+
+      {/* TABS */}
+      <div style={{display:"flex",gap:4,marginBottom:24,background:C.surface,padding:4,borderRadius:10,border:`0.5px solid ${C.border}`,width:"fit-content"}}>
+        {TABS.map(t=>(
+          <button key={t.id} onClick={()=>setTab(t.id)} style={{display:"flex",alignItems:"center",gap:7,padding:"7px 14px",borderRadius:8,border:"none",background:tab===t.id?"#1e1e1e":"transparent",color:tab===t.id?C.text:C.textMuted,fontSize:13,fontWeight:tab===t.id?500:400,fontFamily:"'Geist',sans-serif",cursor:"pointer",transition:"all 0.15s",boxShadow:tab===t.id?`0 0 0 0.5px ${C.border}`:"none"}}>
+            <Icon name={t.icon} size={14}/>{t.label}
+          </button>
+        ))}
+      </div>
+
+      {/* ABA TAREFAS */}
+      {tab==="tarefas"&&(loading?<div style={{textAlign:"center",padding:40}}><Spinner size={24}/></div>:(
         <div className="grid-tasks-4">
           {cols.map(col=>{
             const ct=tasks.filter(t=>t.status===col.id);
@@ -1739,7 +1911,12 @@ const TarefasPage=({sb,user})=>{
             );
           })}
         </div>
-      )}
+      ))}
+
+      {/* ABA MINERAÇÃO */}
+      {tab==="mineracao"&&<MineracaoKanban sb={sb} user={user}/>}
+
+      {/* MODAL NOVA TAREFA */}
       {modal&&(
         <Modal title="Nova Tarefa" onClose={()=>setModal(false)}>
           <div style={{display:"flex",flexDirection:"column",gap:12}}>
