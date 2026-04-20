@@ -1682,7 +1682,7 @@ const MineracaoKanban=({sb,user})=>{
   const [modal,setModal]=useState(false);
   const [saving,setSaving]=useState(false);
   const [detail,setDetail]=useState(null);
-  const [form,setForm]=useState({name:"",status:"testar",store_url:"",notes:"",image_url:""});
+  const [form,setForm]=useState({name:"",status:"minerado",store_url:"",notes:"",image_url:""});
   const dragging=useRef(null);
   const colRefs=useRef({});
   const {show,El}=useToast();
@@ -1693,7 +1693,7 @@ const MineracaoKanban=({sb,user})=>{
     if(!form.name.trim()){show("Nome é obrigatório","error");return;}
     setSaving(true);
     const{data,error}=await sb.from("mineracao_produtos").insert({user_id:user.id,...form,store_url:form.store_url||null,notes:form.notes||null,image_url:form.image_url||null}).select().single();
-    if(error){show("Erro: "+error.message,"error");}else{setItems(p=>[data,...p]);show("Produto adicionado!");setModal(false);setForm({name:"",status:"testar",store_url:"",notes:"",image_url:""});}
+    if(error){show("Erro: "+error.message,"error");}else{setItems(p=>[data,...p]);show("Produto adicionado!");setModal(false);setForm({name:"",status:"minerado",store_url:"",notes:"",image_url:""});}
     setSaving(false);
   };
   const del=async(id)=>{await sb.from("mineracao_produtos").delete().eq("id",id);setItems(p=>p.filter(x=>x.id!==id));setDetail(null);show("Removido");};
@@ -1706,6 +1706,7 @@ const MineracaoKanban=({sb,user})=>{
   const onDrop=(e,colId,el)=>{e.preventDefault();el.classList.remove("drag-over-col");if(dragging.current){move(dragging.current.id,colId);dragging.current=null;}};
 
   const cols=[
+    {id:"minerado",label:"Minerado",color:C.amber,icon:"⛏️",desc:"Produtos encontrados"},
     {id:"testar",label:"Testar",color:C.accent,icon:"🔍",desc:"Produtos para testar"},
     {id:"validado",label:"Validado",color:C.green,icon:"✅",desc:"Produtos que funcionaram"},
     {id:"deu_ruim",label:"Deu Ruim",color:C.red,icon:"❌",desc:"Produtos que não funcionaram"},
@@ -1779,7 +1780,7 @@ const MineracaoKanban=({sb,user})=>{
             <div>
               <label style={{fontSize:12,color:C.textMuted,display:"block",marginBottom:6}}>Status inicial</label>
               <div style={{display:"flex",gap:8}}>
-                {[{id:"testar",label:"🔍 Testar",c:C.accent},{id:"validado",label:"✅ Validado",c:C.green},{id:"deu_ruim",label:"❌ Deu Ruim",c:C.red}].map(s=>(
+                {[{id:"minerado",label:"⛏️ Minerado",c:C.amber},{id:"testar",label:"🔍 Testar",c:C.accent},{id:"validado",label:"✅ Validado",c:C.green},{id:"deu_ruim",label:"❌ Deu Ruim",c:C.red}].map(s=>(
                   <button key={s.id} onClick={()=>setForm(p=>({...p,status:s.id}))}
                     style={{flex:1,padding:"8px 4px",borderRadius:8,border:`0.5px solid ${form.status===s.id?s.c:C.border}`,background:form.status===s.id?s.c+"22":"transparent",color:form.status===s.id?s.c:C.textMuted,fontSize:11,fontWeight:500,cursor:"pointer",fontFamily:"'Geist',sans-serif",transition:"all 0.15s"}}>
                     {s.label}
