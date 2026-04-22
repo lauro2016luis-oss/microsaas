@@ -975,9 +975,43 @@ function main() {
       {El}
 
       {/* HEADER */}
-      <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:28,flexWrap:"wrap",gap:12}}>
-        <div><h1 style={{fontSize:24,fontWeight:600,color:C.text,letterSpacing:"-0.03em"}}>{(()=>{const h=new Date().getHours();if(h>=5&&h<12)return"Bom dia, chefe!";if(h>=12&&h<18)return"Boa tarde, chefe!";if(h>=18&&h<24)return"Boa noite, chefe!";return"Boa madrugada, chefe!";})()}</h1><p style={{fontSize:14,color:C.textMuted,marginTop:4}}>Seu espaco de trabalho.</p></div>
-        <button onClick={()=>setModalResultado(true)} style={{display:"flex",alignItems:"center",gap:7,padding:"9px 16px",borderRadius:9,background:C.accent,color:"#fff",border:"none",fontSize:13,fontWeight:500,cursor:"pointer",fontFamily:"'Geist',sans-serif"}}
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:24,flexWrap:"wrap",gap:12}}>
+        <div style={{display:"flex",alignItems:"center",gap:16}}>
+          <div>
+            <h1 style={{fontSize:22,fontWeight:600,color:C.text,letterSpacing:"-0.03em"}}>{(()=>{const h=new Date().getHours();if(h>=5&&h<12)return"Bom dia, chefe!";if(h>=12&&h<18)return"Boa tarde, chefe!";if(h>=18&&h<24)return"Boa noite, chefe!";return"Boa madrugada, chefe!";})()}</h1>
+            <p style={{fontSize:13,color:C.textMuted,marginTop:3}}>Seu espaço de trabalho.</p>
+          </div>
+
+          {/* SELETOR DE LOJA — hover dropdown */}
+          <div style={{position:"relative"}}
+            onMouseEnter={e=>e.currentTarget.querySelector(".loja-dropdown").style.display="block"}
+            onMouseLeave={e=>e.currentTarget.querySelector(".loja-dropdown").style.display="none"}>
+            <div style={{display:"flex",alignItems:"center",gap:8,padding:"8px 14px",borderRadius:12,background:C.surface,border:`0.5px solid ${C.border}`,cursor:"pointer",userSelect:"none",transition:"border-color 0.15s"}}
+              onMouseEnter={e=>e.currentTarget.style.borderColor=C.accentBorder}
+              onMouseLeave={e=>e.currentTarget.style.borderColor=C.border}>
+              <span style={{width:8,height:8,borderRadius:"50%",background:C.green,flexShrink:0,boxShadow:"0 0 8px rgba(34,197,94,0.7)"}}/>
+              <span style={{fontSize:13,fontWeight:600,color:C.text,maxWidth:180,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>
+                {filtroLoja==="Todas"?"Todas as lojas":filtroLoja}
+              </span>
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={C.textDim} strokeWidth="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+            </div>
+            {/* Dropdown — aparece no hover */}
+            <div className="loja-dropdown fade-in" style={{display:"none",position:"absolute",top:"calc(100% + 6px)",left:0,zIndex:400,background:"#141414",border:`0.5px solid ${C.border}`,borderRadius:14,padding:6,minWidth:200,boxShadow:"0 12px 40px rgba(0,0,0,0.7)"}}>
+              {["Todas",...lojasCad.map(l=>l.nome)].map(nome=>(
+                <button key={nome} onClick={()=>setFiltroLoja(nome)}
+                  style={{display:"flex",alignItems:"center",gap:10,width:"100%",padding:"9px 12px",background:filtroLoja===nome?C.accentDim:"transparent",border:"none",borderRadius:9,cursor:"pointer",color:filtroLoja===nome?C.accent:C.text,fontSize:13,fontFamily:"'Geist',sans-serif",fontWeight:filtroLoja===nome?600:400,textAlign:"left",transition:"background 0.1s"}}
+                  onMouseEnter={e=>{if(filtroLoja!==nome)e.currentTarget.style.background="#1e1e1e";}}
+                  onMouseLeave={e=>{if(filtroLoja!==nome)e.currentTarget.style.background="transparent";}}>
+                  <span style={{width:8,height:8,borderRadius:"50%",background:filtroLoja===nome?C.accent:"#333",flexShrink:0}}/>
+                  {nome==="Todas"?"🏪 Todas as lojas":nome}
+                  {filtroLoja===nome&&<svg style={{marginLeft:"auto"}} width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="20 6 9 17 4 12"/></svg>}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        <button onClick={()=>setModalResultado(true)} style={{display:"flex",alignItems:"center",gap:7,padding:"9px 18px",borderRadius:10,background:C.accent,color:"#fff",border:"none",fontSize:13,fontWeight:600,cursor:"pointer",fontFamily:"'Geist',sans-serif",boxShadow:"0 4px 14px rgba(124,107,255,0.35)"}}
           onMouseEnter={e=>e.currentTarget.style.background="#6c5ce7"} onMouseLeave={e=>e.currentTarget.style.background=C.accent}>
           <Icon name="plus" size={14}/> Registrar
         </button>
@@ -1295,27 +1329,6 @@ function main() {
 
       {/* FILTROS MODERNOS */}
       {(()=>{const moedaFlags={"BRL":"🇧🇷","USD":"🇺🇸","EUR":"🇪🇺","GBP":"🇬🇧"};return(<div style={{display:"flex",gap:10,marginBottom:20,alignItems:"center",flexWrap:"wrap",padding:"10px 14px",background:C.surface,borderRadius:16,border:`0.5px solid ${C.border}`}}>
-            {/* Seletor de loja - dropdown bonito */}
-            <div style={{position:"relative"}}>
-              <button onClick={()=>{setShowLojaDD(v=>!v);setShowMoedaDD(false);}}
-                style={{display:"flex",alignItems:"center",gap:7,padding:"6px 12px",borderRadius:10,background:"#161616",border:`0.5px solid ${C.border}`,color:C.text,cursor:"pointer",fontSize:13,fontFamily:"'Geist',sans-serif",fontWeight:500,gap:8}}>
-                <span style={{width:8,height:8,borderRadius:"50%",background:C.green,flexShrink:0,boxShadow:"0 0 6px rgba(34,197,94,0.6)"}}/>
-                <span>{filtroLoja==="Todas"?"Todas as lojas":filtroLoja}</span>
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="6 9 12 15 18 9"/></svg>
-              </button>
-              {showLojaDD&&(
-                <div className="fade-in" style={{position:"absolute",top:"calc(100% + 6px)",left:0,zIndex:300,background:"#161616",border:`0.5px solid ${C.border}`,borderRadius:12,padding:6,minWidth:200,boxShadow:"0 8px 32px rgba(0,0,0,0.6)"}}>
-                  {["Todas",...lojasCad.map(l=>l.nome)].map(nome=>(
-                    <button key={nome} onClick={()=>{setFiltroLoja(nome);setShowLojaDD(false);}}
-                      style={{display:"flex",alignItems:"center",gap:8,width:"100%",padding:"8px 12px",background:filtroLoja===nome?C.accentDim:"transparent",border:"none",borderRadius:8,cursor:"pointer",color:filtroLoja===nome?C.accent:C.text,fontSize:13,fontFamily:"'Geist',sans-serif",textAlign:"left"}}>
-                      <span style={{width:7,height:7,borderRadius:"50%",background:filtroLoja===nome?C.accent:C.textDim,flexShrink:0}}/>
-                      {nome==="Todas"?"Todas as lojas":nome}
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
-
             {/* Seletor de moeda */}
             <div style={{position:"relative"}}>
               <button onClick={()=>{setShowMoedaDD(v=>!v);setShowLojaDD(false);}}
