@@ -2460,173 +2460,175 @@ const ProdutosPage=({sb,user})=>{
   );
 };
 
-// ─── YOUTUBE DOWNLOADER ───────────────────────────────────────────────────────
-const PIPED_INSTANCES=[
-  "https://pipedapi.kavin.rocks",
-  "https://piped-api.garudalinux.org",
-  "https://api.piped.yt",
-  "https://pipedapi.adminforge.de",
-  "https://watchapi.whatever.social",
-];
-
+// ─── DOWNLOADER (YouTube + TikTok) ───────────────────────────────────────────
 const YoutubePage=({sb,user})=>{
-  const [url,setUrl]=useState("");
+  const [platform,setPlatform]=useState("youtube");
+  // YouTube state
+  const [ytUrl,setYtUrl]=useState("");
   const [quality,setQuality]=useState("1080");
   const [audioOnly,setAudioOnly]=useState(false);
+  const [ytResult,setYtResult]=useState(null);
+  // TikTok state
+  const [ttUrl,setTtUrl]=useState("");
+  const [ttResult,setTtResult]=useState(null);
+  // Common
   const [loading,setLoading]=useState(false);
-  const [result,setResult]=useState(null);
   const [err,setErr]=useState("");
   const {show,El}=useToast();
 
-  const isShorts=(u)=>u.includes("/shorts/");
+  const cleanAll=()=>{setYtResult(null);setTtResult(null);setErr("");};
 
-  const download=async()=>{
-    if(!url.trim()){setErr("Cole uma URL do YouTube");return;}
-    setErr("");setResult(null);setLoading(true);
+  // ── YouTube ────────────────────────────────────────────────────────────────
+  const downloadYT=async()=>{
+    if(!ytUrl.trim()){setErr("Cole uma URL do YouTube");return;}
+    setErr("");setYtResult(null);setLoading(true);
     try{
-      const res=await fetch(`${SUPA_FUNCTIONS_URL}/youtube-download`,{
-        method:"POST",
-        headers:{"Content-Type":"application/json"},
-        body:JSON.stringify({url:url.trim(),quality,audio_only:audioOnly}),
-      });
+      const res=await fetch(`${SUPA_FUNCTIONS_URL}/youtube-download`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({url:ytUrl.trim(),quality,audio_only:audioOnly})});
       const data=await res.json();
       if(!res.ok||data.error){setErr(data.error||"Erro ao processar");setLoading(false);return;}
-      setResult(data);
+      setYtResult(data);
       if(data.url) window.open(data.url,"_blank");
     }catch(e){setErr("Erro: "+e.message);}
     setLoading(false);
   };
 
-  const qualities=[
-    {id:"720",label:"720p",sub:"HD"},
-    {id:"1080",label:"1080p",sub:"Full HD"},
-    {id:"4k",label:"4K",sub:"Ultra HD"},
-  ];
+  // ── TikTok ─────────────────────────────────────────────────────────────────
+  const downloadTT=async()=>{
+    if(!ttUrl.trim()){setErr("Cole uma URL do TikTok");return;}
+    setErr("");setTtResult(null);setLoading(true);
+    try{
+      const res=await fetch(`${SUPA_FUNCTIONS_URL}/tiktok-download`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({url:ttUrl.trim()})});
+      const data=await res.json();
+      if(!res.ok||data.error){setErr(data.error||"Erro ao processar");setLoading(false);return;}
+      setTtResult(data);
+      if(data.hdUrl||data.sdUrl) window.open(data.hdUrl||data.sdUrl,"_blank");
+    }catch(e){setErr("Erro: "+e.message);}
+    setLoading(false);
+  };
 
-  const cleanUrl=()=>{setUrl("");setResult(null);setErr("");};
+  const qualities=[{id:"720",label:"720p",sub:"HD"},{id:"1080",label:"1080p",sub:"Full HD"},{id:"4k",label:"4K",sub:"Ultra HD"}];
+  const isShorts=(u)=>u.includes("/shorts/");
+
+  const BtnStyle=(active,color="#7c6bff",colorDim="rgba(124,107,255,0.12)")=>({
+    flex:1,padding:"10px 14px",borderRadius:10,border:`0.5px solid ${active?color+"66":C.border}`,
+    background:active?colorDim:"transparent",color:active?color:C.textMuted,
+    fontSize:13,fontWeight:active?600:400,cursor:"pointer",fontFamily:"'Geist',sans-serif",
+    transition:"all 0.15s",display:"flex",alignItems:"center",justifyContent:"center",gap:8,
+  });
 
   return(
     <div className="page-pad" style={{overflowY:"auto",flex:1}}>
       {El}
       {/* HEADER */}
-      <div style={{marginBottom:28}}>
-        <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:6}}>
-          <div style={{width:32,height:32,borderRadius:8,background:"#ff000022",border:"0.5px solid #ff000044",display:"flex",alignItems:"center",justifyContent:"center",color:"#ff4444"}}>
-            <Icon name="youtube" size={16}/>
-          </div>
-          <h1 style={{fontSize:22,fontWeight:600,color:C.text,letterSpacing:"-0.03em"}}>Baixar Vídeo</h1>
-        </div>
-        <p style={{fontSize:13,color:C.textMuted}}>Baixe vídeos do YouTube e Shorts em alta qualidade</p>
+      <div style={{marginBottom:20}}>
+        <h1 style={{fontSize:22,fontWeight:600,color:C.text,letterSpacing:"-0.03em",marginBottom:4}}>Downloader</h1>
+        <p style={{fontSize:13,color:C.textMuted}}>Baixe vídeos do YouTube e TikTok</p>
       </div>
 
-      {/* INPUT */}
-      <div style={{background:C.surface,border:`0.5px solid ${C.border}`,borderRadius:14,padding:20,marginBottom:16}}>
-        <label style={{fontSize:12,color:C.textMuted,fontWeight:500,display:"block",marginBottom:8}}>URL do vídeo</label>
-        <div style={{display:"flex",gap:8}}>
-          <div style={{flex:1,position:"relative"}}>
-            <span style={{position:"absolute",left:12,top:"50%",transform:"translateY(-50%)",color:C.textDim}}>
-              <Icon name="youtube" size={14}/>
-            </span>
-            <input
-              value={url}
-              onChange={e=>{setUrl(e.target.value);setErr("");setResult(null);}}
-              placeholder="https://youtube.com/watch?v=... ou /shorts/..."
-              style={{width:"100%",background:"#0d0d0d",border:`0.5px solid ${err?C.red:C.border}`,color:C.text,fontFamily:"'Geist',sans-serif",fontSize:13,padding:"10px 12px 10px 36px",borderRadius:9,outline:"none"}}
-              onFocus={e=>e.target.style.borderColor=C.accentBorder}
-              onBlur={e=>e.target.style.borderColor=err?C.red:C.border}
-              onKeyDown={e=>e.key==="Enter"&&download()}
-            />
-          </div>
-          {url&&<button onClick={cleanUrl} style={{background:"#1a1a1a",border:`0.5px solid ${C.border}`,color:C.textMuted,borderRadius:9,padding:"0 12px",cursor:"pointer"}}><Icon name="x" size={14}/></button>}
-        </div>
-        {url&&isShorts(url)&&<div style={{marginTop:8,display:"flex",alignItems:"center",gap:6,fontSize:11,color:C.accent}}><span>⚡</span> Shorts detectado</div>}
-        {err&&<div style={{marginTop:8,fontSize:12,color:C.red,display:"flex",alignItems:"center",gap:6}}><Icon name="alert" size={12}/>{err}</div>}
-      </div>
-
-      {/* MODO */}
-      <div style={{display:"flex",gap:8,marginBottom:16}}>
-        <button onClick={()=>setAudioOnly(false)} style={{flex:1,padding:"10px 0",borderRadius:10,border:`0.5px solid ${!audioOnly?C.accentBorder:C.border}`,background:!audioOnly?C.accentDim:"transparent",color:!audioOnly?C.accent:C.textMuted,fontSize:13,fontWeight:500,cursor:"pointer",fontFamily:"'Geist',sans-serif",transition:"all 0.15s",display:"flex",alignItems:"center",justifyContent:"center",gap:7}}>
-          <Icon name="video" size={14}/>Vídeo
+      {/* PLATAFORMA */}
+      <div style={{display:"flex",gap:6,marginBottom:20,background:C.surface,padding:4,borderRadius:10,border:`0.5px solid ${C.border}`}}>
+        <button onClick={()=>{setPlatform("youtube");cleanAll();}} style={BtnStyle(platform==="youtube","#ff4444","rgba(255,68,68,0.12)")}>
+          <Icon name="youtube" size={15}/>YouTube
         </button>
-        <button onClick={()=>setAudioOnly(true)} style={{flex:1,padding:"10px 0",borderRadius:10,border:`0.5px solid ${audioOnly?"rgba(245,158,11,0.4)":C.border}`,background:audioOnly?C.amberDim:"transparent",color:audioOnly?C.amber:C.textMuted,fontSize:13,fontWeight:500,cursor:"pointer",fontFamily:"'Geist',sans-serif",transition:"all 0.15s",display:"flex",alignItems:"center",justifyContent:"center",gap:7}}>
-          <Icon name="music" size={14}/>Só Áudio (MP3)
+        <button onClick={()=>{setPlatform("tiktok");cleanAll();}} style={BtnStyle(platform==="tiktok","#ee1d52","rgba(238,29,82,0.12)")}>
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-2.88 2.5 2.89 2.89 0 0 1-2.89-2.89 2.89 2.89 0 0 1 2.89-2.89c.28 0 .54.04.79.1V9.01a6.33 6.33 0 0 0-.79-.05 6.34 6.34 0 0 0-6.34 6.34 6.34 6.34 0 0 0 6.34 6.34 6.34 6.34 0 0 0 6.33-6.34V8.69a8.18 8.18 0 0 0 4.78 1.52V6.76a4.85 4.85 0 0 1-1.01-.07z"/></svg>
+          TikTok
         </button>
       </div>
 
-      {/* QUALIDADE */}
-      {!audioOnly&&(
-        <div style={{marginBottom:20}}>
-          <label style={{fontSize:12,color:C.textMuted,fontWeight:500,display:"block",marginBottom:10}}>Qualidade</label>
-          <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:10}}>
+      {/* ── YOUTUBE ── */}
+      {platform==="youtube"&&(<>
+        <div style={{background:C.surface,border:`0.5px solid ${C.border}`,borderRadius:12,padding:16,marginBottom:14}}>
+          <div style={{display:"flex",gap:8}}>
+            <div style={{flex:1,position:"relative"}}>
+              <span style={{position:"absolute",left:11,top:"50%",transform:"translateY(-50%)",color:C.textDim}}><Icon name="youtube" size={13}/></span>
+              <input value={ytUrl} onChange={e=>{setYtUrl(e.target.value);setErr("");setYtResult(null);}}
+                placeholder="https://youtube.com/watch?v=... ou /shorts/..."
+                style={{width:"100%",background:"#0d0d0d",border:`0.5px solid ${err?C.red:C.border}`,color:C.text,fontFamily:"'Geist',sans-serif",fontSize:13,padding:"9px 12px 9px 32px",borderRadius:8,outline:"none"}}
+                onFocus={e=>e.target.style.borderColor=C.accentBorder} onBlur={e=>e.target.style.borderColor=err?C.red:C.border}
+                onKeyDown={e=>e.key==="Enter"&&downloadYT()}/>
+            </div>
+            {ytUrl&&<button onClick={()=>{setYtUrl("");setYtResult(null);setErr("");}} style={{background:"#1a1a1a",border:`0.5px solid ${C.border}`,color:C.textMuted,borderRadius:8,padding:"0 10px",cursor:"pointer"}}><Icon name="x" size={13}/></button>}
+          </div>
+          {ytUrl&&isShorts(ytUrl)&&<div style={{marginTop:6,fontSize:11,color:C.accent}}>⚡ Shorts detectado</div>}
+        </div>
+        <div style={{display:"flex",gap:8,marginBottom:14}}>
+          <button onClick={()=>setAudioOnly(false)} style={BtnStyle(!audioOnly)}><Icon name="video" size={13}/>Vídeo</button>
+          <button onClick={()=>setAudioOnly(true)} style={BtnStyle(audioOnly,C.amber,"rgba(245,158,11,0.12)")}><Icon name="music" size={13}/>Só Áudio</button>
+        </div>
+        {!audioOnly&&(
+          <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:8,marginBottom:14}}>
             {qualities.map(q=>(
               <button key={q.id} onClick={()=>setQuality(q.id)}
-                style={{padding:"14px 8px",borderRadius:10,border:`0.5px solid ${quality===q.id?C.accentBorder:C.border}`,background:quality===q.id?C.accentDim:"#0d0d0d",color:quality===q.id?C.accent:C.textMuted,cursor:"pointer",fontFamily:"'Geist',sans-serif",transition:"all 0.15s",textAlign:"center"}}>
-                <div style={{fontSize:16,fontWeight:700,letterSpacing:"-0.02em",marginBottom:3}}>{q.label}</div>
-                <div style={{fontSize:10,opacity:0.7,fontFamily:"'Geist Mono',monospace"}}>{q.sub}</div>
+                style={{padding:"12px 8px",borderRadius:9,border:`0.5px solid ${quality===q.id?C.accentBorder:C.border}`,background:quality===q.id?C.accentDim:"#0d0d0d",color:quality===q.id?C.accent:C.textMuted,cursor:"pointer",fontFamily:"'Geist',sans-serif",transition:"all 0.15s",textAlign:"center"}}>
+                <div style={{fontSize:15,fontWeight:700,marginBottom:2}}>{q.label}</div>
+                <div style={{fontSize:10,opacity:0.6,fontFamily:"'Geist Mono',monospace"}}>{q.sub}</div>
               </button>
             ))}
           </div>
-          <div style={{marginTop:10,fontSize:11,color:C.textDim,display:"flex",alignItems:"center",gap:5}}>
-            <Icon name="alert" size={11}/>
-            4K disponível apenas para vídeos originalmente em 4K
-          </div>
-        </div>
-      )}
-
-      {/* BOTÃO */}
-      <button onClick={download} disabled={loading||!url.trim()}
-        style={{width:"100%",padding:"13px 0",borderRadius:10,background:loading||!url.trim()?"#1a1a1a":C.accent,color:loading||!url.trim()?C.textDim:"#fff",border:"none",fontSize:14,fontWeight:600,cursor:loading||!url.trim()?"not-allowed":"pointer",fontFamily:"'Geist',sans-serif",display:"flex",alignItems:"center",justifyContent:"center",gap:8,transition:"all 0.2s"}}>
-        {loading?<><Spinner size={16}/>Processando...</>:<><Icon name="download" size={16}/>{audioOnly?"Baixar MP3":"Baixar Vídeo"}</>}
-      </button>
-
-      {/* RESULTADO */}
-      {result&&result.url&&(
-        <div className="fade-in" style={{marginTop:16,display:"flex",flexDirection:"column",gap:8}}>
-          {/* Vídeo */}
-          <div style={{background:C.greenDim,border:"0.5px solid rgba(34,197,94,0.3)",borderRadius:12,padding:16,display:"flex",alignItems:"center",justifyContent:"space-between",gap:12,flexWrap:"wrap"}}>
-            <div style={{display:"flex",alignItems:"center",gap:10}}>
-              <div style={{width:32,height:32,borderRadius:8,background:"rgba(34,197,94,0.2)",display:"flex",alignItems:"center",justifyContent:"center",color:C.green,flexShrink:0}}><Icon name="check" size={14}/></div>
+        )}
+        <button onClick={downloadYT} disabled={loading||!ytUrl.trim()}
+          style={{width:"100%",padding:"12px 0",borderRadius:9,background:loading||!ytUrl.trim()?"#1a1a1a":"#ff4444",color:loading||!ytUrl.trim()?C.textDim:"#fff",border:"none",fontSize:13,fontWeight:600,cursor:loading||!ytUrl.trim()?"not-allowed":"pointer",fontFamily:"'Geist',sans-serif",display:"flex",alignItems:"center",justifyContent:"center",gap:7,transition:"all 0.2s"}}>
+          {loading?<><Spinner size={15}/>Processando...</>:<><Icon name="download" size={14}/>{audioOnly?"Baixar Áudio":"Baixar Vídeo"}</>}
+        </button>
+        {err&&<div style={{marginTop:10,fontSize:12,color:C.red,display:"flex",alignItems:"center",gap:6}}><Icon name="alert" size={12}/>{err}</div>}
+        {ytResult&&ytResult.url&&(
+          <div className="fade-in" style={{marginTop:14,display:"flex",flexDirection:"column",gap:8}}>
+            <div style={{background:C.greenDim,border:"0.5px solid rgba(34,197,94,0.3)",borderRadius:10,padding:14,display:"flex",alignItems:"center",justifyContent:"space-between",gap:10,flexWrap:"wrap"}}>
               <div>
-                <div style={{fontSize:13,fontWeight:500,color:C.green}}>
-                  Vídeo {result.quality&&<span style={{fontSize:11,fontFamily:"'Geist Mono',monospace",background:"rgba(34,197,94,0.15)",padding:"1px 6px",borderRadius:4,marginLeft:4}}>{result.quality}</span>}
-                  {result.hasAudio&&<span style={{fontSize:10,color:C.textMuted,marginLeft:6}}>· com áudio</span>}
-                </div>
-                {result.title&&<div style={{fontSize:11,color:C.textMuted,marginTop:2,maxWidth:260,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{result.title}</div>}
+                <div style={{fontSize:13,fontWeight:500,color:C.green}}>Vídeo {ytResult.quality&&<span style={{fontSize:10,fontFamily:"'Geist Mono',monospace",background:"rgba(34,197,94,0.15)",padding:"1px 5px",borderRadius:4,marginLeft:4}}>{ytResult.quality}</span>}{ytResult.hasAudio&&<span style={{fontSize:10,color:C.textMuted,marginLeft:6}}>· com áudio</span>}</div>
+                {ytResult.title&&<div style={{fontSize:11,color:C.textMuted,marginTop:2,maxWidth:260,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{ytResult.title}</div>}
               </div>
+              <a href={ytResult.url} target="_blank" rel="noreferrer" style={{padding:"8px 14px",borderRadius:8,background:"rgba(34,197,94,0.2)",border:"0.5px solid rgba(34,197,94,0.4)",color:C.green,fontSize:12,fontWeight:600,textDecoration:"none",display:"flex",alignItems:"center",gap:5}}><Icon name="download" size={12}/>Baixar</a>
             </div>
-            <a href={result.url} target="_blank" rel="noreferrer"
-              style={{padding:"9px 16px",borderRadius:8,background:"rgba(34,197,94,0.25)",border:"0.5px solid rgba(34,197,94,0.4)",color:C.green,fontSize:13,fontWeight:600,textDecoration:"none",whiteSpace:"nowrap",display:"flex",alignItems:"center",gap:6}}>
-              <Icon name="download" size={13}/>Baixar Vídeo
-            </a>
-          </div>
-          {/* Áudio separado quando qualidade não tem áudio */}
-          {!result.hasAudio&&result.audioUrl&&(
-            <div style={{background:C.amberDim,border:"0.5px solid rgba(245,158,11,0.3)",borderRadius:12,padding:16,display:"flex",alignItems:"center",justifyContent:"space-between",gap:12,flexWrap:"wrap"}}>
-              <div style={{display:"flex",alignItems:"center",gap:10}}>
-                <div style={{width:32,height:32,borderRadius:8,background:"rgba(245,158,11,0.2)",display:"flex",alignItems:"center",justifyContent:"center",color:C.amber,flexShrink:0}}><Icon name="music" size={14}/></div>
+            {!ytResult.hasAudio&&ytResult.audioUrl&&(
+              <div style={{background:C.amberDim,border:"0.5px solid rgba(245,158,11,0.3)",borderRadius:10,padding:14,display:"flex",alignItems:"center",justifyContent:"space-between",gap:10,flexWrap:"wrap"}}>
                 <div>
                   <div style={{fontSize:13,fontWeight:500,color:C.amber}}>Áudio separado</div>
-                  <div style={{fontSize:11,color:C.textMuted,marginTop:2}}>YouTube separa áudio/vídeo em {result.quality} — baixe os dois</div>
+                  <div style={{fontSize:11,color:C.textMuted,marginTop:2}}>YouTube separa streams em {ytResult.quality}</div>
                 </div>
+                <a href={ytResult.audioUrl} target="_blank" rel="noreferrer" style={{padding:"8px 14px",borderRadius:8,background:"rgba(245,158,11,0.2)",border:"0.5px solid rgba(245,158,11,0.4)",color:C.amber,fontSize:12,fontWeight:600,textDecoration:"none",display:"flex",alignItems:"center",gap:5}}><Icon name="download" size={12}/>Baixar Áudio</a>
               </div>
-              <a href={result.audioUrl} target="_blank" rel="noreferrer"
-                style={{padding:"9px 16px",borderRadius:8,background:"rgba(245,158,11,0.2)",border:"0.5px solid rgba(245,158,11,0.4)",color:C.amber,fontSize:13,fontWeight:600,textDecoration:"none",whiteSpace:"nowrap",display:"flex",alignItems:"center",gap:6}}>
-                <Icon name="download" size={13}/>Baixar Áudio
-              </a>
-            </div>
-          )}
-        </div>
-      )}
+            )}
+          </div>
+        )}
+      </>)}
 
-      {/* INFO */}
-      <div style={{marginTop:24,padding:14,background:"#0d0d0d",borderRadius:10,border:`0.5px solid ${C.border}`}}>
-        <div style={{fontSize:11,color:C.textDim,lineHeight:1.8}}>
-          <div style={{fontWeight:500,color:C.textMuted,marginBottom:6,fontSize:12}}>Formatos suportados</div>
-          <div>📺 Vídeos normais do YouTube (youtube.com/watch)</div>
-          <div>⚡ YouTube Shorts (youtube.com/shorts)</div>
-          <div>🎵 Áudio em MP3 (qualquer vídeo)</div>
+      {/* ── TIKTOK ── */}
+      {platform==="tiktok"&&(<>
+        <div style={{background:C.surface,border:`0.5px solid ${C.border}`,borderRadius:12,padding:16,marginBottom:14}}>
+          <div style={{display:"flex",gap:8}}>
+            <div style={{flex:1,position:"relative"}}>
+              <span style={{position:"absolute",left:11,top:"50%",transform:"translateY(-50%)",color:"#ee1d52",fontSize:14}}>♪</span>
+              <input value={ttUrl} onChange={e=>{setTtUrl(e.target.value);setErr("");setTtResult(null);}}
+                placeholder="https://www.tiktok.com/@user/video/..."
+                style={{width:"100%",background:"#0d0d0d",border:`0.5px solid ${err?C.red:C.border}`,color:C.text,fontFamily:"'Geist',sans-serif",fontSize:13,padding:"9px 12px 9px 32px",borderRadius:8,outline:"none"}}
+                onFocus={e=>e.target.style.borderColor="rgba(238,29,82,0.4)"} onBlur={e=>e.target.style.borderColor=err?C.red:C.border}
+                onKeyDown={e=>e.key==="Enter"&&downloadTT()}/>
+            </div>
+            {ttUrl&&<button onClick={()=>{setTtUrl("");setTtResult(null);setErr("");}} style={{background:"#1a1a1a",border:`0.5px solid ${C.border}`,color:C.textMuted,borderRadius:8,padding:"0 10px",cursor:"pointer"}}><Icon name="x" size={13}/></button>}
+          </div>
         </div>
-      </div>
+        <div style={{marginBottom:14,padding:"10px 14px",background:"rgba(238,29,82,0.06)",border:"0.5px solid rgba(238,29,82,0.2)",borderRadius:9,fontSize:11,color:C.textMuted,display:"flex",alignItems:"center",gap:7}}>
+          <span style={{color:"#ee1d52",fontSize:14}}>✓</span> Download <strong style={{color:"#ee1d52"}}>sem marca d'água</strong> · Vídeo HD + Áudio separado
+        </div>
+        <button onClick={downloadTT} disabled={loading||!ttUrl.trim()}
+          style={{width:"100%",padding:"12px 0",borderRadius:9,background:loading||!ttUrl.trim()?"#1a1a1a":"#ee1d52",color:loading||!ttUrl.trim()?C.textDim:"#fff",border:"none",fontSize:13,fontWeight:600,cursor:loading||!ttUrl.trim()?"not-allowed":"pointer",fontFamily:"'Geist',sans-serif",display:"flex",alignItems:"center",justifyContent:"center",gap:7,transition:"all 0.2s"}}>
+          {loading?<><Spinner size={15}/>Processando...</>:<><Icon name="download" size={14}/>Baixar sem marca d'água</>}
+        </button>
+        {err&&<div style={{marginTop:10,fontSize:12,color:C.red,display:"flex",alignItems:"center",gap:6}}><Icon name="alert" size={12}/>{err}</div>}
+        {ttResult&&(ttResult.hdUrl||ttResult.sdUrl)&&(
+          <div className="fade-in" style={{marginTop:14,display:"flex",flexDirection:"column",gap:8}}>
+            {ttResult.cover&&<img src={ttResult.cover} alt="thumb" style={{width:"100%",maxHeight:200,objectFit:"cover",borderRadius:10,border:`0.5px solid ${C.border}`}} onError={e=>e.target.style.display="none"}/>}
+            {ttResult.title&&<div style={{fontSize:12,color:C.textMuted,padding:"0 2px",lineHeight:1.5}}>{ttResult.title.slice(0,120)}{ttResult.title.length>120?"…":""}</div>}
+            <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
+              {ttResult.hdUrl&&<a href={ttResult.hdUrl} target="_blank" rel="noreferrer" style={{flex:1,padding:"10px 0",borderRadius:9,background:"rgba(238,29,82,0.15)",border:"0.5px solid rgba(238,29,82,0.4)",color:"#ee1d52",fontSize:13,fontWeight:600,textDecoration:"none",display:"flex",alignItems:"center",justifyContent:"center",gap:6,minWidth:120}}><Icon name="download" size={13}/>HD sem marca</a>}
+              {ttResult.sdUrl&&ttResult.sdUrl!==ttResult.hdUrl&&<a href={ttResult.sdUrl} target="_blank" rel="noreferrer" style={{flex:1,padding:"10px 0",borderRadius:9,background:C.surface,border:`0.5px solid ${C.border}`,color:C.textMuted,fontSize:13,fontWeight:500,textDecoration:"none",display:"flex",alignItems:"center",justifyContent:"center",gap:6,minWidth:100}}><Icon name="download" size={13}/>SD</a>}
+              {ttResult.musicUrl&&<a href={ttResult.musicUrl} target="_blank" rel="noreferrer" style={{flex:1,padding:"10px 0",borderRadius:9,background:C.amberDim,border:"0.5px solid rgba(245,158,11,0.3)",color:C.amber,fontSize:13,fontWeight:500,textDecoration:"none",display:"flex",alignItems:"center",justifyContent:"center",gap:6,minWidth:100}}><Icon name="music" size={13}/>Áudio</a>}
+            </div>
+          </div>
+        )}
+      </>)}
     </div>
   );
 };
