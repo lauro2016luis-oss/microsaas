@@ -2469,6 +2469,8 @@ const PIPED_INSTANCES=[
   "https://watchapi.whatever.social",
 ];
 
+const SUPA_FUNCTIONS_URL="https://vvdhnwknluxsaxcqvlyh.supabase.co/functions/v1";
+
 const YoutubePage=({sb,user})=>{
   const [url,setUrl]=useState("");
   const [quality,setQuality]=useState("1080");
@@ -2478,53 +2480,21 @@ const YoutubePage=({sb,user})=>{
   const [err,setErr]=useState("");
   const {show,El}=useToast();
 
-  const extractId=(u)=>{
-    const m=u.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/shorts\/)([a-zA-Z0-9_-]{11})/);
-    return m?m[1]:null;
-  };
   const isShorts=(u)=>u.includes("/shorts/");
 
   const download=async()=>{
     if(!url.trim()){setErr("Cole uma URL do YouTube");return;}
-    const videoId=extractId(url.trim());
-    if(!videoId){setErr("URL inválida. Use um link do YouTube ou Shorts.");return;}
     setErr("");setResult(null);setLoading(true);
     try{
-      // Chama Piped API diretamente do browser (tem CORS liberado)
-      let data=null;
-      for(const inst of PIPED_INSTANCES){
-        try{
-          const res=await fetch(`${inst}/streams/${videoId}`,{signal:AbortSignal.timeout(7000)});
-          if(res.ok){const d=await res.json();if(d.videoStreams||d.audioStreams){data=d;break;}}
-        }catch(e){console.log("Piped fail:",inst,e.message);}
-      }
-      if(!data){setErr("Não foi possível buscar o vídeo. Verifique a URL e tente novamente.");setLoading(false);return;}
-
-      const title=data.title||"video";
-
-      if(audioOnly){
-        const audios=(data.audioStreams||[]).filter(s=>s.url);
-        audios.sort((a,b)=>(b.bitrate||0)-(a.bitrate||0));
-        if(!audios[0]?.url){setErr("Áudio não disponível");setLoading(false);return;}
-        setResult({url:audios[0].url,title,type:"audio"});
-        window.open(audios[0].url,"_blank");
-      } else {
-        const heightTarget={"720":720,"1080":1080,"4k":2160};
-        const target=heightTarget[quality]||1080;
-        // muxed first (video+audio)
-        let streams=(data.videoStreams||[]).filter(s=>s.url&&s.videoOnly===false);
-        streams.sort((a,b)=>(parseInt(b.quality)||0)-(parseInt(a.quality)||0));
-        let chosen=streams.find(s=>(parseInt(s.quality)||0)<=target)||streams[streams.length-1]||streams[0];
-        // fallback: any video stream
-        if(!chosen){
-          const all=(data.videoStreams||[]).filter(s=>s.url);
-          all.sort((a,b)=>(parseInt(b.quality)||0)-(parseInt(a.quality)||0));
-          chosen=all.find(s=>(parseInt(s.quality)||0)<=target)||all[0];
-        }
-        if(!chosen?.url){setErr("Nenhum formato disponível");setLoading(false);return;}
-        setResult({url:chosen.url,title,quality:chosen.quality||quality});
-        window.open(chosen.url,"_blank");
-      }
+      const res=await fetch(`${SUPA_FUNCTIONS_URL}/youtube-download`,{
+        method:"POST",
+        headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({url:url.trim(),quality,audio_only:audioOnly}),
+      });
+      const data=await res.json();
+      if(!res.ok||data.error){setErr(data.error||"Erro ao processar");setLoading(false);return;}
+      setResult(data);
+      if(data.url) window.open(data.url,"_blank");
     }catch(e){setErr("Erro: "+e.message);}
     setLoading(false);
   };
