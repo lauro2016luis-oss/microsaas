@@ -2469,8 +2469,6 @@ const PIPED_INSTANCES=[
   "https://watchapi.whatever.social",
 ];
 
-const SUPA_FUNCTIONS_URL="https://vvdhnwknluxsaxcqvlyh.supabase.co/functions/v1";
-
 const YoutubePage=({sb,user})=>{
   const [url,setUrl]=useState("");
   const [quality,setQuality]=useState("1080");
