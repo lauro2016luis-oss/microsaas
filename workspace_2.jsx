@@ -2635,14 +2635,25 @@ const YoutubePage=({sb,user})=>{
 };
 
 // ─── CUSTOS DE PRODUTOS ───────────────────────────────────────────────────────
+const CURRENCIES=[
+  {code:"BRL",symbol:"R$",flag:"🇧🇷",name:"Real"},
+  {code:"USD",symbol:"US$",flag:"🇺🇸",name:"Dólar"},
+  {code:"EUR",symbol:"€",flag:"🇪🇺",name:"Euro"},
+  {code:"GBP",symbol:"£",flag:"🇬🇧",name:"Libra"},
+  {code:"ARS",symbol:"$",flag:"🇦🇷",name:"Peso AR"},
+  {code:"CNY",symbol:"¥",flag:"🇨🇳",name:"Yuan"},
+];
+const getCurr=(code)=>CURRENCIES.find(c=>c.code===code)||CURRENCIES[0];
+const fmtCurr=(v,code)=>{const c=getCurr(code);return`${c.symbol} ${(v||0).toFixed(2).replace(".",",")}`;};
+
 const CustosProdutosPage=({sb,user})=>{
   const [shopConfigs,setShopConfigs]=useState([]);
   const [selDomain,setSelDomain]=useState("");
   const [products,setProducts]=useState([]);
-  const [costs,setCosts]=useState({});    // {product_id: {custo, frete, updated_at}}
+  const [costs,setCosts]=useState({});    // {product_id: {custo, frete, currency, updated_at}}
   const [loading,setLoading]=useState(false);
   const [search,setSearch]=useState("");
-  const [editing,setEditing]=useState(null); // {product_id, custo, frete}
+  const [editing,setEditing]=useState(null); // {product_id, custo, frete, currency}
   const [saving,setSaving]=useState(false);
   const {show,El}=useToast();
 
@@ -2660,7 +2671,7 @@ const CustosProdutosPage=({sb,user})=>{
   const loadCosts=async(domain)=>{
     const{data}=await sb.from("product_costs").select("*").eq("user_id",user.id).eq("shop_domain",domain);
     const map={};
-    (data||[]).forEach(c=>{map[c.product_id]={custo:c.custo,frete:c.frete,updated_at:c.updated_at};});
+    (data||[]).forEach(c=>{map[c.product_id]={custo:c.custo,frete:c.frete,currency:c.currency||"BRL",updated_at:c.updated_at};});
     setCosts(map);
   };
 
@@ -2698,18 +2709,18 @@ const CustosProdutosPage=({sb,user})=>{
       product_image:prod?.image||"",
       custo:parseFloat(editing.custo)||0,
       frete:parseFloat(editing.frete)||0,
+      currency:editing.currency||"BRL",
       updated_at:new Date().toISOString(),
     },{onConflict:"user_id,shop_domain,product_id"});
     if(error){show("Erro: "+error.message,"error");}
     else{
-      setCosts(p=>({...p,[editing.product_id]:{custo:parseFloat(editing.custo)||0,frete:parseFloat(editing.frete)||0,updated_at:new Date().toISOString()}}));
+      setCosts(p=>({...p,[editing.product_id]:{custo:parseFloat(editing.custo)||0,frete:parseFloat(editing.frete)||0,currency:editing.currency||"BRL",updated_at:new Date().toISOString()}}));
       show("Custo salvo!");setEditing(null);
     }
     setSaving(false);
   };
 
   const filtered=products.filter(p=>p.title?.toLowerCase().includes(search.toLowerCase()));
-  const fmt=v=>`R$ ${(v||0).toFixed(2).replace(".",",")}`;
   const fmtDate=d=>{if(!d)return"—";const dt=new Date(d);return`${dt.toLocaleDateString("pt-BR")} às ${dt.toLocaleTimeString("pt-BR",{hour:"2-digit",minute:"2-digit"})}`;};
 
   const selStyle={background:"#0d0d0d",border:`0.5px solid ${C.border}`,color:C.text,fontFamily:"'Geist',sans-serif",fontSize:13,padding:"8px 12px",borderRadius:8,outline:"none",cursor:"pointer"};
@@ -2787,21 +2798,24 @@ const CustosProdutosPage=({sb,user})=>{
                         <td style={{padding:"12px 16px",textAlign:"center",color:p.total_sales>0?C.green:C.textDim,fontSize:12,fontWeight:p.total_sales>0?600:400,fontFamily:"'Geist Mono',monospace"}} className="hide-mobile">{p.total_sales}</td>
                         <td style={{padding:"12px 16px",textAlign:"center"}}>
                           {hasCost?(
-                            <span style={{fontSize:12,fontWeight:600,color:C.text,fontFamily:"'Geist Mono',monospace"}}>{fmt(c.custo)}</span>
+                            <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:2}}>
+                              <span style={{fontSize:12,fontWeight:600,color:C.text,fontFamily:"'Geist Mono',monospace"}}>{fmtCurr(c.custo,c.currency)}</span>
+                              <span style={{fontSize:10,color:C.textDim,background:"#1a1a1a",padding:"1px 5px",borderRadius:4}}>{getCurr(c.currency).flag} {c.currency||"BRL"}</span>
+                            </div>
                           ):(
                             <span style={{fontSize:11,color:C.textDim}}>—</span>
                           )}
                         </td>
                         <td style={{padding:"12px 16px",textAlign:"center"}}>
                           {hasCost&&c.frete>0?(
-                            <span style={{fontSize:12,color:C.textMuted,fontFamily:"'Geist Mono',monospace"}}>{fmt(c.frete)}</span>
+                            <span style={{fontSize:12,color:C.textMuted,fontFamily:"'Geist Mono',monospace"}}>{fmtCurr(c.frete,c.currency)}</span>
                           ):(
                             <span style={{fontSize:11,color:C.textDim}}>—</span>
                           )}
                         </td>
                         <td style={{padding:"12px 16px",textAlign:"center",color:C.textDim,fontSize:11}} className="hide-mobile">{fmtDate(c?.updated_at)}</td>
                         <td style={{padding:"12px 16px",textAlign:"center"}}>
-                          <button onClick={()=>setEditing({product_id:p.product_id,title:p.title,image:p.image,custo:c?.custo||"",frete:c?.frete||""})}
+                          <button onClick={()=>setEditing({product_id:p.product_id,title:p.title,image:p.image,custo:c?.custo||"",frete:c?.frete||"",currency:c?.currency||"BRL"})}
                             style={{background:"none",border:"none",color:C.accent,cursor:"pointer",padding:4,display:"flex",alignItems:"center",justifyContent:"center",borderRadius:6,transition:"background 0.1s"}}
                             onMouseEnter={e=>e.currentTarget.style.background=C.accentDim}
                             onMouseLeave={e=>e.currentTarget.style.background="none"}>
@@ -2819,9 +2833,12 @@ const CustosProdutosPage=({sb,user})=>{
       )}
 
       {/* MODAL EDITAR CUSTO */}
-      {editing&&(
+      {editing&&(()=>{
+        const curr=getCurr(editing.currency||"BRL");
+        return(
         <Modal title="Editar Custo do Produto" onClose={()=>setEditing(null)}>
           <div style={{display:"flex",flexDirection:"column",gap:14}}>
+            {/* Produto info */}
             <div style={{display:"flex",alignItems:"center",gap:12,padding:"10px 12px",background:"#0d0d0d",borderRadius:10,border:`0.5px solid ${C.border}`}}>
               {editing.image?(
                 <img src={editing.image} alt="" style={{width:44,height:44,borderRadius:8,objectFit:"cover",flexShrink:0}} onError={e=>e.target.style.display="none"}/>
@@ -2830,26 +2847,56 @@ const CustosProdutosPage=({sb,user})=>{
               )}
               <span style={{fontSize:13,color:C.text,lineHeight:1.4}}>{editing.title}</span>
             </div>
-            <div className="modal-grid-2">
-              <div>
-                <label style={{fontSize:12,color:C.textMuted,display:"block",marginBottom:6}}>Custo do produto (R$)</label>
-                <input type="number" step="0.01" min="0" value={editing.custo} onChange={e=>setEditing(p=>({...p,custo:e.target.value}))}
-                  placeholder="0,00"
-                  style={{width:"100%",background:"#0d0d0d",border:`0.5px solid ${C.border}`,color:C.text,fontFamily:"'Geist Mono',monospace",fontSize:14,padding:"10px 12px",borderRadius:8,outline:"none"}}
-                  onFocus={e=>e.target.style.borderColor=C.accentBorder} onBlur={e=>e.target.style.borderColor=C.border}/>
-              </div>
-              <div>
-                <label style={{fontSize:12,color:C.textMuted,display:"block",marginBottom:6}}>Frete (R$)</label>
-                <input type="number" step="0.01" min="0" value={editing.frete} onChange={e=>setEditing(p=>({...p,frete:e.target.value}))}
-                  placeholder="0,00"
-                  style={{width:"100%",background:"#0d0d0d",border:`0.5px solid ${C.border}`,color:C.text,fontFamily:"'Geist Mono',monospace",fontSize:14,padding:"10px 12px",borderRadius:8,outline:"none"}}
-                  onFocus={e=>e.target.style.borderColor=C.accentBorder} onBlur={e=>e.target.style.borderColor=C.border}/>
+
+            {/* Seletor de moeda */}
+            <div>
+              <label style={{fontSize:12,color:C.textMuted,display:"block",marginBottom:8}}>Moeda</label>
+              <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
+                {CURRENCIES.map(c=>(
+                  <button key={c.code} onClick={()=>setEditing(p=>({...p,currency:c.code}))}
+                    style={{
+                      display:"flex",alignItems:"center",gap:5,padding:"6px 11px",borderRadius:8,cursor:"pointer",fontSize:12,fontFamily:"'Geist',sans-serif",transition:"all 0.1s",
+                      background:editing.currency===c.code?C.accentDim:"#0d0d0d",
+                      border:`0.5px solid ${editing.currency===c.code?C.accent:C.border}`,
+                      color:editing.currency===c.code?C.accent:C.textMuted,
+                    }}>
+                    <span style={{fontSize:14}}>{c.flag}</span>
+                    <span style={{fontWeight:500}}>{c.code}</span>
+                    <span style={{color:editing.currency===c.code?C.accent:C.textDim,fontSize:11}}>{c.symbol}</span>
+                  </button>
+                ))}
               </div>
             </div>
+
+            {/* Campos custo + frete */}
+            <div className="modal-grid-2">
+              <div>
+                <label style={{fontSize:12,color:C.textMuted,display:"block",marginBottom:6}}>Custo do produto ({curr.symbol})</label>
+                <div style={{position:"relative"}}>
+                  <span style={{position:"absolute",left:10,top:"50%",transform:"translateY(-50%)",fontSize:12,color:C.textDim,fontFamily:"'Geist Mono',monospace"}}>{curr.symbol}</span>
+                  <input type="number" step="0.01" min="0" value={editing.custo} onChange={e=>setEditing(p=>({...p,custo:e.target.value}))}
+                    placeholder="0,00"
+                    style={{width:"100%",background:"#0d0d0d",border:`0.5px solid ${C.border}`,color:C.text,fontFamily:"'Geist Mono',monospace",fontSize:14,padding:`10px 12px 10px ${curr.symbol.length>1?"36px":"26px"}`,borderRadius:8,outline:"none"}}
+                    onFocus={e=>e.target.style.borderColor=C.accentBorder} onBlur={e=>e.target.style.borderColor=C.border}/>
+                </div>
+              </div>
+              <div>
+                <label style={{fontSize:12,color:C.textMuted,display:"block",marginBottom:6}}>Frete ({curr.symbol})</label>
+                <div style={{position:"relative"}}>
+                  <span style={{position:"absolute",left:10,top:"50%",transform:"translateY(-50%)",fontSize:12,color:C.textDim,fontFamily:"'Geist Mono',monospace"}}>{curr.symbol}</span>
+                  <input type="number" step="0.01" min="0" value={editing.frete} onChange={e=>setEditing(p=>({...p,frete:e.target.value}))}
+                    placeholder="0,00"
+                    style={{width:"100%",background:"#0d0d0d",border:`0.5px solid ${C.border}`,color:C.text,fontFamily:"'Geist Mono',monospace",fontSize:14,padding:`10px 12px 10px ${curr.symbol.length>1?"36px":"26px"}`,borderRadius:8,outline:"none"}}
+                    onFocus={e=>e.target.style.borderColor=C.accentBorder} onBlur={e=>e.target.style.borderColor=C.border}/>
+                </div>
+              </div>
+            </div>
+
+            {/* Total */}
             {(parseFloat(editing.custo)||0)>0&&(
-              <div style={{padding:"10px 14px",background:C.greenDim,border:"0.5px solid rgba(34,197,94,0.2)",borderRadius:9,fontSize:12,color:C.green,display:"flex",justifyContent:"space-between"}}>
+              <div style={{padding:"10px 14px",background:C.greenDim,border:"0.5px solid rgba(34,197,94,0.2)",borderRadius:9,fontSize:12,color:C.green,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
                 <span>Custo total por unidade:</span>
-                <strong style={{fontFamily:"'Geist Mono',monospace"}}>R$ {((parseFloat(editing.custo)||0)+(parseFloat(editing.frete)||0)).toFixed(2).replace(".",",")}</strong>
+                <strong style={{fontFamily:"'Geist Mono',monospace"}}>{curr.flag} {curr.symbol} {((parseFloat(editing.custo)||0)+(parseFloat(editing.frete)||0)).toFixed(2).replace(".",",")}</strong>
               </div>
             )}
             <div style={{display:"flex",gap:8,justifyContent:"flex-end"}}>
@@ -2858,7 +2905,8 @@ const CustosProdutosPage=({sb,user})=>{
             </div>
           </div>
         </Modal>
-      )}
+        );
+      })()}
     </div>
   );
 };
