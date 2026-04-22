@@ -2581,21 +2581,40 @@ const YoutubePage=({sb,user})=>{
 
       {/* RESULTADO */}
       {result&&result.url&&(
-        <div className="fade-in" style={{marginTop:16,borderRadius:12,overflow:"hidden"}}>
-          <div style={{background:C.greenDim,border:"0.5px solid rgba(34,197,94,0.3)",borderRadius:result.note?0:12,padding:16,display:"flex",alignItems:"center",justifyContent:"space-between",gap:12,flexWrap:"wrap"}}>
+        <div className="fade-in" style={{marginTop:16,display:"flex",flexDirection:"column",gap:8}}>
+          {/* Vídeo */}
+          <div style={{background:C.greenDim,border:"0.5px solid rgba(34,197,94,0.3)",borderRadius:12,padding:16,display:"flex",alignItems:"center",justifyContent:"space-between",gap:12,flexWrap:"wrap"}}>
             <div style={{display:"flex",alignItems:"center",gap:10}}>
               <div style={{width:32,height:32,borderRadius:8,background:"rgba(34,197,94,0.2)",display:"flex",alignItems:"center",justifyContent:"center",color:C.green,flexShrink:0}}><Icon name="check" size={14}/></div>
               <div>
-                <div style={{fontSize:13,fontWeight:500,color:C.green}}>Pronto! {result.quality&&<span style={{fontSize:11,fontFamily:"'Geist Mono',monospace",background:"rgba(34,197,94,0.15)",padding:"1px 6px",borderRadius:4,marginLeft:4}}>{result.quality}</span>}</div>
-                {result.title&&<div style={{fontSize:11,color:C.textMuted,marginTop:2,maxWidth:280,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{result.title}</div>}
+                <div style={{fontSize:13,fontWeight:500,color:C.green}}>
+                  Vídeo {result.quality&&<span style={{fontSize:11,fontFamily:"'Geist Mono',monospace",background:"rgba(34,197,94,0.15)",padding:"1px 6px",borderRadius:4,marginLeft:4}}>{result.quality}</span>}
+                  {result.hasAudio&&<span style={{fontSize:10,color:C.textMuted,marginLeft:6}}>· com áudio</span>}
+                </div>
+                {result.title&&<div style={{fontSize:11,color:C.textMuted,marginTop:2,maxWidth:260,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{result.title}</div>}
               </div>
             </div>
             <a href={result.url} target="_blank" rel="noreferrer"
               style={{padding:"9px 16px",borderRadius:8,background:"rgba(34,197,94,0.25)",border:"0.5px solid rgba(34,197,94,0.4)",color:C.green,fontSize:13,fontWeight:600,textDecoration:"none",whiteSpace:"nowrap",display:"flex",alignItems:"center",gap:6}}>
-              <Icon name="download" size={13}/>Baixar
+              <Icon name="download" size={13}/>Baixar Vídeo
             </a>
           </div>
-          {result.note&&<div style={{background:C.amberDim,border:"0.5px solid rgba(245,158,11,0.3)",borderTop:"none",borderBottomLeftRadius:12,borderBottomRightRadius:12,padding:"8px 16px",fontSize:11,color:C.amber,display:"flex",alignItems:"center",gap:6}}><Icon name="alert" size={11}/>⚠️ {result.note} — use 360p para vídeo com áudio.</div>}
+          {/* Áudio separado quando qualidade não tem áudio */}
+          {!result.hasAudio&&result.audioUrl&&(
+            <div style={{background:C.amberDim,border:"0.5px solid rgba(245,158,11,0.3)",borderRadius:12,padding:16,display:"flex",alignItems:"center",justifyContent:"space-between",gap:12,flexWrap:"wrap"}}>
+              <div style={{display:"flex",alignItems:"center",gap:10}}>
+                <div style={{width:32,height:32,borderRadius:8,background:"rgba(245,158,11,0.2)",display:"flex",alignItems:"center",justifyContent:"center",color:C.amber,flexShrink:0}}><Icon name="music" size={14}/></div>
+                <div>
+                  <div style={{fontSize:13,fontWeight:500,color:C.amber}}>Áudio separado</div>
+                  <div style={{fontSize:11,color:C.textMuted,marginTop:2}}>YouTube separa áudio/vídeo em {result.quality} — baixe os dois</div>
+                </div>
+              </div>
+              <a href={result.audioUrl} target="_blank" rel="noreferrer"
+                style={{padding:"9px 16px",borderRadius:8,background:"rgba(245,158,11,0.2)",border:"0.5px solid rgba(245,158,11,0.4)",color:C.amber,fontSize:13,fontWeight:600,textDecoration:"none",whiteSpace:"nowrap",display:"flex",alignItems:"center",gap:6}}>
+                <Icon name="download" size={13}/>Baixar Áudio
+              </a>
+            </div>
+          )}
         </div>
       )}
 
