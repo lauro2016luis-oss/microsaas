@@ -2471,18 +2471,15 @@ const YoutubePage=({sb,user})=>{
   const {show,El}=useToast();
   const SUPA_FUNCTIONS_URL="https://vvdhnwknluxsaxcqvlyh.supabase.co/functions/v1";
 
-  const getSession=async()=>{const{data:{session}}=await sb.auth.getSession();return session;};
-
   const isShorts=(u)=>u.includes("/shorts/");
 
   const download=async()=>{
     if(!url.trim()){setErr("Cole uma URL do YouTube");return;}
     setErr("");setResult(null);setLoading(true);
     try{
-      const session=await getSession();
       const res=await fetch(`${SUPA_FUNCTIONS_URL}/youtube-download`,{
         method:"POST",
-        headers:{Authorization:"Bearer "+session.access_token,"Content-Type":"application/json"},
+        headers:{"Content-Type":"application/json"},
         body:JSON.stringify({url:url.trim(),quality,audio_only:audioOnly}),
       });
       const data=await res.json();
