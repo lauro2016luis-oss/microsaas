@@ -2655,6 +2655,8 @@ const CustosProdutosPage=({sb,user})=>{
   const [search,setSearch]=useState("");
   const [editing,setEditing]=useState(null); // {product_id, custo, frete, currency}
   const [saving,setSaving]=useState(false);
+  const [filterVendas,setFilterVendas]=useState(false);
+  const [filterSemCusto,setFilterSemCusto]=useState(false);
   const {show,El}=useToast();
 
   // Carrega lojas conectadas
@@ -2720,7 +2722,11 @@ const CustosProdutosPage=({sb,user})=>{
     setSaving(false);
   };
 
-  const filtered=products.filter(p=>p.title?.toLowerCase().includes(search.toLowerCase()));
+  const withSales=products.filter(p=>p.total_sales>0).length;
+  const filtered=products
+    .filter(p=>p.title?.toLowerCase().includes(search.toLowerCase()))
+    .filter(p=>!filterVendas||p.total_sales>0)
+    .filter(p=>!filterSemCusto||!(costs[p.product_id]&&(costs[p.product_id].custo>0||costs[p.product_id].frete>0)));
   const fmtDate=d=>{if(!d)return"—";const dt=new Date(d);return`${dt.toLocaleDateString("pt-BR")} às ${dt.toLocaleTimeString("pt-BR",{hour:"2-digit",minute:"2-digit"})}`;};
 
   const selStyle={background:"#0d0d0d",border:`0.5px solid ${C.border}`,color:C.text,fontFamily:"'Geist',sans-serif",fontSize:13,padding:"8px 12px",borderRadius:8,outline:"none",cursor:"pointer"};
@@ -2741,7 +2747,7 @@ const CustosProdutosPage=({sb,user})=>{
         <div style={{padding:40,textAlign:"center",color:C.textMuted,fontSize:13}}>Nenhuma loja Shopify conectada. Vá em Configurações → Integrações.</div>
       ):(
         <>
-          <div style={{display:"flex",gap:10,marginBottom:20,alignItems:"center",flexWrap:"wrap"}}>
+          <div style={{display:"flex",gap:10,marginBottom:12,alignItems:"center",flexWrap:"wrap"}}>
             <select value={selDomain} onChange={e=>setSelDomain(e.target.value)} style={{...selStyle,minWidth:240}}>
               {shopConfigs.map(c=><option key={c.shop_domain} value={c.shop_domain}>{c.store_name?`${c.store_name} (${c.shop_domain})`:c.shop_domain}</option>)}
             </select>
@@ -2749,10 +2755,47 @@ const CustosProdutosPage=({sb,user})=>{
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
               Atualizar
             </button>
-            <div style={{position:"relative",flex:1,maxWidth:320}}>
+            <div style={{position:"relative",flex:1,maxWidth:280}}>
               <span style={{position:"absolute",left:10,top:"50%",transform:"translateY(-50%)",color:C.textDim}}><Icon name="search" size={13}/></span>
               <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Buscar produto..." style={{width:"100%",background:C.surface,border:`0.5px solid ${C.border}`,color:C.text,fontFamily:"'Geist',sans-serif",fontSize:13,padding:"8px 12px 8px 30px",borderRadius:8,outline:"none"}}/>
             </div>
+          </div>
+
+          {/* FILTROS */}
+          <div style={{display:"flex",gap:8,marginBottom:16,alignItems:"center",flexWrap:"wrap"}}>
+            <span style={{fontSize:11,color:C.textDim,textTransform:"uppercase",letterSpacing:"0.05em",marginRight:4}}>Filtrar:</span>
+            {/* Todos */}
+            <button onClick={()=>{setFilterVendas(false);setFilterSemCusto(false);}}
+              style={{display:"flex",alignItems:"center",gap:5,padding:"5px 11px",borderRadius:20,cursor:"pointer",fontSize:12,fontFamily:"'Geist',sans-serif",transition:"all 0.1s",
+                background:!filterVendas&&!filterSemCusto?C.surface:"transparent",
+                border:`0.5px solid ${!filterVendas&&!filterSemCusto?C.borderHover:C.border}`,
+                color:!filterVendas&&!filterSemCusto?C.text:C.textMuted}}>
+              Todos <span style={{background:"#1a1a1a",padding:"1px 6px",borderRadius:10,fontSize:10,color:C.textDim}}>{products.length}</span>
+            </button>
+            {/* Com vendas */}
+            <button onClick={()=>{setFilterVendas(v=>!v);setFilterSemCusto(false);}}
+              style={{display:"flex",alignItems:"center",gap:5,padding:"5px 11px",borderRadius:20,cursor:"pointer",fontSize:12,fontFamily:"'Geist',sans-serif",transition:"all 0.1s",
+                background:filterVendas?C.greenDim:"transparent",
+                border:`0.5px solid ${filterVendas?"rgba(34,197,94,0.4)":C.border}`,
+                color:filterVendas?C.green:C.textMuted}}>
+              📦 Com Vendas <span style={{background:filterVendas?"rgba(34,197,94,0.15)":"#1a1a1a",padding:"1px 6px",borderRadius:10,fontSize:10,color:filterVendas?C.green:C.textDim}}>{withSales}</span>
+            </button>
+            {/* Sem custo cadastrado */}
+            <button onClick={()=>{setFilterSemCusto(v=>!v);setFilterVendas(false);}}
+              style={{display:"flex",alignItems:"center",gap:5,padding:"5px 11px",borderRadius:20,cursor:"pointer",fontSize:12,fontFamily:"'Geist',sans-serif",transition:"all 0.1s",
+                background:filterSemCusto?C.amberDim:"transparent",
+                border:`0.5px solid ${filterSemCusto?"rgba(245,158,11,0.4)":C.border}`,
+                color:filterSemCusto?C.amber:C.textMuted}}>
+              ⚠️ Sem Custo <span style={{background:filterSemCusto?"rgba(245,158,11,0.15)":"#1a1a1a",padding:"1px 6px",borderRadius:10,fontSize:10,color:filterSemCusto?C.amber:C.textDim}}>{products.filter(p=>!(costs[p.product_id]&&(costs[p.product_id].custo>0||costs[p.product_id].frete>0))).length}</span>
+            </button>
+            {/* Com vendas + sem custo combinado */}
+            <button onClick={()=>{setFilterVendas(true);setFilterSemCusto(true);}}
+              style={{display:"flex",alignItems:"center",gap:5,padding:"5px 11px",borderRadius:20,cursor:"pointer",fontSize:12,fontFamily:"'Geist',sans-serif",transition:"all 0.1s",
+                background:filterVendas&&filterSemCusto?C.accentDim:"transparent",
+                border:`0.5px solid ${filterVendas&&filterSemCusto?C.accent:C.border}`,
+                color:filterVendas&&filterSemCusto?C.accent:C.textMuted}}>
+              🔥 Vendas sem Custo <span style={{background:filterVendas&&filterSemCusto?C.accentDim:"#1a1a1a",padding:"1px 6px",borderRadius:10,fontSize:10,color:filterVendas&&filterSemCusto?C.accent:C.textDim}}>{products.filter(p=>p.total_sales>0&&!(costs[p.product_id]&&(costs[p.product_id].custo>0||costs[p.product_id].frete>0))).length}</span>
+            </button>
             <div style={{fontSize:12,color:C.textMuted,marginLeft:"auto"}}>{filtered.length} produtos · {Object.keys(costs).length} com custo</div>
           </div>
 
@@ -2795,7 +2838,15 @@ const CustosProdutosPage=({sb,user})=>{
                           </div>
                         </td>
                         <td style={{padding:"12px 16px",textAlign:"center",color:C.textMuted,fontSize:12,fontFamily:"'Geist Mono',monospace"}} className="hide-mobile">{p.variants_count}</td>
-                        <td style={{padding:"12px 16px",textAlign:"center",color:p.total_sales>0?C.green:C.textDim,fontSize:12,fontWeight:p.total_sales>0?600:400,fontFamily:"'Geist Mono',monospace"}} className="hide-mobile">{p.total_sales}</td>
+                        <td style={{padding:"12px 16px",textAlign:"center"}} className="hide-mobile">
+                          {p.total_sales>0?(
+                            <span style={{display:"inline-flex",alignItems:"center",gap:4,background:"rgba(34,197,94,0.12)",border:"0.5px solid rgba(34,197,94,0.25)",borderRadius:20,padding:"2px 10px",fontSize:12,fontWeight:600,color:C.green,fontFamily:"'Geist Mono',monospace"}}>
+                              <span style={{fontSize:9,opacity:0.8}}>▲</span>{p.total_sales}
+                            </span>
+                          ):(
+                            <span style={{fontSize:11,color:C.textDim}}>0</span>
+                          )}
+                        </td>
                         <td style={{padding:"12px 16px",textAlign:"center"}}>
                           {hasCost?(
                             <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:2}}>
