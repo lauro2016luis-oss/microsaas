@@ -2575,18 +2575,20 @@ const YoutubePage=({sb,user})=>{
 
       {/* RESULTADO */}
       {result&&result.url&&(
-        <div className="fade-in" style={{marginTop:16,background:C.greenDim,border:"0.5px solid rgba(34,197,94,0.3)",borderRadius:12,padding:16,display:"flex",alignItems:"center",justifyContent:"space-between",gap:12}}>
-          <div style={{display:"flex",alignItems:"center",gap:10}}>
-            <div style={{width:32,height:32,borderRadius:8,background:"rgba(34,197,94,0.2)",display:"flex",alignItems:"center",justifyContent:"center",color:C.green,flexShrink:0}}><Icon name="check" size={14}/></div>
-            <div>
-              <div style={{fontSize:13,fontWeight:500,color:C.green}}>Pronto para baixar!</div>
-              <div style={{fontSize:11,color:C.textMuted,marginTop:2}}>O download deve ter iniciado automaticamente</div>
+        <div className="fade-in" style={{marginTop:16,background:C.greenDim,border:"0.5px solid rgba(34,197,94,0.3)",borderRadius:12,padding:16}}>
+          <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:12,flexWrap:"wrap"}}>
+            <div style={{display:"flex",alignItems:"center",gap:10}}>
+              <div style={{width:32,height:32,borderRadius:8,background:"rgba(34,197,94,0.2)",display:"flex",alignItems:"center",justifyContent:"center",color:C.green,flexShrink:0}}><Icon name="check" size={14}/></div>
+              <div>
+                <div style={{fontSize:13,fontWeight:500,color:C.green}}>Pronto para baixar!</div>
+                {result.title&&<div style={{fontSize:11,color:C.textMuted,marginTop:2,maxWidth:280,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{result.title}</div>}
+              </div>
             </div>
+            <a href={result.url} target="_blank" rel="noreferrer"
+              style={{padding:"9px 16px",borderRadius:8,background:"rgba(34,197,94,0.25)",border:"0.5px solid rgba(34,197,94,0.4)",color:C.green,fontSize:13,fontWeight:600,textDecoration:"none",whiteSpace:"nowrap",display:"flex",alignItems:"center",gap:6}}>
+              <Icon name="download" size={13}/>Baixar
+            </a>
           </div>
-          <a href={result.url} target="_blank" rel="noreferrer"
-            style={{padding:"7px 14px",borderRadius:8,background:"rgba(34,197,94,0.2)",border:"0.5px solid rgba(34,197,94,0.4)",color:C.green,fontSize:12,fontWeight:500,textDecoration:"none",whiteSpace:"nowrap",display:"flex",alignItems:"center",gap:6}}>
-            <Icon name="download" size={12}/>Baixar novamente
-          </a>
         </div>
       )}
 
