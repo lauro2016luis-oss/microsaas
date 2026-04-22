@@ -331,50 +331,62 @@ const Sidebar=({page,setPage,storeName,setStoreName,sb,user})=>{
   ];
   const save=()=>{if(inp.trim())setStoreName(inp.trim());setEditing(false);};
   return (
-    <div style={{width:220,minWidth:220,background:C.surface,borderRight:`0.5px solid ${C.border}`,display:"flex",flexDirection:"column",padding:"20px 12px"}}>
-      <div style={{padding:"4px 12px",marginBottom:28,display:"flex",alignItems:"center",gap:10}}>
-        <div style={{width:30,height:30,borderRadius:8,background:"linear-gradient(135deg,#22c55e 0%,#16a34a 100%)",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,boxShadow:"0 2px 8px rgba(34,197,94,0.35)"}}>
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" fill="white"/></svg>
+    <div style={{width:230,minWidth:230,background:C.surface,borderRight:`0.5px solid ${C.border}`,display:"flex",flexDirection:"column",padding:"16px 10px"}}>
+      {/* Logo */}
+      <div style={{padding:"6px 10px",marginBottom:8,display:"flex",alignItems:"center",gap:10}}>
+        <div style={{width:32,height:32,borderRadius:10,background:"linear-gradient(135deg,#22c55e 0%,#16a34a 100%)",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,boxShadow:"0 2px 10px rgba(34,197,94,0.4)"}}>
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" fill="white"/></svg>
         </div>
         <div>
-          <div style={{fontSize:14,fontWeight:700,color:C.text,letterSpacing:"-0.03em",lineHeight:1}}>Workspace</div>
-          <div style={{fontSize:10,color:C.textMuted,marginTop:2,letterSpacing:"0.04em",textTransform:"uppercase",fontWeight:500}}>Pro</div>
+          <div style={{fontSize:15,fontWeight:700,color:C.text,letterSpacing:"-0.03em",lineHeight:1}}>Workspace</div>
+          <div style={{fontSize:9,color:C.green,marginTop:2,letterSpacing:"0.08em",textTransform:"uppercase",fontWeight:600}}>● Pro</div>
         </div>
       </div>
+
+      {/* Loja ativa - destaque */}
+      <div style={{margin:"4px 0 14px",padding:"10px 12px",borderRadius:12,background:"#0d0d0d",border:`0.5px solid ${C.border}`,cursor:"pointer"}} onClick={()=>{setInp(storeName);setEditing(true);}}>
+        {editing?(
+          <div style={{display:"flex",flexDirection:"column",gap:6}}>
+            <input autoFocus value={inp} onChange={e=>setInp(e.target.value)} onKeyDown={e=>e.key==="Enter"&&save()} style={{background:"#1a1a1a",border:`0.5px solid ${C.accentBorder}`,color:C.text,fontFamily:"'Geist',sans-serif",fontSize:12,padding:"6px 8px",borderRadius:7,outline:"none",width:"100%"}}/>
+            <div style={{display:"flex",gap:4}}>
+              <button onClick={e=>{e.stopPropagation();save();}} style={{flex:1,background:C.accentDim,border:`0.5px solid ${C.accentBorder}`,color:C.accent,fontSize:11,borderRadius:6,padding:"4px 0",cursor:"pointer",fontFamily:"'Geist',sans-serif"}}>Salvar</button>
+              <button onClick={e=>{e.stopPropagation();setEditing(false);}} style={{flex:1,background:"#1a1a1a",border:`0.5px solid ${C.border}`,color:C.textMuted,fontSize:11,borderRadius:6,padding:"4px 0",cursor:"pointer",fontFamily:"'Geist',sans-serif"}}>Cancelar</button>
+            </div>
+          </div>
+        ):(
+          <div style={{display:"flex",alignItems:"center",gap:9}}>
+            <div style={{width:32,height:32,borderRadius:9,background:"linear-gradient(135deg,rgba(124,107,255,0.3) 0%,rgba(124,107,255,0.1) 100%)",display:"flex",alignItems:"center",justifyContent:"center",color:C.accent,flexShrink:0,border:`0.5px solid ${C.accentBorder}`}}><Icon name="store" size={15}/></div>
+            <div style={{flex:1,minWidth:0}}>
+              <div style={{fontSize:10,color:C.textDim,textTransform:"uppercase",letterSpacing:"0.06em",marginBottom:2}}>Loja ativa</div>
+              <div style={{fontSize:13,fontWeight:600,color:C.text,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{storeName}</div>
+            </div>
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={C.textDim} strokeWidth="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+          </div>
+        )}
+      </div>
+
+      {/* Nav */}
       <nav style={{display:"flex",flexDirection:"column",gap:2}}>
         {nav.map(n=>{
           const active=page===n.id;
           return <button key={n.id} onClick={()=>setPage(n.id)}
-            style={{display:"flex",alignItems:"center",gap:10,padding:"8px 12px",borderRadius:8,background:active?C.accentDim:"transparent",color:active?C.accent:C.textMuted,border:`0.5px solid ${active?C.accentBorder:"transparent"}`,cursor:"pointer",fontSize:13,fontFamily:"'Geist',sans-serif",fontWeight:active?500:400,transition:"all 0.15s",textAlign:"left"}}
+            style={{display:"flex",alignItems:"center",gap:10,padding:"9px 12px",borderRadius:10,background:active?C.accentDim:"transparent",color:active?C.accent:C.textMuted,border:`0.5px solid ${active?C.accentBorder:"transparent"}`,cursor:"pointer",fontSize:13,fontFamily:"'Geist',sans-serif",fontWeight:active?600:400,transition:"all 0.12s",textAlign:"left"}}
             onMouseEnter={e=>{if(!active){e.currentTarget.style.background="#161616";e.currentTarget.style.color=C.text;}}}
             onMouseLeave={e=>{if(!active){e.currentTarget.style.background="transparent";e.currentTarget.style.color=C.textMuted;}}}
           ><Icon name={n.icon} size={15}/>{n.label}</button>;
         })}
       </nav>
-      <div style={{marginTop:20,padding:"12px",borderRadius:10,background:"#0d0d0d",border:`0.5px solid ${C.border}`}}>
-        <div style={{fontSize:10,color:C.textDim,marginBottom:8,textTransform:"uppercase",letterSpacing:"0.06em"}}>Link da loja</div>
-        {editing?(
-          <div style={{display:"flex",flexDirection:"column",gap:6}}>
-            <input autoFocus value={inp} onChange={e=>setInp(e.target.value)} onKeyDown={e=>e.key==="Enter"&&save()} style={{background:"#1a1a1a",border:`0.5px solid ${C.accentBorder}`,color:C.text,fontFamily:"'Geist',sans-serif",fontSize:12,padding:"6px 8px",borderRadius:6,outline:"none",width:"100%"}}/>
-            <div style={{display:"flex",gap:4}}>
-              <button onClick={save} style={{flex:1,background:C.accentDim,border:`0.5px solid ${C.accentBorder}`,color:C.accent,fontSize:11,borderRadius:5,padding:"4px 0",cursor:"pointer",fontFamily:"'Geist',sans-serif"}}>Salvar</button>
-              <button onClick={()=>setEditing(false)} style={{flex:1,background:"#1a1a1a",border:`0.5px solid ${C.border}`,color:C.textMuted,fontSize:11,borderRadius:5,padding:"4px 0",cursor:"pointer",fontFamily:"'Geist',sans-serif"}}>Cancelar</button>
-            </div>
-          </div>
-        ):(
-          <div style={{display:"flex",alignItems:"center",gap:8,cursor:"pointer"}} onClick={()=>{setInp(storeName);setEditing(true);}}>
-            <div style={{width:28,height:28,borderRadius:7,background:C.amberDim,display:"flex",alignItems:"center",justifyContent:"center",color:C.amber,flexShrink:0}}><Icon name="store" size={14}/></div>
-            <div style={{flex:1,minWidth:0}}>
-              <div style={{fontSize:12,fontWeight:500,color:C.text,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{storeName}</div>
-              <div style={{fontSize:10,color:C.textMuted}}>clique para editar</div>
-            </div>
-          </div>
-        )}
-      </div>
-      <div style={{marginTop:"auto",padding:"10px 12px",borderRadius:10,background:"#0d0d0d",border:`0.5px solid ${C.border}`,display:"flex",alignItems:"center",gap:8}}>
-        <div style={{width:8,height:8,borderRadius:"50%",background:C.green,flexShrink:0}}/>
-        <div style={{flex:1,fontSize:11,color:C.textMuted,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{user?.email||"conectado"}</div>
-        <button onClick={()=>sb.auth.signOut()} title="Sair" style={{background:"none",border:"none",color:C.textDim,cursor:"pointer",padding:2,display:"flex",alignItems:"center"}}><Icon name="logout" size={14}/></button>
+
+      {/* Footer usuário */}
+      <div style={{marginTop:"auto",padding:"10px 12px",borderRadius:12,background:"#0d0d0d",border:`0.5px solid ${C.border}`,display:"flex",alignItems:"center",gap:8}}>
+        <div style={{width:28,height:28,borderRadius:8,background:"linear-gradient(135deg,#22c55e,#16a34a)",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,fontSize:13,fontWeight:700,color:"#fff"}}>
+          {(user?.email||"U")[0].toUpperCase()}
+        </div>
+        <div style={{flex:1,minWidth:0}}>
+          <div style={{fontSize:11,color:C.textMuted,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{user?.email||"conectado"}</div>
+          <div style={{fontSize:9,color:C.green,marginTop:1}}>● online</div>
+        </div>
+        <button onClick={()=>sb.auth.signOut()} title="Sair" style={{background:"none",border:"none",color:C.textDim,cursor:"pointer",padding:3,display:"flex",alignItems:"center",borderRadius:6}} onMouseEnter={e=>e.currentTarget.style.color=C.red} onMouseLeave={e=>e.currentTarget.style.color=C.textDim}><Icon name="logout" size={14}/></button>
       </div>
     </div>
   );
@@ -1279,74 +1291,124 @@ function main() {
         </Modal>
       )}
 
+      {/* FILTROS MODERNOS */}
+      {(()=>{
+        const [showLojaDD,setShowLojaDD]=useState(false);
+        const [showMoedaDD,setShowMoedaDD]=useState(false);
+        const moedaFlags={"BRL":"🇧🇷","USD":"🇺🇸","EUR":"🇪🇺","GBP":"🇬🇧"};
+        return(
+          <div style={{display:"flex",gap:10,marginBottom:20,alignItems:"center",flexWrap:"wrap",padding:"10px 14px",background:C.surface,borderRadius:16,border:`0.5px solid ${C.border}`}}>
+            {/* Seletor de loja - dropdown bonito */}
+            <div style={{position:"relative"}}>
+              <button onClick={()=>{setShowLojaDD(v=>!v);setShowMoedaDD(false);}}
+                style={{display:"flex",alignItems:"center",gap:7,padding:"6px 12px",borderRadius:10,background:"#161616",border:`0.5px solid ${C.border}`,color:C.text,cursor:"pointer",fontSize:13,fontFamily:"'Geist',sans-serif",fontWeight:500,gap:8}}>
+                <span style={{width:8,height:8,borderRadius:"50%",background:C.green,flexShrink:0,boxShadow:"0 0 6px rgba(34,197,94,0.6)"}}/>
+                <span>{filtroLoja==="Todas"?"Todas as lojas":filtroLoja}</span>
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="6 9 12 15 18 9"/></svg>
+              </button>
+              {showLojaDD&&(
+                <div className="fade-in" style={{position:"absolute",top:"calc(100% + 6px)",left:0,zIndex:300,background:"#161616",border:`0.5px solid ${C.border}`,borderRadius:12,padding:6,minWidth:200,boxShadow:"0 8px 32px rgba(0,0,0,0.6)"}}>
+                  {["Todas",...lojasCad.map(l=>l.nome)].map(nome=>(
+                    <button key={nome} onClick={()=>{setFiltroLoja(nome);setShowLojaDD(false);}}
+                      style={{display:"flex",alignItems:"center",gap:8,width:"100%",padding:"8px 12px",background:filtroLoja===nome?C.accentDim:"transparent",border:"none",borderRadius:8,cursor:"pointer",color:filtroLoja===nome?C.accent:C.text,fontSize:13,fontFamily:"'Geist',sans-serif",textAlign:"left"}}>
+                      <span style={{width:7,height:7,borderRadius:"50%",background:filtroLoja===nome?C.accent:C.textDim,flexShrink:0}}/>
+                      {nome==="Todas"?"Todas as lojas":nome}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Seletor de moeda */}
+            <div style={{position:"relative"}}>
+              <button onClick={()=>{setShowMoedaDD(v=>!v);setShowLojaDD(false);}}
+                style={{display:"flex",alignItems:"center",gap:7,padding:"6px 12px",borderRadius:10,background:"#161616",border:`0.5px solid ${C.border}`,color:C.text,cursor:"pointer",fontSize:13,fontFamily:"'Geist',sans-serif",fontWeight:500}}>
+                <span>{moedaFlags[filtroMoeda]||"💱"}</span>
+                <span>{filtroMoeda}</span>
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="6 9 12 15 18 9"/></svg>
+              </button>
+              {showMoedaDD&&(
+                <div className="fade-in" style={{position:"absolute",top:"calc(100% + 6px)",left:0,zIndex:300,background:"#161616",border:`0.5px solid ${C.border}`,borderRadius:12,padding:6,minWidth:130,boxShadow:"0 8px 32px rgba(0,0,0,0.6)"}}>
+                  {moedas.map(m=>(
+                    <button key={m} onClick={()=>{setFiltroMoeda(m);setShowMoedaDD(false);}}
+                      style={{display:"flex",alignItems:"center",gap:8,width:"100%",padding:"8px 12px",background:filtroMoeda===m?C.accentDim:"transparent",border:"none",borderRadius:8,cursor:"pointer",color:filtroMoeda===m?C.accent:C.text,fontSize:13,fontFamily:"'Geist',sans-serif"}}>
+                      <span>{moedaFlags[m]||"💱"}</span><span style={{fontWeight:filtroMoeda===m?600:400}}>{m}</span>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Status câmbio */}
+            <span style={{fontSize:11,color:taxaInfo.carregando?C.amber:taxaInfo.atualizado==="offline"?C.red:C.green,fontFamily:"'Geist Mono',monospace",display:"flex",alignItems:"center",gap:5,padding:"4px 10px",borderRadius:8,background:taxaInfo.carregando?"rgba(245,158,11,0.08)":taxaInfo.atualizado==="offline"?"rgba(239,68,68,0.08)":"rgba(34,197,94,0.08)"}}>
+              <span style={{width:6,height:6,borderRadius:"50%",background:taxaInfo.carregando?C.amber:taxaInfo.atualizado==="offline"?C.red:C.green}}/>
+              {taxaInfo.carregando?"Buscando câmbio...":taxaInfo.atualizado==="offline"?"Câmbio offline":`Câmbio ${taxaInfo.atualizado}`}
+            </span>
+
+            {/* Chips de período */}
+            <div style={{display:"flex",gap:5,flexWrap:"wrap",marginLeft:"auto",position:"relative"}}>
+              {periodos.map(p=>(
+                <button key={p.id} onClick={()=>setFiltroPeriodo(p.id)}
+                  style={{padding:"5px 13px",borderRadius:20,fontSize:12,fontFamily:"'Geist',sans-serif",fontWeight:500,cursor:"pointer",transition:"all 0.15s",
+                    background:filtroPeriodo===p.id?C.accentDim:"transparent",
+                    color:filtroPeriodo===p.id?C.accent:C.textMuted,
+                    border:`0.5px solid ${filtroPeriodo===p.id?C.accentBorder:C.border}`}}>
+                  {p.label}
+                </button>
+              ))}
+              {filtroPeriodo==="custom"&&(
+                <div className="fade-in" style={{position:"absolute",top:"calc(100% + 8px)",right:0,zIndex:200,background:"#161616",border:`0.5px solid ${C.accentBorder}`,borderRadius:14,padding:16,minWidth:280,boxShadow:"0 8px 32px rgba(0,0,0,0.5)"}}>
+                  <div style={{fontSize:12,fontWeight:600,color:C.text,marginBottom:12}}>Selecionar período</div>
+                  <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:12}}>
+                    <div><label style={{fontSize:11,color:C.textMuted,display:"block",marginBottom:5}}>Data início</label>
+                      <input type="date" value={filtroDataInicio} onChange={e=>setFiltroDataInicio(e.target.value)} style={{background:"#0d0d0d",border:`0.5px solid ${C.border}`,color:C.text,fontFamily:"'Geist Mono',monospace",fontSize:12,padding:"7px 10px",borderRadius:8,outline:"none",width:"100%"}}/></div>
+                    <div><label style={{fontSize:11,color:C.textMuted,display:"block",marginBottom:5}}>Data fim</label>
+                      <input type="date" value={filtroDataFim} onChange={e=>setFiltroDataFim(e.target.value)} style={{background:"#0d0d0d",border:`0.5px solid ${C.border}`,color:C.text,fontFamily:"'Geist Mono',monospace",fontSize:12,padding:"7px 10px",borderRadius:8,outline:"none",width:"100%"}}/></div>
+                  </div>
+                  {filtroDataInicio&&filtroDataFim&&<div style={{fontSize:11,color:C.green,background:C.greenDim,padding:"6px 10px",borderRadius:7,border:"0.5px solid rgba(34,197,94,0.2)",marginBottom:8}}>✅ {filtroDataInicio.split("-").reverse().join("/")} → {filtroDataFim.split("-").reverse().join("/")}</div>}
+                  <div style={{display:"flex",gap:6,justifyContent:"flex-end"}}>
+                    <button onClick={()=>{setFiltroDataInicio("");setFiltroDataFim("");}} style={{fontSize:11,padding:"5px 10px",borderRadius:7,background:"transparent",border:`0.5px solid ${C.border}`,color:C.textMuted,cursor:"pointer",fontFamily:"'Geist',sans-serif"}}>Limpar</button>
+                    <button onClick={()=>setFiltroPeriodo("total")} style={{fontSize:11,padding:"5px 10px",borderRadius:7,background:C.accentDim,border:`0.5px solid ${C.accentBorder}`,color:C.accent,cursor:"pointer",fontFamily:"'Geist',sans-serif"}}>Fechar</button>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        );
+      })()}
+
       {/* KPI CARDS */}
-      <div className="grid-kpi-4">
+      <div className="grid-kpi-4" style={{marginBottom:16}}>
         {[
-          {l:`💰 Lucro · ${periodoLabel}`,v:kpiLucro,c:kpiLucro>=0?C.green:C.red},
-          {l:`🧾 Faturamento · ${periodoLabel}`,v:kpiFat,c:C.accent},
-          {l:`📢 Gasto em Ads · ${periodoLabel}`,v:kpiAds,c:C.red},
-          {l:"📈 Lucro Total (tudo)",v:lucroTotal,c:lucroTotal>=0?C.green:C.red},
+          {label:"Lucro",sub:periodoLabel,v:kpiLucro,c:kpiLucro>=0?C.green:C.red,bg:kpiLucro>=0?"rgba(34,197,94,0.1)":"rgba(239,68,68,0.1)",border:kpiLucro>=0?"rgba(34,197,94,0.25)":"rgba(239,68,68,0.25)",icon:<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>,icoBg:"rgba(34,197,94,0.15)",icoColor:C.green,featured:true},
+          {label:"Faturamento",sub:periodoLabel,v:kpiFat,c:C.accent,bg:"transparent",border:C.border,icon:<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>,icoBg:"rgba(124,107,255,0.15)",icoColor:C.accent},
+          {label:"Gasto em Ads",sub:periodoLabel,v:kpiAds,c:C.red,bg:"transparent",border:C.border,icon:<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>,icoBg:"rgba(239,68,68,0.15)",icoColor:C.red},
+          {label:"Lucro Total",sub:"tudo",v:lucroTotal,c:lucroTotal>=0?C.green:C.red,bg:"transparent",border:C.border,icon:<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>,icoBg:"rgba(59,130,246,0.15)",icoColor:C.blue},
         ].map((s,i)=>(
-          <div key={i} style={{background:C.surface,border:`0.5px solid ${C.border}`,borderRadius:12,padding:"18px 20px"}}>
-            <div style={{fontSize:11,color:C.textMuted,marginBottom:10,textTransform:"uppercase",letterSpacing:"0.05em"}}>{s.l}</div>
-            <div style={{fontSize:"clamp(16px,3vw,24px)",fontWeight:600,color:s.c,letterSpacing:"-0.02em",fontFamily:"'Geist Mono',monospace",wordBreak:"break-all",...pv}}>{fmtVal(s.v)}</div>
+          <div key={i} style={{background:s.featured?s.bg:C.surface,border:`0.5px solid ${s.featured?s.border:C.border}`,borderRadius:18,padding:"20px 22px",position:"relative",overflow:"hidden"}}>
+            {s.featured&&<div style={{position:"absolute",inset:0,background:"linear-gradient(135deg,rgba(34,197,94,0.08) 0%,transparent 60%)",pointerEvents:"none"}}/>}
+            <div style={{display:"flex",alignItems:"flex-start",justifyContent:"space-between",marginBottom:14}}>
+              <div>
+                <div style={{fontSize:12,color:s.featured?s.c:C.textMuted,fontWeight:500,marginBottom:2}}>{s.label}</div>
+                <div style={{fontSize:10,color:s.featured?s.c:C.textDim,opacity:0.7,textTransform:"uppercase",letterSpacing:"0.05em"}}>{s.sub}</div>
+              </div>
+              <div style={{width:38,height:38,borderRadius:12,background:s.icoBg,display:"flex",alignItems:"center",justifyContent:"center",color:s.icoColor,flexShrink:0}}>
+                {s.icon}
+              </div>
+            </div>
+            <div style={{fontSize:"clamp(18px,2.5vw,26px)",fontWeight:700,color:s.c,letterSpacing:"-0.03em",fontFamily:"'Geist Mono',monospace",wordBreak:"break-all",...pv}}>
+              {fmtVal(s.v)}
+            </div>
           </div>
         ))}
       </div>
 
-      {/* FILTROS */}
-      <div style={{display:"flex",gap:8,marginBottom:20,alignItems:"center",flexWrap:"wrap",padding:"12px 16px",background:C.surface,borderRadius:12,border:`0.5px solid ${C.border}`}}>
-        <span style={{fontSize:12,color:C.textMuted}}>Loja:</span>
-        <select value={filtroLoja} onChange={e=>setFiltroLoja(e.target.value)} style={{background:"#1a1a1a",border:`0.5px solid ${C.border}`,color:C.text,fontFamily:"'Geist',sans-serif",fontSize:12,padding:"5px 10px",borderRadius:7,cursor:"pointer",outline:"none"}}>
-          <option>Todas</option>
-          {lojasCad.map(l=><option key={l.id} value={l.nome}>{l.nome}</option>)}
-        </select>
-        <select value={filtroMoeda} onChange={e=>setFiltroMoeda(e.target.value)} style={{background:"#1a1a1a",border:`0.5px solid ${C.border}`,color:C.text,fontFamily:"'Geist',sans-serif",fontSize:12,padding:"5px 10px",borderRadius:7,cursor:"pointer",outline:"none"}}>
-          {moedas.map(m=><option key={m}>{m}</option>)}
-        </select>
-        <span style={{fontSize:11,color:taxaInfo.carregando?C.amber:taxaInfo.atualizado==="offline"?C.red:C.green,fontFamily:"'Geist Mono',monospace",display:"flex",alignItems:"center",gap:4}}>
-          {taxaInfo.carregando?"⏳ buscando câmbio...":taxaInfo.atualizado==="offline"?"⚠ câmbio offline":`● câmbio ${taxaInfo.atualizado}`}
-        </span>
-        <div style={{display:"flex",gap:4,flexWrap:"wrap",position:"relative"}}>
-          {periodos.map(p=>(
-            <button key={p.id} onClick={()=>setFiltroPeriodo(p.id)} style={{padding:"5px 12px",borderRadius:7,fontSize:12,fontFamily:"'Geist',sans-serif",fontWeight:500,cursor:"pointer",background:filtroPeriodo===p.id?C.accentDim:"transparent",color:filtroPeriodo===p.id?C.accent:C.textMuted,border:`0.5px solid ${filtroPeriodo===p.id?C.accentBorder:C.border}`,transition:"all 0.15s"}}>{p.label}</button>
-          ))}
-          {/* Popover de período personalizado */}
-          {filtroPeriodo==="custom"&&(
-            <div className="fade-in" style={{position:"absolute",top:"calc(100% + 8px)",left:0,zIndex:200,background:"#161616",border:`0.5px solid ${C.accentBorder}`,borderRadius:12,padding:16,minWidth:280,boxShadow:"0 8px 32px rgba(0,0,0,0.5)"}}>
-              <div style={{fontSize:12,fontWeight:500,color:C.text,marginBottom:12}}>Selecionar período</div>
-              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:12}}>
-                <div>
-                  <label style={{fontSize:11,color:C.textMuted,display:"block",marginBottom:5}}>Data início</label>
-                  <input type="date" value={filtroDataInicio} onChange={e=>setFiltroDataInicio(e.target.value)}
-                    style={{background:"#0d0d0d",border:`0.5px solid ${C.border}`,color:C.text,fontFamily:"'Geist Mono',monospace",fontSize:12,padding:"7px 10px",borderRadius:7,outline:"none",width:"100%"}}/>
-                </div>
-                <div>
-                  <label style={{fontSize:11,color:C.textMuted,display:"block",marginBottom:5}}>Data fim</label>
-                  <input type="date" value={filtroDataFim} onChange={e=>setFiltroDataFim(e.target.value)}
-                    style={{background:"#0d0d0d",border:`0.5px solid ${C.border}`,color:C.text,fontFamily:"'Geist Mono',monospace",fontSize:12,padding:"7px 10px",borderRadius:7,outline:"none",width:"100%"}}/>
-                </div>
-              </div>
-              {filtroDataInicio&&filtroDataFim&&(
-                <div style={{fontSize:11,color:C.green,background:C.greenDim,padding:"6px 10px",borderRadius:6,border:"0.5px solid rgba(34,197,94,0.2)",marginBottom:8}}>
-                  ✅ {filtroDataInicio.split("-").reverse().join("/")} → {filtroDataFim.split("-").reverse().join("/")}
-                </div>
-              )}
-              <div style={{display:"flex",gap:6,justifyContent:"flex-end"}}>
-                <button onClick={()=>{setFiltroDataInicio("");setFiltroDataFim("");}} style={{fontSize:11,padding:"5px 10px",borderRadius:6,background:"transparent",border:`0.5px solid ${C.border}`,color:C.textMuted,cursor:"pointer",fontFamily:"'Geist',sans-serif"}}>Limpar</button>
-                <button onClick={()=>setFiltroPeriodo("total")} style={{fontSize:11,padding:"5px 10px",borderRadius:6,background:"transparent",border:`0.5px solid ${C.border}`,color:C.textMuted,cursor:"pointer",fontFamily:"'Geist',sans-serif"}}>Fechar</button>
-              </div>
-            </div>
-          )}
-        </div>
-      </div>
-
       {/* GRÁFICO + LUCRO POR LOJA */}
       <div className="grid-chart">
-        <div style={{background:C.surface,border:`0.5px solid ${C.border}`,borderRadius:12,padding:20}}>
+        <div style={{background:C.surface,border:`0.5px solid ${C.border}`,borderRadius:18,padding:"20px 22px"}}>
           <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:20}}>
-            <h2 style={{fontSize:14,fontWeight:500,color:C.text}}>Performance das Lojas</h2>
-            <span style={{fontSize:11,color:C.textMuted,fontFamily:"'Geist Mono',monospace"}}>Lucro por dia · últimos 30 registros</span>
+            <h2 style={{fontSize:14,fontWeight:600,color:C.text}}>Performance das Lojas</h2>
+            <span style={{fontSize:11,color:C.textMuted,fontFamily:"'Geist Mono',monospace",background:"#161616",padding:"3px 10px",borderRadius:20,border:`0.5px solid ${C.border}`}}>Lucro por dia · 30 dias</span>
           </div>
           <div style={{height:200,position:"relative"}}>
             {chartReady?<LineChart data={graficoDados}/>:<div style={{display:"flex",alignItems:"center",justifyContent:"center",height:"100%"}}><Spinner size={20}/></div>}
@@ -1354,29 +1416,32 @@ function main() {
         </div>
 
         <div style={{display:"flex",flexDirection:"column",gap:12}}>
-          <div style={{background:C.surface,border:`0.5px solid ${C.border}`,borderRadius:12,padding:20,flex:1}}>
-            <h2 style={{fontSize:14,fontWeight:500,color:C.text,marginBottom:14}}>Lucro por loja</h2>
+          <div style={{background:C.surface,border:`0.5px solid ${C.border}`,borderRadius:18,padding:"18px 20px",flex:1}}>
+            <h2 style={{fontSize:14,fontWeight:600,color:C.text,marginBottom:14}}>Lucro por loja</h2>
             {lucroPorLoja.length===0
-              ?<div style={{fontSize:12,color:C.textMuted}}>Nenhum dado ainda</div>
+              ?<div style={{fontSize:12,color:C.textMuted,padding:"16px 0",textAlign:"center"}}>Nenhum dado ainda</div>
               :lucroPorLoja.map(({loja,lucro})=>(
-                <div key={loja} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"9px 0",borderBottom:`0.5px solid ${C.border}`}}>
-                  <span style={{fontSize:12,color:C.text,fontWeight:500,...pv}}>{loja}</span>
-                  <span style={{fontSize:12,fontWeight:600,color:lucro>=0?C.green:C.red,fontFamily:"'Geist Mono',monospace",...pv}}>{fmtVal(lucro)}</span>
+                <div key={loja} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"10px 0",borderBottom:`0.5px solid ${C.border}`}}>
+                  <div style={{display:"flex",alignItems:"center",gap:8}}>
+                    <div style={{width:8,height:8,borderRadius:"50%",background:lucro>=0?C.green:C.red}}/>
+                    <span style={{fontSize:13,color:C.text,fontWeight:500,...pv}}>{loja}</span>
+                  </div>
+                  <span style={{fontSize:13,fontWeight:700,color:lucro>=0?C.green:C.red,fontFamily:"'Geist Mono',monospace",...pv}}>{fmtVal(lucro)}</span>
                 </div>
               ))
             }
           </div>
-          <div style={{background:C.surface,border:`0.5px solid ${C.border}`,borderRadius:12,padding:16}}>
-            <div style={{fontSize:12,fontWeight:500,color:C.text,marginBottom:10}}>Operacional</div>
+          <div style={{background:C.surface,border:`0.5px solid ${C.border}`,borderRadius:18,padding:"16px 18px"}}>
+            <div style={{fontSize:13,fontWeight:600,color:C.text,marginBottom:12}}>Operacional</div>
             {[
-              {l:"Tarefas hoje",v:hojeList.length,c:C.accent},
-              {l:"Atrasadas",v:atrasadas.length,c:atrasadas.length>0?C.red:C.textMuted},
-              {l:"Payments",v:payments.length,c:C.green},
-              {l:"Links",v:links.length,c:C.blue},
+              {l:"Tarefas hoje",v:hojeList.length,c:C.accent,icon:"📋"},
+              {l:"Atrasadas",v:atrasadas.length,c:atrasadas.length>0?C.red:C.textMuted,icon:"⚠️"},
+              {l:"Payments",v:payments.length,c:C.green,icon:"💳"},
+              {l:"Links",v:links.length,c:C.blue,icon:"🔗"},
             ].map(s=>(
-              <div key={s.l} style={{display:"flex",justifyContent:"space-between",fontSize:12,padding:"5px 0",borderBottom:`0.5px solid ${C.border}`}}>
-                <span style={{color:C.textMuted}}>{s.l}</span>
-                <span style={{color:s.c,fontWeight:600}}>{s.v}</span>
+              <div key={s.l} style={{display:"flex",justifyContent:"space-between",alignItems:"center",fontSize:12,padding:"8px 0",borderBottom:`0.5px solid ${C.border}`}}>
+                <span style={{color:C.textMuted,display:"flex",alignItems:"center",gap:6}}><span style={{fontSize:12}}>{s.icon}</span>{s.l}</span>
+                <span style={{color:s.c,fontWeight:700,fontSize:14,fontFamily:"'Geist Mono',monospace"}}>{s.v}</span>
               </div>
             ))}
           </div>
@@ -1384,8 +1449,8 @@ function main() {
       </div>
 
       {/* RESULTADOS RECENTES */}
-      <div style={{background:C.surface,border:`0.5px solid ${C.border}`,borderRadius:12,padding:20,marginBottom:20}}>
-        <h2 style={{fontSize:14,fontWeight:500,color:C.text,marginBottom:16}}>Resultados Recentes</h2>
+      <div style={{background:C.surface,border:`0.5px solid ${C.border}`,borderRadius:18,padding:"20px 22px",marginBottom:20}}>
+        <h2 style={{fontSize:14,fontWeight:600,color:C.text,marginBottom:16}}>Resultados Recentes</h2>
         {recentes.length===0?(
           <div style={{textAlign:"center",padding:"24px 0",color:C.textDim,fontSize:13}}>Nenhum resultado ainda. Clique em "Registrar Resultado" para começar.</div>
         ):(
@@ -1429,8 +1494,8 @@ function main() {
 
       {/* TAREFAS + LINKS */}
       <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(280px,1fr))",gap:16}}>
-        <div style={{background:C.surface,border:`0.5px solid ${C.border}`,borderRadius:12,padding:20}}>
-          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14}}><h2 style={{fontSize:14,fontWeight:500,color:C.text}}>Tarefas de hoje</h2><Btn small onClick={()=>setPage("tarefas")}>Ver todas</Btn></div>
+        <div style={{background:C.surface,border:`0.5px solid ${C.border}`,borderRadius:18,padding:"20px 22px"}}>
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14}}><h2 style={{fontSize:14,fontWeight:600,color:C.text}}>Tarefas de hoje</h2><Btn small onClick={()=>setPage("tarefas")}>Ver todas</Btn></div>
           {hojeList.length===0?<div style={{fontSize:13,color:C.textMuted}}>Nenhuma tarefa para hoje 🎉</div>:hojeList.map(t=>(
             <div key={t.id} style={{display:"flex",alignItems:"center",gap:10,padding:"9px 12px",background:"#0d0d0d",borderRadius:8,border:`0.5px solid ${C.border}`,marginBottom:6}}>
               <div style={{width:6,height:6,borderRadius:"50%",background:{Alta:C.red,Média:C.amber,Baixa:C.blue}[t.priority],flexShrink:0}}/>
@@ -1440,8 +1505,8 @@ function main() {
           ))}
           {atrasadas.length>0&&<div style={{marginTop:8,padding:"8px 12px",background:C.redDim,borderRadius:8,border:"0.5px solid rgba(239,68,68,0.2)",fontSize:12,color:C.red}}>⚠ {atrasadas.length} atrasada{atrasadas.length>1?"s":""}</div>}
         </div>
-        <div style={{background:C.surface,border:`0.5px solid ${C.border}`,borderRadius:12,padding:20}}>
-          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14}}><h2 style={{fontSize:14,fontWeight:500,color:C.text}}>Links salvos</h2><Btn small onClick={()=>setPage("links")}>Ver todos</Btn></div>
+        <div style={{background:C.surface,border:`0.5px solid ${C.border}`,borderRadius:18,padding:"20px 22px"}}>
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14}}><h2 style={{fontSize:14,fontWeight:600,color:C.text}}>Links salvos</h2><Btn small onClick={()=>setPage("links")}>Ver todos</Btn></div>
           {links.length===0?<div style={{fontSize:13,color:C.textMuted}}>Nenhum link ainda</div>:links.slice(0,4).map(l=>(
             <div key={l.id} style={{display:"flex",alignItems:"center",gap:10,padding:"9px 12px",background:"#0d0d0d",borderRadius:8,border:`0.5px solid ${C.border}`,marginBottom:6}}>
               <div style={{width:26,height:26,borderRadius:6,background:C.blueDim,display:"flex",alignItems:"center",justifyContent:"center",color:C.blue,flexShrink:0}}><Icon name="link" size={12}/></div>
