@@ -531,6 +531,8 @@ const PainelPage=({sb,user,setPage,privacyMode})=>{
   const [showSysSettings,setShowSysSettings]=useState(false);
   const [sysForm,setSysForm]=useState({shopify_client_id:"",shopify_client_secret:""});
   const [sysSaving,setSysSaving]=useState(false);
+  const [showLojaDD,setShowLojaDD]=useState(false);
+  const [showMoedaDD,setShowMoedaDD]=useState(false);
   const {show,El}=useToast();
 
   // Detecta retorno de OAuth
@@ -1292,12 +1294,7 @@ function main() {
       )}
 
       {/* FILTROS MODERNOS */}
-      {(()=>{
-        const [showLojaDD,setShowLojaDD]=useState(false);
-        const [showMoedaDD,setShowMoedaDD]=useState(false);
-        const moedaFlags={"BRL":"🇧🇷","USD":"🇺🇸","EUR":"🇪🇺","GBP":"🇬🇧"};
-        return(
-          <div style={{display:"flex",gap:10,marginBottom:20,alignItems:"center",flexWrap:"wrap",padding:"10px 14px",background:C.surface,borderRadius:16,border:`0.5px solid ${C.border}`}}>
+      {(()=>{const moedaFlags={"BRL":"🇧🇷","USD":"🇺🇸","EUR":"🇪🇺","GBP":"🇬🇧"};return(<div style={{display:"flex",gap:10,marginBottom:20,alignItems:"center",flexWrap:"wrap",padding:"10px 14px",background:C.surface,borderRadius:16,border:`0.5px solid ${C.border}`}}>
             {/* Seletor de loja - dropdown bonito */}
             <div style={{position:"relative"}}>
               <button onClick={()=>{setShowLojaDD(v=>!v);setShowMoedaDD(false);}}
@@ -1376,7 +1373,6 @@ function main() {
           </div>
         );
       })()}
-
       {/* KPI CARDS */}
       <div className="grid-kpi-4" style={{marginBottom:16}}>
         {[
