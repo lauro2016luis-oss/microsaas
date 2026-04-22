@@ -324,7 +324,7 @@ const Sidebar=({page,setPage,storeName,setStoreName,sb,user})=>{
     {id:"tarefas",label:"Tarefas",icon:"task"},
     {id:"arquivos",label:"Arquivos",icon:"file"},
     {id:"payments",label:"Payments",icon:"payment"},
-    {id:"youtube",label:"YouTube",icon:"youtube"},
+    {id:"youtube",label:"Baixar Vídeo",icon:"download"},
   ];
   const save=()=>{if(inp.trim())setStoreName(inp.trim());setEditing(false);};
   return (
