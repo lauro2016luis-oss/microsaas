@@ -24,7 +24,10 @@
       "mcp__6e2a353a-6861-407a-8da6-fdb034188deb__get_edge_function",
       "mcp__6e2a353a-6861-407a-8da6-fdb034188deb__execute_sql",
       "mcp__Claude_Preview__preview_start",
-      "Bash(export PATH=\"/opt/homebrew/bin:/usr/local/bin:$PATH\")"
+      "Bash(export PATH=\"/opt/homebrew/bin:/usr/local/bin:$PATH\")",
+      "Bash(curl -s 'https://youtube-media-downloader.p.rapidapi.com/v2/video/details?videoId=oxnhjIN9rDI' -H 'X-RapidAPI-Key: 5bdda02a58msh1e075fdbd70f5dfp1866d6jsnecab8b5aa30e' -H 'X-RapidAPI-Host: youtube-media-downloader.p.rapidapi.com')",
+      "Bash(python3 -m json.tool)",
+      "Bash(python3 -c ':*)"
     ]
   }
 }
