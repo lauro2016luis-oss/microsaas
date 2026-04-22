@@ -509,6 +509,7 @@ const PainelPage=({sb,user,setPage,privacyMode})=>{
   const [shopifyLoading,setShopifyLoading]=useState(false);
   const [syncingId,setSyncingId]=useState(null);
   const [showShopifySettings,setShowShopifySettings]=useState(false);
+  const [shopifyCollapsed,setShopifyCollapsed]=useState(false);
   const [manualDomain,setManualDomain]=useState("");
   const [manualStoreName,setManualStoreName]=useState("");
   const [manualToken,setManualToken]=useState("");
@@ -1042,13 +1043,15 @@ function main() {
 
           {/* ── COLUNA SHOPIFY ── */}
           <div style={{background:C.surface,border:`0.5px solid ${C.border}`,borderRadius:12,overflow:"hidden"}}>
-            <div style={{padding:"12px 16px",borderBottom:`0.5px solid ${C.border}`,display:"flex",alignItems:"center",gap:8}}>
+            <div style={{padding:"12px 16px",borderBottom:shopifyCollapsed?`0.5px solid ${C.border}`:`0.5px solid ${C.border}`,display:"flex",alignItems:"center",gap:8,cursor:"pointer",userSelect:"none"}}
+              onClick={()=>setShopifyCollapsed(v=>!v)}>
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M15.5 3.5C15.5 3.5 15 3 13.5 3C12 3 11 4.5 10.5 5.5L6 6.5L4 20H18L20 6.5L16.5 5.5C16.5 5.5 16.5 3.5 15.5 3.5Z" stroke={C.green} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/><path d="M10.5 5.5C10.5 5.5 11 9 14 9C17 9 16.5 5.5 16.5 5.5" stroke={C.green} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
               <span style={{fontSize:13,fontWeight:500,color:C.text}}>Shopify</span>
-              <span style={{fontSize:11,color:C.textMuted,marginLeft:"auto"}}>{shopifyConfigs.length} loja{shopifyConfigs.length!==1?"s":""}</span>
+              <span style={{fontSize:11,color:C.textMuted}}>{shopifyConfigs.length} loja{shopifyConfigs.length!==1?"s":""}</span>
+              <svg style={{marginLeft:"auto",transition:"transform 0.2s",transform:shopifyCollapsed?"rotate(-90deg)":"rotate(0deg)"}} width="13" height="13" viewBox="0 0 24 24" fill="none" stroke={C.textMuted} strokeWidth="2"><polyline points="6 9 12 15 18 9"/></svg>
             </div>
 
-            {shopifyConfigs.map(cfg=>(
+            {!shopifyCollapsed&&shopifyConfigs.map(cfg=>(
               <div key={cfg.id} style={{padding:"10px 16px",borderBottom:`0.5px solid ${C.border}`,display:"flex",alignItems:"center",gap:8}}>
                 <div style={{flex:1,minWidth:0}}>
                   {editingStoreNameId===cfg.id?(
@@ -1081,13 +1084,15 @@ function main() {
             ))}
 
             {/* Botão adicionar Shopify */}
-            <button onClick={()=>{setManualDomain("");setShowShopifySettings(true);}}
-              style={{width:"100%",padding:"14px 16px",background:"transparent",border:"none",borderTop:shopifyConfigs.length>0?`0.5px solid ${C.border}`:"none",color:C.accent,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:8,fontSize:13,fontWeight:500,fontFamily:"'Geist',sans-serif",transition:"background 0.15s"}}
-              onMouseEnter={e=>e.currentTarget.style.background=C.accentDim}
-              onMouseLeave={e=>e.currentTarget.style.background="transparent"}>
-              <Icon name="plus" size={15}/>
-              {shopifyConfigs.length===0?"Conectar loja Shopify":"Adicionar outra loja"}
-            </button>
+            {!shopifyCollapsed&&(
+              <button onClick={()=>{setManualDomain("");setShowShopifySettings(true);}}
+                style={{width:"100%",padding:"14px 16px",background:"transparent",border:"none",borderTop:shopifyConfigs.length>0?`0.5px solid ${C.border}`:"none",color:C.accent,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:8,fontSize:13,fontWeight:500,fontFamily:"'Geist',sans-serif",transition:"background 0.15s"}}
+                onMouseEnter={e=>e.currentTarget.style.background=C.accentDim}
+                onMouseLeave={e=>e.currentTarget.style.background="transparent"}>
+                <Icon name="plus" size={15}/>
+                {shopifyConfigs.length===0?"Conectar loja Shopify":"Adicionar outra loja"}
+              </button>
+            )}
           </div>
 
           {/* ── COLUNA GOOGLE ADS ── */}
