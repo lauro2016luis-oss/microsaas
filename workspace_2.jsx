@@ -108,6 +108,9 @@ const Icon = ({ name, size=16 }) => {
     alert:<svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>,
     package:<svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><line x1="16.5" y1="9.4" x2="7.5" y2="4.21"/><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>,
     copy:<svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>,
+    youtube:<svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>,
+    download:<svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>,
+    music:<svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>,
   };
   return I[name]||null;
 };
@@ -321,6 +324,7 @@ const Sidebar=({page,setPage,storeName,setStoreName,sb,user})=>{
     {id:"tarefas",label:"Tarefas",icon:"task"},
     {id:"arquivos",label:"Arquivos",icon:"file"},
     {id:"payments",label:"Payments",icon:"payment"},
+    {id:"youtube",label:"YouTube",icon:"youtube"},
   ];
   const save=()=>{if(inp.trim())setStoreName(inp.trim());setEditing(false);};
   return (
@@ -2456,6 +2460,152 @@ const ProdutosPage=({sb,user})=>{
   );
 };
 
+// ─── YOUTUBE DOWNLOADER ───────────────────────────────────────────────────────
+const YoutubePage=({sb,user})=>{
+  const [url,setUrl]=useState("");
+  const [quality,setQuality]=useState("1080");
+  const [audioOnly,setAudioOnly]=useState(false);
+  const [loading,setLoading]=useState(false);
+  const [result,setResult]=useState(null);
+  const [err,setErr]=useState("");
+  const {show,El}=useToast();
+  const SUPA_FUNCTIONS_URL="https://vvdhnwknluxsaxcqvlyh.supabase.co/functions/v1";
+
+  const getSession=async()=>{const{data:{session}}=await sb.auth.getSession();return session;};
+
+  const isShorts=(u)=>u.includes("/shorts/");
+
+  const download=async()=>{
+    if(!url.trim()){setErr("Cole uma URL do YouTube");return;}
+    setErr("");setResult(null);setLoading(true);
+    try{
+      const session=await getSession();
+      const res=await fetch(`${SUPA_FUNCTIONS_URL}/youtube-download`,{
+        method:"POST",
+        headers:{Authorization:"Bearer "+session.access_token,"Content-Type":"application/json"},
+        body:JSON.stringify({url:url.trim(),quality,audio_only:audioOnly}),
+      });
+      const data=await res.json();
+      if(!res.ok||data.error){setErr(data.error||"Erro ao processar");setLoading(false);return;}
+      setResult(data);
+      // Abre link de download automaticamente
+      if(data.url){window.open(data.url,"_blank");}
+    }catch(e){setErr("Erro de conexão: "+e.message);}
+    setLoading(false);
+  };
+
+  const qualities=[
+    {id:"720",label:"720p",sub:"HD"},
+    {id:"1080",label:"1080p",sub:"Full HD"},
+    {id:"4k",label:"4K",sub:"Ultra HD"},
+  ];
+
+  const cleanUrl=()=>{setUrl("");setResult(null);setErr("");};
+
+  return(
+    <div className="page-pad" style={{overflowY:"auto",flex:1}}>
+      {El}
+      {/* HEADER */}
+      <div style={{marginBottom:28}}>
+        <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:6}}>
+          <div style={{width:32,height:32,borderRadius:8,background:"#ff000022",border:"0.5px solid #ff000044",display:"flex",alignItems:"center",justifyContent:"center",color:"#ff4444"}}>
+            <Icon name="youtube" size={16}/>
+          </div>
+          <h1 style={{fontSize:22,fontWeight:600,color:C.text,letterSpacing:"-0.03em"}}>Baixar Vídeo</h1>
+        </div>
+        <p style={{fontSize:13,color:C.textMuted}}>Baixe vídeos do YouTube e Shorts em alta qualidade</p>
+      </div>
+
+      {/* INPUT */}
+      <div style={{background:C.surface,border:`0.5px solid ${C.border}`,borderRadius:14,padding:20,marginBottom:16}}>
+        <label style={{fontSize:12,color:C.textMuted,fontWeight:500,display:"block",marginBottom:8}}>URL do vídeo</label>
+        <div style={{display:"flex",gap:8}}>
+          <div style={{flex:1,position:"relative"}}>
+            <span style={{position:"absolute",left:12,top:"50%",transform:"translateY(-50%)",color:C.textDim}}>
+              <Icon name="youtube" size={14}/>
+            </span>
+            <input
+              value={url}
+              onChange={e=>{setUrl(e.target.value);setErr("");setResult(null);}}
+              placeholder="https://youtube.com/watch?v=... ou /shorts/..."
+              style={{width:"100%",background:"#0d0d0d",border:`0.5px solid ${err?C.red:C.border}`,color:C.text,fontFamily:"'Geist',sans-serif",fontSize:13,padding:"10px 12px 10px 36px",borderRadius:9,outline:"none"}}
+              onFocus={e=>e.target.style.borderColor=C.accentBorder}
+              onBlur={e=>e.target.style.borderColor=err?C.red:C.border}
+              onKeyDown={e=>e.key==="Enter"&&download()}
+            />
+          </div>
+          {url&&<button onClick={cleanUrl} style={{background:"#1a1a1a",border:`0.5px solid ${C.border}`,color:C.textMuted,borderRadius:9,padding:"0 12px",cursor:"pointer"}}><Icon name="x" size={14}/></button>}
+        </div>
+        {url&&isShorts(url)&&<div style={{marginTop:8,display:"flex",alignItems:"center",gap:6,fontSize:11,color:C.accent}}><span>⚡</span> Shorts detectado</div>}
+        {err&&<div style={{marginTop:8,fontSize:12,color:C.red,display:"flex",alignItems:"center",gap:6}}><Icon name="alert" size={12}/>{err}</div>}
+      </div>
+
+      {/* MODO */}
+      <div style={{display:"flex",gap:8,marginBottom:16}}>
+        <button onClick={()=>setAudioOnly(false)} style={{flex:1,padding:"10px 0",borderRadius:10,border:`0.5px solid ${!audioOnly?C.accentBorder:C.border}`,background:!audioOnly?C.accentDim:"transparent",color:!audioOnly?C.accent:C.textMuted,fontSize:13,fontWeight:500,cursor:"pointer",fontFamily:"'Geist',sans-serif",transition:"all 0.15s",display:"flex",alignItems:"center",justifyContent:"center",gap:7}}>
+          <Icon name="video" size={14}/>Vídeo
+        </button>
+        <button onClick={()=>setAudioOnly(true)} style={{flex:1,padding:"10px 0",borderRadius:10,border:`0.5px solid ${audioOnly?"rgba(245,158,11,0.4)":C.border}`,background:audioOnly?C.amberDim:"transparent",color:audioOnly?C.amber:C.textMuted,fontSize:13,fontWeight:500,cursor:"pointer",fontFamily:"'Geist',sans-serif",transition:"all 0.15s",display:"flex",alignItems:"center",justifyContent:"center",gap:7}}>
+          <Icon name="music" size={14}/>Só Áudio (MP3)
+        </button>
+      </div>
+
+      {/* QUALIDADE */}
+      {!audioOnly&&(
+        <div style={{marginBottom:20}}>
+          <label style={{fontSize:12,color:C.textMuted,fontWeight:500,display:"block",marginBottom:10}}>Qualidade</label>
+          <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:10}}>
+            {qualities.map(q=>(
+              <button key={q.id} onClick={()=>setQuality(q.id)}
+                style={{padding:"14px 8px",borderRadius:10,border:`0.5px solid ${quality===q.id?C.accentBorder:C.border}`,background:quality===q.id?C.accentDim:"#0d0d0d",color:quality===q.id?C.accent:C.textMuted,cursor:"pointer",fontFamily:"'Geist',sans-serif",transition:"all 0.15s",textAlign:"center"}}>
+                <div style={{fontSize:16,fontWeight:700,letterSpacing:"-0.02em",marginBottom:3}}>{q.label}</div>
+                <div style={{fontSize:10,opacity:0.7,fontFamily:"'Geist Mono',monospace"}}>{q.sub}</div>
+              </button>
+            ))}
+          </div>
+          <div style={{marginTop:10,fontSize:11,color:C.textDim,display:"flex",alignItems:"center",gap:5}}>
+            <Icon name="alert" size={11}/>
+            4K disponível apenas para vídeos originalmente em 4K
+          </div>
+        </div>
+      )}
+
+      {/* BOTÃO */}
+      <button onClick={download} disabled={loading||!url.trim()}
+        style={{width:"100%",padding:"13px 0",borderRadius:10,background:loading||!url.trim()?"#1a1a1a":C.accent,color:loading||!url.trim()?C.textDim:"#fff",border:"none",fontSize:14,fontWeight:600,cursor:loading||!url.trim()?"not-allowed":"pointer",fontFamily:"'Geist',sans-serif",display:"flex",alignItems:"center",justifyContent:"center",gap:8,transition:"all 0.2s"}}>
+        {loading?<><Spinner size={16}/>Processando...</>:<><Icon name="download" size={16}/>{audioOnly?"Baixar MP3":"Baixar Vídeo"}</>}
+      </button>
+
+      {/* RESULTADO */}
+      {result&&result.url&&(
+        <div className="fade-in" style={{marginTop:16,background:C.greenDim,border:"0.5px solid rgba(34,197,94,0.3)",borderRadius:12,padding:16,display:"flex",alignItems:"center",justifyContent:"space-between",gap:12}}>
+          <div style={{display:"flex",alignItems:"center",gap:10}}>
+            <div style={{width:32,height:32,borderRadius:8,background:"rgba(34,197,94,0.2)",display:"flex",alignItems:"center",justifyContent:"center",color:C.green,flexShrink:0}}><Icon name="check" size={14}/></div>
+            <div>
+              <div style={{fontSize:13,fontWeight:500,color:C.green}}>Pronto para baixar!</div>
+              <div style={{fontSize:11,color:C.textMuted,marginTop:2}}>O download deve ter iniciado automaticamente</div>
+            </div>
+          </div>
+          <a href={result.url} target="_blank" rel="noreferrer"
+            style={{padding:"7px 14px",borderRadius:8,background:"rgba(34,197,94,0.2)",border:"0.5px solid rgba(34,197,94,0.4)",color:C.green,fontSize:12,fontWeight:500,textDecoration:"none",whiteSpace:"nowrap",display:"flex",alignItems:"center",gap:6}}>
+            <Icon name="download" size={12}/>Baixar novamente
+          </a>
+        </div>
+      )}
+
+      {/* INFO */}
+      <div style={{marginTop:24,padding:14,background:"#0d0d0d",borderRadius:10,border:`0.5px solid ${C.border}`}}>
+        <div style={{fontSize:11,color:C.textDim,lineHeight:1.8}}>
+          <div style={{fontWeight:500,color:C.textMuted,marginBottom:6,fontSize:12}}>Formatos suportados</div>
+          <div>📺 Vídeos normais do YouTube (youtube.com/watch)</div>
+          <div>⚡ YouTube Shorts (youtube.com/shorts)</div>
+          <div>🎵 Áudio em MP3 (qualquer vídeo)</div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 // ─── LOJAS ────────────────────────────────────────────────────────────────────
 const LojasPage=({sb,user})=>{
   const [lojas,setLojas]=useState([]);
@@ -2619,6 +2769,7 @@ export default function App() {
     arquivos:<ArquivosPage sb={sb} user={user}/>,
     payments:<PaymentsPage sb={sb} user={user} privacyMode={privacyMode}/>,
     lojas:<LojasPage sb={sb} user={user}/>,
+    youtube:<YoutubePage sb={sb} user={user}/>,
   };
 
   return (
