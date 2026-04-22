@@ -2649,6 +2649,7 @@ const PrecificacaoPage=()=>{
   const [checkout,setCheckout]=useState("2.50");
   const [gateway,setGateway]=useState("5.00");
   const [impostos,setImpostos]=useState("10.00");
+  const [precoCustom,setPrecoCustom]=useState(""); // preço direto desejado
   const [showCurrPicker,setShowCurrPicker]=useState(null); // "custo"|"frete"
 
   const CURR_LIST=[
@@ -2671,6 +2672,18 @@ const PrecificacaoPage=()=>{
     const maxCPA=pf-custoFixo;
     const margem=pf>0?lucro/pf*100:0;
     return{pf,custoFixo,mkt,lucro,maxCPA,margem};
+  };
+
+  const calcFromPrice=(pf)=>{
+    const c=parseFloat(custo)||0;
+    const f=parseFloat(frete)||0;
+    const custoFixo=c+(parseFloat(iof)||0)/100*pf+f+(parseFloat(checkout)||0)/100*pf+(parseFloat(gateway)||0)/100*pf+(parseFloat(impostos)||0)/100*pf;
+    const mkt=(parseFloat(marketing)||0)/100*pf;
+    const lucro=pf-custoFixo-mkt;
+    const maxCPA=pf-custoFixo;
+    const margem=pf>0?lucro/pf*100:0;
+    const markup=c>0?pf/c:0;
+    return{pf,custoFixo,mkt,lucro,maxCPA,margem,markup};
   };
 
   const sym=getCurr(custoCurr).symbol;
@@ -2747,6 +2760,28 @@ const PrecificacaoPage=()=>{
                 </div>
               </div>
             </div>
+          </div>
+
+          {/* Preço Personalizado */}
+          <div style={{...cardStyle,border:`0.5px solid ${C.accentBorder}`,background:C.accentDim}}>
+            <label style={{...labelStyle,color:C.accent}}>🎯 Preço de Venda Desejado</label>
+            <div style={{display:"flex",gap:8,alignItems:"center"}}>
+              <CurrBtn curr={custoCurr} onChange={setCustoCurr} pickerId="precoCustom"/>
+              <input type="number" step="0.01" min="0" value={precoCustom} onChange={e=>setPrecoCustom(e.target.value)}
+                placeholder="Ex: 89.99"
+                style={{...inpStyle,flex:1,borderColor:precoCustom?C.accent:C.border,background:"#0d0d0d"}}
+                onFocus={e=>e.target.style.borderColor=C.accent} onBlur={e=>e.target.style.borderColor=precoCustom?C.accent:C.border}/>
+            </div>
+            {parseFloat(precoCustom)>0&&(()=>{
+              const r=calcFromPrice(parseFloat(precoCustom));
+              return(
+                <div style={{marginTop:10,paddingTop:10,borderTop:`0.5px solid ${C.accentBorder}`,display:"flex",gap:12,flexWrap:"wrap"}}>
+                  <span style={{fontSize:11,color:C.textMuted}}>Markup: <strong style={{color:C.accent,fontFamily:"'Geist Mono',monospace"}}>{r.markup.toFixed(2)}x</strong></span>
+                  <span style={{fontSize:11,color:C.textMuted}}>Lucro: <strong style={{color:r.lucro>0?C.green:C.red,fontFamily:"'Geist Mono',monospace"}}>{sym} {r.lucro.toFixed(2)}</strong></span>
+                  <span style={{fontSize:11,color:C.textMuted}}>Margem: <strong style={{color:r.margem>=25?C.green:r.margem>=15?C.amber:C.red,fontFamily:"'Geist Mono',monospace"}}>{r.margem.toFixed(2)}%</strong></span>
+                </div>
+              );
+            })()}
           </div>
 
           {/* Custos Fixos */}
@@ -2847,6 +2882,27 @@ const PrecificacaoPage=()=>{
                   </tr>
                 </thead>
                 <tbody>
+                  {parseFloat(precoCustom)>0&&(()=>{
+                    const r=calcFromPrice(parseFloat(precoCustom));
+                    return(
+                      <tr style={{borderBottom:`0.5px solid ${C.border}`,background:"rgba(124,107,255,0.08)",borderLeft:`3px solid ${C.accent}`}}>
+                        <td style={{...tdStyle,textAlign:"left"}}>
+                          <div style={{display:"flex",alignItems:"center",gap:6}}>
+                            <span style={{color:C.accent,fontWeight:700}}>{r.markup.toFixed(2)}x</span>
+                            <span style={{fontSize:10,background:C.accentDim,color:C.accent,padding:"1px 8px",borderRadius:4,border:`0.5px solid ${C.accentBorder}`,fontFamily:"'Geist',sans-serif"}}>🎯 seu preço</span>
+                          </div>
+                        </td>
+                        <td style={{...tdStyle,color:C.accent,fontWeight:700}}>{fmt(r.pf)}</td>
+                        <td style={{...tdStyle,color:C.textMuted,textDecoration:"underline dotted",cursor:"help"}} title={`Produto: ${fmt(parseFloat(custo)||0)} | IOF: ${fmt((parseFloat(iof)||0)/100*r.pf)} | Frete: ${fmt(parseFloat(frete)||0)} | Checkout: ${fmt((parseFloat(checkout)||0)/100*r.pf)} | Gateway: ${fmt((parseFloat(gateway)||0)/100*r.pf)} | Impostos: ${fmt((parseFloat(impostos)||0)/100*r.pf)}`}>{fmt(r.custoFixo)}</td>
+                        <td style={{...tdStyle,color:C.textMuted}}>{fmt(r.mkt)}</td>
+                        <td style={{...tdStyle}}>
+                          <span style={{background:r.lucro>0?"rgba(34,197,94,0.15)":C.redDim,color:r.lucro>0?C.green:C.red,padding:"3px 10px",borderRadius:6,fontWeight:600,fontSize:12}}>{fmt(r.lucro)}</span>
+                        </td>
+                        <td style={{...tdStyle,color:C.textMuted}}>{fmt(r.maxCPA)}</td>
+                        <td style={{...tdStyle,fontWeight:700,color:r.margem>=25?C.green:r.margem>=15?C.amber:C.red}}>{r.margem.toFixed(2)}%</td>
+                      </tr>
+                    );
+                  })()}
                   {allMarkups.map(mk=>{
                     const r=calc(mk);
                     const isRec=mk===RECOMMENDED_MARKUP;
@@ -2900,6 +2956,24 @@ const PrecificacaoPage=()=>{
                   </tr>
                 </thead>
                 <tbody>
+                  {parseFloat(precoCustom)>0&&(()=>{
+                    const r=calcFromPrice(parseFloat(precoCustom));
+                    return(
+                      <tr style={{borderBottom:`0.5px solid ${C.border}`,background:"rgba(124,107,255,0.08)",borderLeft:`3px solid ${C.accent}`}}>
+                        <td style={{...tdStyle,textAlign:"left"}}>
+                          <div style={{display:"flex",alignItems:"center",gap:6}}>
+                            <span style={{color:C.accent,fontWeight:700}}>{r.markup.toFixed(2)}x</span>
+                            <span style={{fontSize:10,background:C.accentDim,color:C.accent,padding:"1px 8px",borderRadius:4,border:`0.5px solid ${C.accentBorder}`,fontFamily:"'Geist',sans-serif"}}>🎯 seu preço</span>
+                          </div>
+                        </td>
+                        <td style={{...tdStyle,color:C.accent,fontWeight:700}}>{fmt(r.pf)}</td>
+                        <td style={{...tdStyle,color:C.accent,fontWeight:600}}>{fmt(r.maxCPA)}</td>
+                        <td style={{...tdStyle,color:C.textMuted}}>{fmt(r.maxCPA/10)}</td>
+                        <td style={{...tdStyle,color:C.textMuted}}>{fmt(r.maxCPA/5)}</td>
+                        <td style={{...tdStyle,color:C.textMuted}}>{fmt(r.maxCPA/3)}</td>
+                      </tr>
+                    );
+                  })()}
                   {allMarkups.map(mk=>{
                     const r=calc(mk);
                     const isRec=mk===RECOMMENDED_MARKUP;
