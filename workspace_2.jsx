@@ -322,6 +322,7 @@ const Sidebar=({page,setPage,storeName,setStoreName,sb,user})=>{
     {id:"produtos",label:"Produtos",icon:"package"},
     {id:"links",label:"Links",icon:"link"},
     {id:"tarefas",label:"Tarefas",icon:"task"},
+    {id:"custos",label:"Custos de Produtos",icon:"package"},
     {id:"arquivos",label:"Arquivos",icon:"file"},
     {id:"payments",label:"Payments",icon:"payment"},
     {id:"youtube",label:"Baixar Vídeo",icon:"download"},
@@ -2633,6 +2634,235 @@ const YoutubePage=({sb,user})=>{
   );
 };
 
+// ─── CUSTOS DE PRODUTOS ───────────────────────────────────────────────────────
+const CustosProdutosPage=({sb,user})=>{
+  const [shopConfigs,setShopConfigs]=useState([]);
+  const [selDomain,setSelDomain]=useState("");
+  const [products,setProducts]=useState([]);
+  const [costs,setCosts]=useState({});    // {product_id: {custo, frete, updated_at}}
+  const [loading,setLoading]=useState(false);
+  const [search,setSearch]=useState("");
+  const [editing,setEditing]=useState(null); // {product_id, custo, frete}
+  const [saving,setSaving]=useState(false);
+  const {show,El}=useToast();
+
+  // Carrega lojas conectadas
+  useEffect(()=>{
+    sb.from("shopify_configs").select("shop_domain,store_name").eq("user_id",user.id)
+      .then(({data})=>{
+        const d=data||[];
+        setShopConfigs(d);
+        if(d.length>0) setSelDomain(d[0].shop_domain);
+      });
+  },[]);
+
+  // Carrega custos salvos
+  const loadCosts=async(domain)=>{
+    const{data}=await sb.from("product_costs").select("*").eq("user_id",user.id).eq("shop_domain",domain);
+    const map={};
+    (data||[]).forEach(c=>{map[c.product_id]={custo:c.custo,frete:c.frete,updated_at:c.updated_at};});
+    setCosts(map);
+  };
+
+  // Busca produtos da Shopify
+  const loadProducts=async(domain)=>{
+    if(!domain) return;
+    setLoading(true);setProducts([]);
+    try{
+      const{data:{session}}=await sb.auth.getSession();
+      const res=await fetch(`${SUPA_FUNCTIONS_URL}/shopify-list-products`,{
+        method:"POST",
+        headers:{Authorization:`Bearer ${session.access_token}`,"Content-Type":"application/json"},
+        body:JSON.stringify({shop_domain:domain}),
+      });
+      const data=await res.json();
+      if(data.error){show("Erro: "+data.error,"error");}
+      else{setProducts(data.products||[]);}
+    }catch(e){show("Erro: "+e.message,"error");}
+    setLoading(false);
+  };
+
+  useEffect(()=>{
+    if(selDomain){loadProducts(selDomain);loadCosts(selDomain);}
+  },[selDomain]);
+
+  const saveCost=async()=>{
+    if(!editing) return;
+    setSaving(true);
+    const prod=products.find(p=>p.product_id===editing.product_id);
+    const{error}=await sb.from("product_costs").upsert({
+      user_id:user.id,
+      shop_domain:selDomain,
+      product_id:editing.product_id,
+      product_title:prod?.title||"",
+      product_image:prod?.image||"",
+      custo:parseFloat(editing.custo)||0,
+      frete:parseFloat(editing.frete)||0,
+      updated_at:new Date().toISOString(),
+    },{onConflict:"user_id,shop_domain,product_id"});
+    if(error){show("Erro: "+error.message,"error");}
+    else{
+      setCosts(p=>({...p,[editing.product_id]:{custo:parseFloat(editing.custo)||0,frete:parseFloat(editing.frete)||0,updated_at:new Date().toISOString()}}));
+      show("Custo salvo!");setEditing(null);
+    }
+    setSaving(false);
+  };
+
+  const filtered=products.filter(p=>p.title?.toLowerCase().includes(search.toLowerCase()));
+  const fmt=v=>`R$ ${(v||0).toFixed(2).replace(".",",")}`;
+  const fmtDate=d=>{if(!d)return"—";const dt=new Date(d);return`${dt.toLocaleDateString("pt-BR")} às ${dt.toLocaleTimeString("pt-BR",{hour:"2-digit",minute:"2-digit"})}`;};
+
+  const selStyle={background:"#0d0d0d",border:`0.5px solid ${C.border}`,color:C.text,fontFamily:"'Geist',sans-serif",fontSize:13,padding:"8px 12px",borderRadius:8,outline:"none",cursor:"pointer"};
+
+  return(
+    <div className="page-pad" style={{overflowY:"auto",flex:1}}>
+      {El}
+      {/* HEADER */}
+      <div className="page-header">
+        <div>
+          <h1 style={{fontSize:22,fontWeight:600,color:C.text,letterSpacing:"-0.03em"}}>Custos de Produtos</h1>
+          <p style={{fontSize:13,color:C.textMuted,marginTop:2}}>Defina o custo e frete de cada produto para calcular o lucro real</p>
+        </div>
+      </div>
+
+      {/* SELETOR DE LOJA */}
+      {shopConfigs.length===0?(
+        <div style={{padding:40,textAlign:"center",color:C.textMuted,fontSize:13}}>Nenhuma loja Shopify conectada. Vá em Configurações → Integrações.</div>
+      ):(
+        <>
+          <div style={{display:"flex",gap:10,marginBottom:20,alignItems:"center",flexWrap:"wrap"}}>
+            <select value={selDomain} onChange={e=>setSelDomain(e.target.value)} style={{...selStyle,minWidth:240}}>
+              {shopConfigs.map(c=><option key={c.shop_domain} value={c.shop_domain}>{c.store_name?`${c.store_name} (${c.shop_domain})`:c.shop_domain}</option>)}
+            </select>
+            <button onClick={()=>{loadProducts(selDomain);loadCosts(selDomain);}} style={{display:"flex",alignItems:"center",gap:6,padding:"8px 14px",borderRadius:8,background:C.surface,border:`0.5px solid ${C.border}`,color:C.textMuted,fontSize:13,cursor:"pointer",fontFamily:"'Geist',sans-serif"}}>
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+              Atualizar
+            </button>
+            <div style={{position:"relative",flex:1,maxWidth:320}}>
+              <span style={{position:"absolute",left:10,top:"50%",transform:"translateY(-50%)",color:C.textDim}}><Icon name="search" size={13}/></span>
+              <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Buscar produto..." style={{width:"100%",background:C.surface,border:`0.5px solid ${C.border}`,color:C.text,fontFamily:"'Geist',sans-serif",fontSize:13,padding:"8px 12px 8px 30px",borderRadius:8,outline:"none"}}/>
+            </div>
+            <div style={{fontSize:12,color:C.textMuted,marginLeft:"auto"}}>{filtered.length} produtos · {Object.keys(costs).length} com custo</div>
+          </div>
+
+          {/* TABELA */}
+          {loading?(
+            <div style={{textAlign:"center",padding:60}}><Spinner size={28}/><div style={{fontSize:13,color:C.textMuted,marginTop:12}}>Buscando produtos da Shopify...</div></div>
+          ):(
+            <div className="table-wrap" style={{border:`0.5px solid ${C.border}`,borderRadius:12,overflow:"hidden"}}>
+              <table style={{width:"100%",borderCollapse:"collapse",fontSize:13}}>
+                <thead>
+                  <tr style={{background:"#0d0d0d",borderBottom:`0.5px solid ${C.border}`}}>
+                    <th style={{padding:"10px 16px",textAlign:"left",color:C.textMuted,fontWeight:500,fontSize:11,textTransform:"uppercase",letterSpacing:"0.05em"}}>#</th>
+                    <th style={{padding:"10px 16px",textAlign:"left",color:C.textMuted,fontWeight:500,fontSize:11,textTransform:"uppercase",letterSpacing:"0.05em"}}>Produto</th>
+                    <th style={{padding:"10px 16px",textAlign:"center",color:C.textMuted,fontWeight:500,fontSize:11,textTransform:"uppercase",letterSpacing:"0.05em"}} className="hide-mobile">Variantes</th>
+                    <th style={{padding:"10px 16px",textAlign:"center",color:C.textMuted,fontWeight:500,fontSize:11,textTransform:"uppercase",letterSpacing:"0.05em"}} className="hide-mobile">Vendas</th>
+                    <th style={{padding:"10px 16px",textAlign:"center",color:C.textMuted,fontWeight:500,fontSize:11,textTransform:"uppercase",letterSpacing:"0.05em"}}>Custo</th>
+                    <th style={{padding:"10px 16px",textAlign:"center",color:C.textMuted,fontWeight:500,fontSize:11,textTransform:"uppercase",letterSpacing:"0.05em"}}>Frete</th>
+                    <th style={{padding:"10px 16px",textAlign:"center",color:C.textMuted,fontWeight:500,fontSize:11,textTransform:"uppercase",letterSpacing:"0.05em"}} className="hide-mobile">Último custo</th>
+                    <th style={{padding:"10px 16px",width:40}}></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filtered.length===0&&(
+                    <tr><td colSpan={8} style={{padding:40,textAlign:"center",color:C.textDim,fontSize:13}}>Nenhum produto encontrado</td></tr>
+                  )}
+                  {filtered.map((p,i)=>{
+                    const c=costs[p.product_id];
+                    const hasCost=c&&(c.custo>0||c.frete>0);
+                    return(
+                      <tr key={p.product_id} style={{borderBottom:`0.5px solid ${C.border}`,transition:"background 0.1s"}} onMouseEnter={e=>e.currentTarget.style.background=C.surfaceHover} onMouseLeave={e=>e.currentTarget.style.background="transparent"}>
+                        <td style={{padding:"12px 16px",color:C.textDim,fontSize:11,fontFamily:"'Geist Mono',monospace"}}>#{i+1}</td>
+                        <td style={{padding:"12px 16px"}}>
+                          <div style={{display:"flex",alignItems:"center",gap:10}}>
+                            {p.image?(
+                              <img src={p.image} alt="" style={{width:36,height:36,borderRadius:7,objectFit:"cover",flexShrink:0,border:`0.5px solid ${C.border}`}} onError={e=>e.target.style.display="none"}/>
+                            ):(
+                              <div style={{width:36,height:36,borderRadius:7,background:C.accentDim,flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center"}}><Icon name="package" size={14}/></div>
+                            )}
+                            <span style={{fontSize:13,color:C.text,lineHeight:1.4,maxWidth:260,overflow:"hidden",display:"-webkit-box",WebkitLineClamp:2,WebkitBoxOrient:"vertical"}}>{p.title}</span>
+                          </div>
+                        </td>
+                        <td style={{padding:"12px 16px",textAlign:"center",color:C.textMuted,fontSize:12,fontFamily:"'Geist Mono',monospace"}} className="hide-mobile">{p.variants_count}</td>
+                        <td style={{padding:"12px 16px",textAlign:"center",color:p.total_sales>0?C.green:C.textDim,fontSize:12,fontWeight:p.total_sales>0?600:400,fontFamily:"'Geist Mono',monospace"}} className="hide-mobile">{p.total_sales}</td>
+                        <td style={{padding:"12px 16px",textAlign:"center"}}>
+                          {hasCost?(
+                            <span style={{fontSize:12,fontWeight:600,color:C.text,fontFamily:"'Geist Mono',monospace"}}>{fmt(c.custo)}</span>
+                          ):(
+                            <span style={{fontSize:11,color:C.textDim}}>—</span>
+                          )}
+                        </td>
+                        <td style={{padding:"12px 16px",textAlign:"center"}}>
+                          {hasCost&&c.frete>0?(
+                            <span style={{fontSize:12,color:C.textMuted,fontFamily:"'Geist Mono',monospace"}}>{fmt(c.frete)}</span>
+                          ):(
+                            <span style={{fontSize:11,color:C.textDim}}>—</span>
+                          )}
+                        </td>
+                        <td style={{padding:"12px 16px",textAlign:"center",color:C.textDim,fontSize:11}} className="hide-mobile">{fmtDate(c?.updated_at)}</td>
+                        <td style={{padding:"12px 16px",textAlign:"center"}}>
+                          <button onClick={()=>setEditing({product_id:p.product_id,title:p.title,image:p.image,custo:c?.custo||"",frete:c?.frete||""})}
+                            style={{background:"none",border:"none",color:C.accent,cursor:"pointer",padding:4,display:"flex",alignItems:"center",justifyContent:"center",borderRadius:6,transition:"background 0.1s"}}
+                            onMouseEnter={e=>e.currentTarget.style.background=C.accentDim}
+                            onMouseLeave={e=>e.currentTarget.style.background="none"}>
+                            <Icon name="edit" size={14}/>
+                          </button>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </>
+      )}
+
+      {/* MODAL EDITAR CUSTO */}
+      {editing&&(
+        <Modal title="Editar Custo do Produto" onClose={()=>setEditing(null)}>
+          <div style={{display:"flex",flexDirection:"column",gap:14}}>
+            <div style={{display:"flex",alignItems:"center",gap:12,padding:"10px 12px",background:"#0d0d0d",borderRadius:10,border:`0.5px solid ${C.border}`}}>
+              {editing.image?(
+                <img src={editing.image} alt="" style={{width:44,height:44,borderRadius:8,objectFit:"cover",flexShrink:0}} onError={e=>e.target.style.display="none"}/>
+              ):(
+                <div style={{width:44,height:44,borderRadius:8,background:C.accentDim,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}><Icon name="package" size={18}/></div>
+              )}
+              <span style={{fontSize:13,color:C.text,lineHeight:1.4}}>{editing.title}</span>
+            </div>
+            <div className="modal-grid-2">
+              <div>
+                <label style={{fontSize:12,color:C.textMuted,display:"block",marginBottom:6}}>Custo do produto (R$)</label>
+                <input type="number" step="0.01" min="0" value={editing.custo} onChange={e=>setEditing(p=>({...p,custo:e.target.value}))}
+                  placeholder="0,00"
+                  style={{width:"100%",background:"#0d0d0d",border:`0.5px solid ${C.border}`,color:C.text,fontFamily:"'Geist Mono',monospace",fontSize:14,padding:"10px 12px",borderRadius:8,outline:"none"}}
+                  onFocus={e=>e.target.style.borderColor=C.accentBorder} onBlur={e=>e.target.style.borderColor=C.border}/>
+              </div>
+              <div>
+                <label style={{fontSize:12,color:C.textMuted,display:"block",marginBottom:6}}>Frete (R$)</label>
+                <input type="number" step="0.01" min="0" value={editing.frete} onChange={e=>setEditing(p=>({...p,frete:e.target.value}))}
+                  placeholder="0,00"
+                  style={{width:"100%",background:"#0d0d0d",border:`0.5px solid ${C.border}`,color:C.text,fontFamily:"'Geist Mono',monospace",fontSize:14,padding:"10px 12px",borderRadius:8,outline:"none"}}
+                  onFocus={e=>e.target.style.borderColor=C.accentBorder} onBlur={e=>e.target.style.borderColor=C.border}/>
+              </div>
+            </div>
+            {(parseFloat(editing.custo)||0)>0&&(
+              <div style={{padding:"10px 14px",background:C.greenDim,border:"0.5px solid rgba(34,197,94,0.2)",borderRadius:9,fontSize:12,color:C.green,display:"flex",justifyContent:"space-between"}}>
+                <span>Custo total por unidade:</span>
+                <strong style={{fontFamily:"'Geist Mono',monospace"}}>R$ {((parseFloat(editing.custo)||0)+(parseFloat(editing.frete)||0)).toFixed(2).replace(".",",")}</strong>
+              </div>
+            )}
+            <div style={{display:"flex",gap:8,justifyContent:"flex-end"}}>
+              <Btn variant="outline" onClick={()=>setEditing(null)}>Cancelar</Btn>
+              <Btn variant="primary" onClick={saveCost} loading={saving}>Salvar Custo</Btn>
+            </div>
+          </div>
+        </Modal>
+      )}
+    </div>
+  );
+};
+
 // ─── LOJAS ────────────────────────────────────────────────────────────────────
 const LojasPage=({sb,user})=>{
   const [lojas,setLojas]=useState([]);
@@ -2796,6 +3026,7 @@ export default function App() {
     arquivos:<ArquivosPage sb={sb} user={user}/>,
     payments:<PaymentsPage sb={sb} user={user} privacyMode={privacyMode}/>,
     lojas:<LojasPage sb={sb} user={user}/>,
+    custos:<CustosProdutosPage sb={sb} user={user}/>,
     youtube:<YoutubePage sb={sb} user={user}/>,
   };
 
