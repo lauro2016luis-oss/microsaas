@@ -111,6 +111,7 @@ const Icon = ({ name, size=16 }) => {
     youtube:<svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>,
     download:<svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>,
     music:<svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>,
+    calculator:<svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><rect x="4" y="2" width="16" height="20" rx="2"/><line x1="8" y1="6" x2="16" y2="6"/><line x1="8" y1="10" x2="8" y2="10"/><line x1="12" y1="10" x2="12" y2="10"/><line x1="16" y1="10" x2="16" y2="10"/><line x1="8" y1="14" x2="8" y2="14"/><line x1="12" y1="14" x2="12" y2="14"/><line x1="16" y1="14" x2="16" y2="14"/><line x1="8" y1="18" x2="12" y2="18"/><line x1="16" y1="18" x2="16" y2="18"/></svg>,
   };
   return I[name]||null;
 };
@@ -322,6 +323,7 @@ const Sidebar=({page,setPage,storeName,setStoreName,sb,user})=>{
     {id:"produtos",label:"Produtos",icon:"package"},
     {id:"links",label:"Links",icon:"link"},
     {id:"tarefas",label:"Tarefas",icon:"task"},
+    {id:"precificacao",label:"Precificação",icon:"calculator"},
     {id:"custos",label:"Custos de Produtos",icon:"package"},
     {id:"arquivos",label:"Arquivos",icon:"file"},
     {id:"payments",label:"Payments",icon:"payment"},
@@ -2635,6 +2637,295 @@ const YoutubePage=({sb,user})=>{
 };
 
 // ─── CUSTOS DE PRODUTOS ───────────────────────────────────────────────────────
+// ─── CALCULADORA DE PRECIFICAÇÃO ──────────────────────────────────────────────
+const PrecificacaoPage=()=>{
+  const [custo,setCusto]=useState("20.00");
+  const [custoCurr,setCustoCurr]=useState("USD");
+  const [marketing,setMarketing]=useState("30");
+  const [markupCustom,setMarkupCustom]=useState("0");
+  const [iof,setIof]=useState("0.38");
+  const [frete,setFrete]=useState("5.00");
+  const [freteCurr,setFreteCurr]=useState("USD");
+  const [checkout,setCheckout]=useState("2.50");
+  const [gateway,setGateway]=useState("5.00");
+  const [impostos,setImpostos]=useState("10.00");
+  const [showCurrPicker,setShowCurrPicker]=useState(null); // "custo"|"frete"
+
+  const CURR_LIST=[
+    {code:"USD",symbol:"US$",flag:"🇺🇸"},{code:"BRL",symbol:"R$",flag:"🇧🇷"},
+    {code:"EUR",symbol:"€",flag:"🇪🇺"},{code:"GBP",symbol:"£",flag:"🇬🇧"},
+    {code:"ARS",symbol:"$",flag:"🇦🇷"},{code:"CNY",symbol:"¥",flag:"🇨🇳"},
+  ];
+  const getCurr=c=>CURR_LIST.find(x=>x.code===c)||CURR_LIST[0];
+
+  const MARKUPS=[3,3.5,4,4.5,5,5.5,6];
+  const RECOMMENDED_MARKUP=4;
+
+  const calc=(markup)=>{
+    const c=parseFloat(custo)||0;
+    const f=parseFloat(frete)||0;
+    const pf=c*markup;
+    const custoFixo=c+(parseFloat(iof)||0)/100*pf+f+(parseFloat(checkout)||0)/100*pf+(parseFloat(gateway)||0)/100*pf+(parseFloat(impostos)||0)/100*pf;
+    const mkt=(parseFloat(marketing)||0)/100*pf;
+    const lucro=pf-custoFixo-mkt;
+    const maxCPA=pf-custoFixo;
+    const margem=pf>0?lucro/pf*100:0;
+    return{pf,custoFixo,mkt,lucro,maxCPA,margem};
+  };
+
+  const sym=getCurr(custoCurr).symbol;
+  const fmt=(v)=>`${sym} ${(v||0).toFixed(2)}`;
+
+  const cardStyle={background:"#0d0d0d",border:`0.5px solid ${C.border}`,borderRadius:14,padding:"18px 20px"};
+  const labelStyle={fontSize:11,color:C.textMuted,display:"block",marginBottom:6,textTransform:"uppercase",letterSpacing:"0.05em"};
+  const inpStyle={width:"100%",background:"#111",border:`0.5px solid ${C.border}`,color:C.text,fontFamily:"'Geist Mono',monospace",fontSize:14,padding:"9px 12px",borderRadius:8,outline:"none"};
+  const thStyle={padding:"10px 14px",textAlign:"right",color:C.textMuted,fontWeight:500,fontSize:11,textTransform:"uppercase",letterSpacing:"0.05em",whiteSpace:"nowrap"};
+  const tdStyle={padding:"12px 14px",textAlign:"right",fontFamily:"'Geist Mono',monospace",fontSize:13};
+
+  const CurrBtn=({curr,onChange,pickerId})=>{
+    const c=getCurr(curr);
+    return(
+      <div style={{position:"relative"}}>
+        <button onClick={()=>setShowCurrPicker(showCurrPicker===pickerId?null:pickerId)}
+          style={{display:"flex",alignItems:"center",gap:5,padding:"9px 10px",background:"#111",border:`0.5px solid ${C.border}`,borderRadius:8,cursor:"pointer",color:C.text,fontSize:12,fontFamily:"'Geist',sans-serif",whiteSpace:"nowrap"}}>
+          <span>{c.flag}</span><span style={{fontWeight:600}}>{c.code}</span>
+          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="6 9 12 15 18 9"/></svg>
+        </button>
+        {showCurrPicker===pickerId&&(
+          <div style={{position:"absolute",top:"calc(100% + 4px)",left:0,zIndex:100,background:"#111",border:`0.5px solid ${C.border}`,borderRadius:10,padding:6,minWidth:130,boxShadow:"0 8px 24px rgba(0,0,0,0.6)"}}>
+            {CURR_LIST.map(x=>(
+              <button key={x.code} onClick={()=>{onChange(x.code);setShowCurrPicker(null);}}
+                style={{display:"flex",alignItems:"center",gap:8,width:"100%",padding:"7px 10px",background:curr===x.code?C.accentDim:"transparent",border:"none",borderRadius:7,cursor:"pointer",color:curr===x.code?C.accent:C.text,fontSize:12,fontFamily:"'Geist',sans-serif"}}>
+                <span>{x.flag}</span><span style={{fontWeight:500}}>{x.code}</span><span style={{color:C.textDim,marginLeft:"auto"}}>{x.symbol}</span>
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  const allMarkups=[...MARKUPS,...(parseFloat(markupCustom)>0&&!MARKUPS.includes(parseFloat(markupCustom))?[parseFloat(markupCustom)]:[])].sort((a,b)=>a-b);
+
+  return(
+    <div className="page-pad" style={{overflowY:"auto",flex:1}} onClick={()=>showCurrPicker&&setShowCurrPicker(null)}>
+      <div style={{textAlign:"center",marginBottom:28}}>
+        <h1 style={{fontSize:22,fontWeight:600,color:C.text,letterSpacing:"-0.03em"}}>Calculadora de Precificação</h1>
+        <p style={{fontSize:13,color:C.textMuted,marginTop:4}}>Calcule o preço de venda ideal para os seus produtos. Conheça seus custos e alcance o lucro desejado.</p>
+      </div>
+
+      <div style={{display:"grid",gridTemplateColumns:"340px 1fr",gap:20,alignItems:"start"}}>
+        {/* PAINEL ESQUERDO */}
+        <div style={{display:"flex",flexDirection:"column",gap:14}}>
+          {/* Custo do produto */}
+          <div style={cardStyle}>
+            <label style={labelStyle}>Custo do produto</label>
+            <div style={{display:"flex",gap:8,alignItems:"center"}}>
+              <CurrBtn curr={custoCurr} onChange={setCustoCurr} pickerId="custo"/>
+              <input type="number" step="0.01" min="0" value={custo} onChange={e=>setCusto(e.target.value)}
+                style={{...inpStyle,flex:1}} onFocus={e=>e.target.style.borderColor=C.accentBorder} onBlur={e=>e.target.style.borderColor=C.border}/>
+            </div>
+          </div>
+
+          {/* Marketing + Markup */}
+          <div style={cardStyle}>
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14}}>
+              <div>
+                <label style={labelStyle}>Custo do Marketing</label>
+                <div style={{position:"relative"}}>
+                  <input type="number" step="0.1" min="0" max="100" value={marketing} onChange={e=>setMarketing(e.target.value)}
+                    style={{...inpStyle,paddingRight:28}} onFocus={e=>e.target.style.borderColor=C.accentBorder} onBlur={e=>e.target.style.borderColor=C.border}/>
+                  <span style={{position:"absolute",right:10,top:"50%",transform:"translateY(-50%)",color:C.textDim,fontSize:13}}>%</span>
+                </div>
+              </div>
+              <div>
+                <label style={labelStyle}>Markup Customizado</label>
+                <div style={{position:"relative"}}>
+                  <input type="number" step="0.5" min="0" value={markupCustom} onChange={e=>setMarkupCustom(e.target.value)}
+                    style={{...inpStyle,paddingRight:24}} onFocus={e=>e.target.style.borderColor=C.accentBorder} onBlur={e=>e.target.style.borderColor=C.border}/>
+                  <span style={{position:"absolute",right:10,top:"50%",transform:"translateY(-50%)",color:C.textDim,fontSize:13}}>x</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Custos Fixos */}
+          <div style={cardStyle}>
+            <label style={{...labelStyle,marginBottom:14}}>Custos Fixos</label>
+            <div style={{display:"flex",flexDirection:"column",gap:10}}>
+              {/* IOF */}
+              <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:10}}>
+                <span style={{fontSize:13,color:C.textMuted,minWidth:80}}>IOF</span>
+                <select value={iof} onChange={e=>setIof(e.target.value)}
+                  style={{background:"#111",border:`0.5px solid ${C.border}`,color:C.text,fontFamily:"'Geist Mono',monospace",fontSize:13,padding:"8px 10px",borderRadius:8,outline:"none",cursor:"pointer",minWidth:120}}>
+                  <option value="0">0% (Nenhum)</option>
+                  <option value="0.38">0,38% (Boleto/PIX)</option>
+                  <option value="1.1">1,10% (Cartão)</option>
+                </select>
+              </div>
+              {/* Frete */}
+              <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:10}}>
+                <span style={{fontSize:13,color:C.textMuted,minWidth:80}}>Frete</span>
+                <div style={{display:"flex",gap:6,alignItems:"center"}}>
+                  <CurrBtn curr={freteCurr} onChange={setFreteCurr} pickerId="frete"/>
+                  <input type="number" step="0.01" min="0" value={frete} onChange={e=>setFrete(e.target.value)}
+                    style={{...inpStyle,width:90}} onFocus={e=>e.target.style.borderColor=C.accentBorder} onBlur={e=>e.target.style.borderColor=C.border}/>
+                </div>
+              </div>
+              {/* Checkout */}
+              <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:10}}>
+                <span style={{fontSize:13,color:C.textMuted,minWidth:80}}>Checkout</span>
+                <div style={{position:"relative",width:120}}>
+                  <input type="number" step="0.1" min="0" value={checkout} onChange={e=>setCheckout(e.target.value)}
+                    style={{...inpStyle,paddingRight:24,width:"100%"}} onFocus={e=>e.target.style.borderColor=C.accentBorder} onBlur={e=>e.target.style.borderColor=C.border}/>
+                  <span style={{position:"absolute",right:10,top:"50%",transform:"translateY(-50%)",color:C.textDim,fontSize:13}}>%</span>
+                </div>
+              </div>
+              {/* Gateway */}
+              <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:10}}>
+                <span style={{fontSize:13,color:C.textMuted,minWidth:80}}>Gateway</span>
+                <div style={{position:"relative",width:120}}>
+                  <input type="number" step="0.1" min="0" value={gateway} onChange={e=>setGateway(e.target.value)}
+                    style={{...inpStyle,paddingRight:24,width:"100%"}} onFocus={e=>e.target.style.borderColor=C.accentBorder} onBlur={e=>e.target.style.borderColor=C.border}/>
+                  <span style={{position:"absolute",right:10,top:"50%",transform:"translateY(-50%)",color:C.textDim,fontSize:13}}>%</span>
+                </div>
+              </div>
+              {/* Impostos */}
+              <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:10}}>
+                <span style={{fontSize:13,color:C.textMuted,minWidth:80}}>Impostos</span>
+                <div style={{position:"relative",width:120}}>
+                  <input type="number" step="0.1" min="0" value={impostos} onChange={e=>setImpostos(e.target.value)}
+                    style={{...inpStyle,paddingRight:24,width:"100%"}} onFocus={e=>e.target.style.borderColor=C.accentBorder} onBlur={e=>e.target.style.borderColor=C.border}/>
+                  <span style={{position:"absolute",right:10,top:"50%",transform:"translateY(-50%)",color:C.textDim,fontSize:13}}>%</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Preço Mínimo Recomendado */}
+          {(parseFloat(custo)||0)>0&&(
+            <div style={{...cardStyle,border:`0.5px solid rgba(34,197,94,0.3)`,background:"rgba(34,197,94,0.04)"}}>
+              <div style={{display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+                <div>
+                  <div style={{fontSize:11,color:C.textMuted,textTransform:"uppercase",letterSpacing:"0.05em"}}>Preço Mínimo Recomendado</div>
+                  <div style={{fontSize:11,color:C.textDim,marginTop:2}}>(Markup {RECOMMENDED_MARKUP},00x)</div>
+                </div>
+                <div style={{fontSize:22,fontWeight:700,color:C.green,fontFamily:"'Geist Mono',monospace"}}>
+                  {fmt(calc(RECOMMENDED_MARKUP).pf)}
+                </div>
+              </div>
+              <div style={{marginTop:10,paddingTop:10,borderTop:`0.5px solid rgba(34,197,94,0.15)`,display:"flex",gap:16}}>
+                <div style={{fontSize:12}}>
+                  <span style={{color:C.textDim}}>Lucro: </span>
+                  <span style={{color:C.green,fontFamily:"'Geist Mono',monospace",fontWeight:600}}>{fmt(calc(RECOMMENDED_MARKUP).lucro)}</span>
+                </div>
+                <div style={{fontSize:12}}>
+                  <span style={{color:C.textDim}}>Margem: </span>
+                  <span style={{color:C.green,fontFamily:"'Geist Mono',monospace",fontWeight:600}}>{calc(RECOMMENDED_MARKUP).margem.toFixed(2)}%</span>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* PAINEL DIREITO */}
+        <div style={{display:"flex",flexDirection:"column",gap:16}}>
+          {/* Estimador de Lucro */}
+          <div style={cardStyle}>
+            <h3 style={{fontSize:15,fontWeight:600,color:C.text,marginBottom:16}}>Estimador de Lucro</h3>
+            <div style={{overflowX:"auto"}}>
+              <table style={{width:"100%",borderCollapse:"collapse",fontSize:13}}>
+                <thead>
+                  <tr style={{borderBottom:`0.5px solid ${C.border}`}}>
+                    <th style={{...thStyle,textAlign:"left"}}>Markup</th>
+                    <th style={thStyle}>Preço final</th>
+                    <th style={thStyle}>Custo fixo</th>
+                    <th style={thStyle}>C. marketing</th>
+                    <th style={thStyle}>Lucro</th>
+                    <th style={thStyle}>Máx. CPA</th>
+                    <th style={thStyle}>Margem</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {allMarkups.map(mk=>{
+                    const r=calc(mk);
+                    const isRec=mk===RECOMMENDED_MARKUP;
+                    const isCustom=parseFloat(markupCustom)>0&&mk===parseFloat(markupCustom);
+                    const lucroPos=r.lucro>0;
+                    return(
+                      <tr key={mk} style={{borderBottom:`0.5px solid ${C.border}`,background:isRec?"rgba(34,197,94,0.04)":isCustom?C.accentDim:"transparent",transition:"background 0.1s"}}
+                        onMouseEnter={e=>{if(!isRec&&!isCustom)e.currentTarget.style.background=C.surfaceHover;}}
+                        onMouseLeave={e=>{if(!isRec&&!isCustom)e.currentTarget.style.background="transparent";}}>
+                        <td style={{...tdStyle,textAlign:"left"}}>
+                          <div style={{display:"flex",alignItems:"center",gap:6}}>
+                            <span style={{color:isCustom?C.accent:isRec?C.green:C.textMuted,fontWeight:600}}>{mk.toFixed(2)}x</span>
+                            {isRec&&<span style={{fontSize:10,background:"rgba(34,197,94,0.15)",color:C.green,padding:"1px 6px",borderRadius:4,border:"0.5px solid rgba(34,197,94,0.3)"}}>recomendado</span>}
+                            {isCustom&&<span style={{fontSize:10,background:C.accentDim,color:C.accent,padding:"1px 6px",borderRadius:4,border:`0.5px solid ${C.accentBorder}`}}>custom</span>}
+                          </div>
+                        </td>
+                        <td style={{...tdStyle,color:C.text,fontWeight:500}}>{fmt(r.pf)}</td>
+                        <td style={{...tdStyle,color:C.textMuted,textDecoration:"underline dotted",cursor:"help"}} title={`Produto: ${fmt(parseFloat(custo)||0)} | IOF: ${fmt((parseFloat(iof)||0)/100*r.pf)} | Frete: ${fmt(parseFloat(frete)||0)} | Checkout: ${fmt((parseFloat(checkout)||0)/100*r.pf)} | Gateway: ${fmt((parseFloat(gateway)||0)/100*r.pf)} | Impostos: ${fmt((parseFloat(impostos)||0)/100*r.pf)}`}>{fmt(r.custoFixo)}</td>
+                        <td style={{...tdStyle,color:C.textMuted}}>{fmt(r.mkt)}</td>
+                        <td style={{...tdStyle}}>
+                          <span style={{background:lucroPos?"rgba(34,197,94,0.15)":C.redDim,color:lucroPos?C.green:C.red,padding:"3px 10px",borderRadius:6,fontWeight:600,fontSize:12}}>
+                            {fmt(r.lucro)}
+                          </span>
+                        </td>
+                        <td style={{...tdStyle,color:C.textMuted}}>{fmt(r.maxCPA)}</td>
+                        <td style={{...tdStyle,fontWeight:600,color:r.margem>=25?C.green:r.margem>=15?C.amber:C.red}}>
+                          {r.margem.toFixed(2)}%
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          {/* Facebook Ads - Break even */}
+          <div style={cardStyle}>
+            <h3 style={{fontSize:15,fontWeight:600,color:C.text,marginBottom:4}}>Facebook Ads – Break even de uma venda</h3>
+            <p style={{fontSize:12,color:C.textDim,marginBottom:16}}>Quanto você pode gastar por venda sem ter prejuízo (Máx. CPA)</p>
+            <div style={{overflowX:"auto"}}>
+              <table style={{width:"100%",borderCollapse:"collapse",fontSize:13}}>
+                <thead>
+                  <tr style={{borderBottom:`0.5px solid ${C.border}`}}>
+                    <th style={{...thStyle,textAlign:"left"}}>Markup</th>
+                    <th style={thStyle}>Preço final</th>
+                    <th style={thStyle}>Máx. CPA</th>
+                    <th style={thStyle}>10 conjuntos de</th>
+                    <th style={thStyle}>5 conjuntos de</th>
+                    <th style={thStyle}>3 conjuntos de</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {allMarkups.map(mk=>{
+                    const r=calc(mk);
+                    const isRec=mk===RECOMMENDED_MARKUP;
+                    return(
+                      <tr key={mk} style={{borderBottom:`0.5px solid ${C.border}`,background:isRec?"rgba(34,197,94,0.04)":"transparent",transition:"background 0.1s"}}
+                        onMouseEnter={e=>{if(!isRec)e.currentTarget.style.background=C.surfaceHover;}}
+                        onMouseLeave={e=>{if(!isRec)e.currentTarget.style.background=isRec?"rgba(34,197,94,0.04)":"transparent";}}>
+                        <td style={{...tdStyle,textAlign:"left",color:isRec?C.green:C.textMuted,fontWeight:isRec?600:400}}>{mk.toFixed(2)}x</td>
+                        <td style={{...tdStyle,color:C.text}}>{fmt(r.pf)}</td>
+                        <td style={{...tdStyle,color:C.accent,fontWeight:600}}>{fmt(r.maxCPA)}</td>
+                        <td style={{...tdStyle,color:C.textMuted}}>{fmt(r.maxCPA/10)}</td>
+                        <td style={{...tdStyle,color:C.textMuted}}>{fmt(r.maxCPA/5)}</td>
+                        <td style={{...tdStyle,color:C.textMuted}}>{fmt(r.maxCPA/3)}</td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 const CURRENCIES=[
   {code:"BRL",symbol:"R$",flag:"🇧🇷",name:"Real"},
   {code:"USD",symbol:"US$",flag:"🇺🇸",name:"Dólar"},
@@ -3125,6 +3416,7 @@ export default function App() {
     arquivos:<ArquivosPage sb={sb} user={user}/>,
     payments:<PaymentsPage sb={sb} user={user} privacyMode={privacyMode}/>,
     lojas:<LojasPage sb={sb} user={user}/>,
+    precificacao:<PrecificacaoPage/>,
     custos:<CustosProdutosPage sb={sb} user={user}/>,
     youtube:<YoutubePage sb={sb} user={user}/>,
   };
