@@ -3118,67 +3118,52 @@ const VideoHashPage=()=>{
   const process=async()=>{
     if(!file)return;
     setProcessing(true); setProgress(0); setResult(null);
+    let timer=null;
     try{
       const srcUrl=URL.createObjectURL(file);
-      // --- Hidden video element ---
+
+      // ── 1. Carrega metadados do vídeo ──
       const video=document.createElement("video");
-      video.src=srcUrl; video.muted=true; video.playsInline=true;
-      await new Promise((res,rej)=>{video.onloadedmetadata=res;video.onerror=()=>rej(new Error("Erro ao carregar vídeo"));});
+      video.src=srcUrl;
+      video.muted=true; // silencia durante o processamento
+      video.playsInline=true;
+      video.style.cssText="position:fixed;left:-9999px;top:-9999px;width:1px;height:1px;";
+      document.body.appendChild(video);
 
-      const origW=video.videoWidth; const origH=video.videoHeight;
-      const cropPx=opts.crop; // pixels to remove from each side
-      const w=Math.max(2,origW-cropPx*2); const h=Math.max(2,origH-cropPx*2);
+      await new Promise((res,rej)=>{
+        video.onloadedmetadata=res;
+        video.onerror=()=>rej(new Error("Não foi possível carregar o vídeo"));
+      });
 
-      // --- Canvas setup ---
+      const origW=video.videoWidth||1280;
+      const origH=video.videoHeight||720;
+      const cropPx=opts.crop;
+      const w=Math.max(2,origW-cropPx*2);
+      const h=Math.max(2,origH-cropPx*2);
+
+      // ── 2. Canvas ──
       const canvas=document.createElement("canvas");
       canvas.width=w; canvas.height=h;
-      const ctx=canvas.getContext("2d",{willReadFrequently:opts.noiseLevel>0});
-
-      // CSS filter for brightness / contrast / saturation
+      const ctx=canvas.getContext("2d",{willReadFrequently:true});
       const bri=1+opts.brightness/100;
       const con=1+opts.contrast/100;
       const sat=1+opts.saturation/100;
-      ctx.filter=`brightness(${bri.toFixed(3)}) contrast(${con.toFixed(3)}) saturate(${sat.toFixed(3)})`;
-
-      // --- Audio passthrough via AudioContext ---
-      let combinedStream;
-      const targetFps=opts.fps==="original"?30:parseFloat(opts.fps);
-      const videoStream=canvas.captureStream(targetFps);
-      try{
-        const audioCtx=new AudioContext();
-        const src=audioCtx.createMediaElementSource(video);
-        const dest=audioCtx.createMediaStreamDestination();
-        src.connect(dest); src.connect(audioCtx.destination);
-        combinedStream=new MediaStream([...videoStream.getVideoTracks(),...dest.stream.getAudioTracks()]);
-      }catch(_){
-        combinedStream=videoStream; // fallback: no audio
-      }
-
-      // --- MediaRecorder ---
-      const mimeType=MediaRecorder.isTypeSupported("video/webm;codecs=vp9")?"video/webm;codecs=vp9":"video/webm";
-      const recorder=new MediaRecorder(combinedStream,{mimeType});
-      const chunks=[];
-      recorder.ondataavailable=e=>{if(e.data&&e.data.size>0)chunks.push(e.data);};
-      const recDone=new Promise(res=>{recorder.onstop=res;});
-      recorder.start(200); // collect every 200ms
-
-      // --- Draw loop ---
-      let ended=false;
-      video.onended=()=>{ended=true;};
-      const noiseAmt=opts.noiseLevel*6;
+      const filterStr=`brightness(${bri.toFixed(3)}) contrast(${con.toFixed(3)}) saturate(${sat.toFixed(3)})`;
+      const noiseAmt=opts.noiseLevel*5;
 
       const drawFrame=()=>{
-        if(video.videoWidth===0)return;
+        if(!video.videoWidth)return;
+        ctx.filter=filterStr;
         ctx.save();
         if(opts.flipH){ctx.translate(w,0);ctx.scale(-1,1);}
         ctx.drawImage(video,cropPx,cropPx,origW-cropPx*2,origH-cropPx*2,0,0,w,h);
         ctx.restore();
-        // Pixel noise (subtle, changes hash without visible change)
+        ctx.filter="none";
         if(noiseAmt>0){
           const id=ctx.getImageData(0,0,w,h);
           const d=id.data;
           for(let i=0;i<d.length;i+=4){
-            const n=(Math.random()-0.5)*noiseAmt;
+            const n=(Math.random()-.5)*noiseAmt;
             d[i]=Math.min(255,Math.max(0,d[i]+n));
             d[i+1]=Math.min(255,Math.max(0,d[i+1]+n));
             d[i+2]=Math.min(255,Math.max(0,d[i+2]+n));
@@ -3187,27 +3172,69 @@ const VideoHashPage=()=>{
         }
       };
 
-      await new Promise(res=>{
-        const loop=()=>{
-          if(ended){drawFrame();res();return;}
-          drawFrame();
-          if(video.duration>0)setProgress(Math.round(video.currentTime/video.duration*95));
-          requestAnimationFrame(loop);
+      // ── 3. Detecta MIME (MP4 primeiro para Safari) ──
+      const mimeType=
+        MediaRecorder.isTypeSupported("video/mp4;codecs=avc1")?"video/mp4;codecs=avc1":
+        MediaRecorder.isTypeSupported("video/mp4")?"video/mp4":
+        MediaRecorder.isTypeSupported("video/webm;codecs=vp9")?"video/webm;codecs=vp9":
+        "video/webm";
+      const ext=mimeType.includes("mp4")?"mp4":"webm";
+
+      // ── 4. Stream = canvas + áudio (AudioContext) ──
+      const targetFps=opts.fps==="original"?30:parseFloat(opts.fps);
+      const videoStream=canvas.captureStream(targetFps);
+      let recStream=videoStream;
+      let audioCtx=null;
+      try{
+        audioCtx=new (window.AudioContext||window.webkitAudioContext)();
+        const audioSrc=audioCtx.createMediaElementSource(video);
+        const audioDest=audioCtx.createMediaStreamDestination();
+        audioSrc.connect(audioDest); // captura áudio → stream (sem tocar no speaker)
+        recStream=new MediaStream([...videoStream.getVideoTracks(),...audioDest.stream.getAudioTracks()]);
+      }catch(_){}
+
+      // ── 5. MediaRecorder ──
+      const recorder=new MediaRecorder(recStream,{mimeType});
+      const chunks=[];
+      recorder.ondataavailable=e=>{if(e.data&&e.data.size>0)chunks.push(e.data);};
+      const recDone=new Promise(res=>{recorder.onstop=res;});
+      recorder.start(50); // chunk a cada 50ms
+
+      // ── 6. Loop de captura via setInterval (não sofre throttle do rAF) ──
+      await new Promise((res,rej)=>{
+        video.onended=()=>{
+          if(timer){clearInterval(timer);timer=null;}
+          drawFrame(); // último frame
+          res();
         };
-        video.play().then(()=>requestAnimationFrame(loop));
+        video.onerror=rej;
+        const ms=Math.round(1000/targetFps);
+        timer=setInterval(()=>{
+          drawFrame();
+          if(video.duration>0)setProgress(Math.round(video.currentTime/video.duration*94));
+        },ms);
+        video.play().catch(rej);
       });
 
-      setProgress(98);
+      setProgress(97);
       recorder.stop();
       await recDone;
+
+      // limpeza
+      if(audioCtx)try{audioCtx.close();}catch(_){}
+      document.body.removeChild(video);
       URL.revokeObjectURL(srcUrl);
 
       const blob=new Blob(chunks,{type:mimeType});
+      if(blob.size<500)throw new Error("Arquivo gerado está vazio — tente um vídeo diferente");
       const url=URL.createObjectURL(blob);
-      setResult({url,name:`video_${Date.now()}.webm`,size:blob.size,origSize:file.size});
+      setResult({url,name:`video_modificado_${Date.now()}.${ext}`,size:blob.size,origSize:file.size,ext});
       setProgress(100);
       show("Vídeo processado com sucesso! ✅");
-    }catch(e){show("Erro: "+e.message,"error");}
+    }catch(e){
+      if(timer)clearInterval(timer);
+      show("Erro: "+e.message,"error");
+    }
     setProcessing(false);
   };
 
