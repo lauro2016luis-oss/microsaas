@@ -328,6 +328,7 @@ const Sidebar=({page,setPage,storeName,setStoreName,sb,user})=>{
     {id:"arquivos",label:"Arquivos",icon:"file"},
     {id:"payments",label:"Payments",icon:"payment"},
     {id:"youtube",label:"Baixar Vídeo",icon:"download"},
+    {id:"videohash",label:"Mudar Hash Vídeo",icon:"zap"},
   ];
   const save=()=>{if(inp.trim())setStoreName(inp.trim());setEditing(false);};
   return (
@@ -3097,6 +3098,289 @@ const PrecificacaoPage=()=>{
   );
 };
 
+// ─── VIDEO HASH CHANGER ───────────────────────────────────────────────────────
+const VideoHashPage=()=>{
+  const [file,setFile]=useState(null);
+  const [preview,setPreview]=useState(null);
+  const [opts,setOpts]=useState({brightness:5,contrast:5,saturation:5,crop:1,fps:"original",flipH:false,clearMeta:true,noiseLevel:1});
+  const [processing,setProcessing]=useState(false);
+  const [progress,setProgress]=useState(0);
+  const [result,setResult]=useState(null);
+  const [ffReady,setFfReady]=useState(false);
+  const [ffLoading,setFfLoading]=useState(false);
+  const [drag,setDrag]=useState(false);
+  const ffRef=useRef(null);
+  const {show,El}=useToast();
+
+  const loadFF=async()=>{
+    if(ffRef.current)return ffRef.current;
+    setFfLoading(true);
+    try{
+      if(!window.FFmpeg){
+        await new Promise((res,rej)=>{
+          const s=document.createElement("script");
+          s.src="https://unpkg.com/@ffmpeg/ffmpeg@0.11.6/dist/ffmpeg.min.js";
+          s.onload=res; s.onerror=rej;
+          document.head.appendChild(s);
+        });
+      }
+      const {createFFmpeg,fetchFile}=window.FFmpeg;
+      const ff=createFFmpeg({log:false,progress:({ratio})=>setProgress(Math.round(ratio*100))});
+      await ff.load();
+      ffRef.current=ff;
+      window._ffFetch=fetchFile;
+      setFfReady(true);
+    }catch(e){show("Erro ao carregar FFmpeg: "+e.message,"error");}
+    setFfLoading(false);
+  };
+
+  useEffect(()=>{loadFF();},[]);
+
+  const handleFile=(f)=>{
+    if(!f||!f.type.startsWith("video/"))return show("Selecione um arquivo de vídeo","error");
+    setFile(f); setResult(null);
+    setPreview(URL.createObjectURL(f));
+  };
+
+  const process=async()=>{
+    if(!file)return;
+    if(!ffRef.current){show("FFmpeg ainda carregando...","error");return;}
+    setProcessing(true); setProgress(0); setResult(null);
+    try{
+      const ff=ffRef.current;
+      const fetch=window._ffFetch;
+      const ext=file.name.split(".").pop().toLowerCase()||"mp4";
+      const inp=`input.${ext}`; const out=`output.${ext}`;
+      ff.FS("writeFile",inp,await fetch(file));
+
+      // Monta filtros de vídeo
+      const vf=[];
+      const b=opts.brightness/100; const co=1+opts.contrast/100; const sat=1+opts.saturation/100;
+      if(b!==0||co!==1||sat!==1) vf.push(`eq=brightness=${b.toFixed(3)}:contrast=${co.toFixed(3)}:saturation=${sat.toFixed(3)}`);
+      if(opts.crop>0) vf.push(`crop=iw-${opts.crop*2}:ih-${opts.crop*2}:${opts.crop}:${opts.crop}`);
+      if(opts.flipH) vf.push("hflip");
+      if(opts.noiseLevel>0) vf.push(`noise=alls=${opts.noiseLevel}:allf=t+u`);
+
+      const args=["-i",inp];
+      if(opts.clearMeta) args.push("-map_metadata","-1");
+      if(vf.length>0) args.push("-vf",vf.join(","));
+      if(opts.fps!=="original") args.push("-r",opts.fps);
+      args.push("-c:a","copy","-y",out);
+
+      await ff.run(...args);
+      const data=ff.FS("readFile",out);
+      const blob=new Blob([data.buffer],{type:file.type});
+      const url=URL.createObjectURL(blob);
+      const origHash=`${file.size}-${file.lastModified}`;
+      setResult({url,name:`video_${Date.now()}.${ext}`,size:blob.size,origSize:file.size,origHash});
+      show("Vídeo processado com sucesso! ✅");
+    }catch(e){show("Erro: "+e.message,"error");}
+    setProcessing(false);
+  };
+
+  const fmtSize=b=>{if(b>1e6)return`${(b/1e6).toFixed(1)} MB`;return`${(b/1e3).toFixed(0)} KB`;};
+  const cardStyle={background:"#0d0d0d",border:`0.5px solid ${C.border}`,borderRadius:14,padding:"18px 20px"};
+  const labelStyle={fontSize:11,color:C.textMuted,display:"block",marginBottom:6,textTransform:"uppercase",letterSpacing:"0.05em"};
+  const Slider=({label,val,set,min,max,step=1,suffix=""})=>(
+    <div style={{marginBottom:14}}>
+      <div style={{display:"flex",justifyContent:"space-between",marginBottom:6}}>
+        <label style={labelStyle}>{label}</label>
+        <span style={{fontSize:12,color:C.accent,fontFamily:"'Geist Mono',monospace",fontWeight:600}}>{val>0?"+":""}{val}{suffix}</span>
+      </div>
+      <input type="range" min={min} max={max} step={step} value={val} onChange={e=>set(+e.target.value)}
+        style={{width:"100%",accentColor:C.accent,cursor:"pointer"}}/>
+    </div>
+  );
+
+  return(
+    <div className="page-pad" style={{overflowY:"auto",flex:1}}>
+      {El}
+      <div style={{textAlign:"center",marginBottom:28}}>
+        <h1 style={{fontSize:22,fontWeight:600,color:C.text,letterSpacing:"-0.03em"}}>Mudar Hash & Metadados</h1>
+        <p style={{fontSize:13,color:C.textMuted,marginTop:4}}>Modifica a impressão digital do vídeo para repostar sem ser detectado como duplicado</p>
+        {/* Status FFmpeg */}
+        <div style={{display:"inline-flex",alignItems:"center",gap:7,marginTop:10,padding:"5px 14px",borderRadius:20,background:ffReady?"rgba(34,197,94,0.08)":ffLoading?"rgba(245,158,11,0.08)":"rgba(239,68,68,0.08)",border:`0.5px solid ${ffReady?"rgba(34,197,94,0.3)":ffLoading?"rgba(245,158,11,0.3)":"rgba(239,68,68,0.3)"}`}}>
+          <span style={{width:7,height:7,borderRadius:"50%",background:ffReady?C.green:ffLoading?C.amber:C.red}}/>
+          <span style={{fontSize:12,color:ffReady?C.green:ffLoading?C.amber:C.red}}>{ffReady?"FFmpeg pronto":ffLoading?"Carregando FFmpeg...":"FFmpeg não carregado"}</span>
+          {!ffReady&&!ffLoading&&<button onClick={loadFF} style={{fontSize:11,color:C.accent,background:"none",border:"none",cursor:"pointer",textDecoration:"underline"}}>tentar novamente</button>}
+        </div>
+      </div>
+
+      <div style={{display:"grid",gridTemplateColumns:"340px 1fr",gap:20,alignItems:"start"}}>
+        {/* PAINEL ESQUERDO — Upload + Opções */}
+        <div style={{display:"flex",flexDirection:"column",gap:14}}>
+
+          {/* Upload */}
+          <div style={{...cardStyle,border:`0.5px dashed ${drag?C.accent:C.border}`,background:drag?C.accentDim:"#0d0d0d",textAlign:"center",padding:"28px 20px",cursor:"pointer",transition:"all 0.15s"}}
+            onDragOver={e=>{e.preventDefault();setDrag(true);}} onDragLeave={()=>setDrag(false)}
+            onDrop={e=>{e.preventDefault();setDrag(false);handleFile(e.dataTransfer.files[0]);}}
+            onClick={()=>document.getElementById("vhash-input").click()}>
+            <input id="vhash-input" type="file" accept="video/*" style={{display:"none"}} onChange={e=>handleFile(e.target.files[0])}/>
+            {file?(
+              <div>
+                <div style={{fontSize:28,marginBottom:8}}>🎬</div>
+                <div style={{fontSize:13,fontWeight:600,color:C.text,marginBottom:3,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{file.name}</div>
+                <div style={{fontSize:11,color:C.textMuted}}>{fmtSize(file.size)}</div>
+                <div style={{fontSize:11,color:C.accent,marginTop:6,cursor:"pointer"}}>clique para trocar</div>
+              </div>
+            ):(
+              <div>
+                <div style={{fontSize:36,marginBottom:10}}>📹</div>
+                <div style={{fontSize:13,color:C.text,fontWeight:500}}>Arraste o vídeo aqui</div>
+                <div style={{fontSize:12,color:C.textMuted,marginTop:4}}>ou clique para selecionar</div>
+                <div style={{fontSize:11,color:C.textDim,marginTop:6}}>MP4, MOV, AVI, MKV...</div>
+              </div>
+            )}
+          </div>
+
+          {/* Opções visuais */}
+          <div style={cardStyle}>
+            <div style={{fontSize:13,fontWeight:600,color:C.text,marginBottom:16,display:"flex",alignItems:"center",gap:7}}>
+              <span>🎨</span> Ajustes Visuais
+            </div>
+            <Slider label="Brilho" val={opts.brightness} set={v=>setOpts(p=>({...p,brightness:v}))} min={-20} max={20}/>
+            <Slider label="Contraste" val={opts.contrast} set={v=>setOpts(p=>({...p,contrast:v}))} min={-20} max={20}/>
+            <Slider label="Saturação" val={opts.saturation} set={v=>setOpts(p=>({...p,saturation:v}))} min={-20} max={20}/>
+            <Slider label="Ruído invisível" val={opts.noiseLevel} set={v=>setOpts(p=>({...p,noiseLevel:v}))} min={0} max={5} suffix="px"/>
+            <Slider label="Corte nas bordas" val={opts.crop} set={v=>setOpts(p=>({...p,crop:v}))} min={0} max={6} suffix="px"/>
+          </div>
+
+          {/* Opções técnicas */}
+          <div style={cardStyle}>
+            <div style={{fontSize:13,fontWeight:600,color:C.text,marginBottom:16,display:"flex",alignItems:"center",gap:7}}>
+              <span>⚙️</span> Configurações Técnicas
+            </div>
+            <div style={{marginBottom:14}}>
+              <label style={labelStyle}>FPS</label>
+              <select value={opts.fps} onChange={e=>setOpts(p=>({...p,fps:e.target.value}))}
+                style={{width:"100%",background:"#111",border:`0.5px solid ${C.border}`,color:C.text,fontFamily:"'Geist Mono',monospace",fontSize:13,padding:"8px 10px",borderRadius:8,outline:"none",cursor:"pointer"}}>
+                <option value="original">Original (sem alterar)</option>
+                <option value="29.97">29.97 fps</option>
+                <option value="30">30 fps</option>
+                <option value="25">25 fps</option>
+                <option value="24">24 fps</option>
+                <option value="60">60 fps</option>
+              </select>
+            </div>
+            {[
+              {key:"flipH",label:"🔄 Espelhar horizontalmente",desc:"Inverte o vídeo no eixo X"},
+              {key:"clearMeta",label:"🧹 Limpar metadados",desc:"Remove câmera, GPS, data, dispositivo"},
+            ].map(({key,label,desc})=>(
+              <div key={key} style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"10px 0",borderBottom:`0.5px solid ${C.border}`}}>
+                <div>
+                  <div style={{fontSize:13,color:C.text,fontWeight:500}}>{label}</div>
+                  <div style={{fontSize:11,color:C.textDim,marginTop:2}}>{desc}</div>
+                </div>
+                <button onClick={()=>setOpts(p=>({...p,[key]:!p[key]}))}
+                  style={{width:40,height:22,borderRadius:11,border:"none",cursor:"pointer",transition:"all 0.2s",background:opts[key]?C.green:"#333",position:"relative",flexShrink:0}}>
+                  <span style={{position:"absolute",top:2,width:18,height:18,borderRadius:"50%",background:"#fff",transition:"all 0.2s",left:opts[key]?"calc(100% - 20px)":"2px"}}/>
+                </button>
+              </div>
+            ))}
+          </div>
+
+          {/* Botão processar */}
+          <button onClick={process} disabled={!file||processing||!ffReady}
+            style={{padding:"12px 0",borderRadius:12,background:!file||!ffReady?C.surface:processing?C.accentDim:C.accent,border:`0.5px solid ${!file||!ffReady?C.border:C.accent}`,color:!file||!ffReady?C.textMuted:"#fff",fontSize:14,fontWeight:700,cursor:!file||processing||!ffReady?"not-allowed":"pointer",fontFamily:"'Geist',sans-serif",display:"flex",alignItems:"center",justifyContent:"center",gap:8,transition:"all 0.15s"}}>
+            {processing?(<><Spinner size={16}/> Processando... {progress}%</>):"⚡ Processar Vídeo"}
+          </button>
+
+          {/* Barra de progresso */}
+          {processing&&(
+            <div style={{background:"#1a1a1a",borderRadius:8,overflow:"hidden",height:6}}>
+              <div style={{height:"100%",background:`linear-gradient(90deg,${C.accent},${C.green})`,width:`${progress}%`,transition:"width 0.3s",borderRadius:8}}/>
+            </div>
+          )}
+        </div>
+
+        {/* PAINEL DIREITO — Preview + Resultado */}
+        <div style={{display:"flex",flexDirection:"column",gap:16}}>
+          {/* Preview original */}
+          {preview&&(
+            <div style={cardStyle}>
+              <div style={{fontSize:13,fontWeight:600,color:C.text,marginBottom:12}}>📽️ Preview Original</div>
+              <video src={preview} controls style={{width:"100%",borderRadius:10,maxHeight:320,background:"#000"}}/>
+            </div>
+          )}
+
+          {/* Resultado */}
+          {result&&(
+            <div style={{...cardStyle,border:`0.5px solid rgba(34,197,94,0.4)`,background:"rgba(34,197,94,0.04)"}}>
+              <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:16}}>
+                <span style={{fontSize:20}}>✅</span>
+                <div>
+                  <div style={{fontSize:14,fontWeight:700,color:C.green}}>Vídeo modificado com sucesso!</div>
+                  <div style={{fontSize:11,color:C.textMuted,marginTop:2}}>Hash e metadados alterados</div>
+                </div>
+              </div>
+
+              <video src={result.url} controls style={{width:"100%",borderRadius:10,maxHeight:320,background:"#000",marginBottom:16}}/>
+
+              {/* Comparação tamanho */}
+              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:16}}>
+                {[
+                  {label:"Tamanho original",val:fmtSize(result.origSize),c:C.textMuted},
+                  {label:"Tamanho novo",val:fmtSize(result.size),c:C.text},
+                ].map(s=>(
+                  <div key={s.label} style={{background:"#0d0d0d",borderRadius:10,padding:"12px 14px",border:`0.5px solid ${C.border}`}}>
+                    <div style={{fontSize:10,color:C.textDim,textTransform:"uppercase",letterSpacing:"0.05em",marginBottom:4}}>{s.label}</div>
+                    <div style={{fontSize:16,fontWeight:700,color:s.c,fontFamily:"'Geist Mono',monospace"}}>{s.val}</div>
+                  </div>
+                ))}
+              </div>
+
+              {/* O que foi modificado */}
+              <div style={{background:"#0d0d0d",borderRadius:10,padding:"12px 14px",border:`0.5px solid ${C.border}`,marginBottom:14}}>
+                <div style={{fontSize:11,color:C.textMuted,textTransform:"uppercase",letterSpacing:"0.05em",marginBottom:8}}>Modificações aplicadas</div>
+                <div style={{display:"flex",flexWrap:"wrap",gap:6}}>
+                  {[
+                    opts.brightness!==0&&`Brilho ${opts.brightness>0?"+":""}${opts.brightness}%`,
+                    opts.contrast!==0&&`Contraste ${opts.contrast>0?"+":""}${opts.contrast}%`,
+                    opts.saturation!==0&&`Saturação ${opts.saturation>0?"+":""}${opts.saturation}%`,
+                    opts.noiseLevel>0&&`Ruído +${opts.noiseLevel}px`,
+                    opts.crop>0&&`Corte ${opts.crop}px bordas`,
+                    opts.flipH&&"Espelhado",
+                    opts.fps!=="original"&&`FPS: ${opts.fps}`,
+                    opts.clearMeta&&"Metadados limpos",
+                  ].filter(Boolean).map((m,i)=>(
+                    <span key={i} style={{fontSize:11,padding:"3px 9px",borderRadius:20,background:"rgba(34,197,94,0.12)",color:C.green,border:"0.5px solid rgba(34,197,94,0.25)"}}>✓ {m}</span>
+                  ))}
+                </div>
+              </div>
+
+              <a href={result.url} download={result.name}
+                style={{display:"flex",alignItems:"center",justifyContent:"center",gap:8,padding:"12px",borderRadius:10,background:C.green,color:"#fff",fontSize:14,fontWeight:700,textDecoration:"none",fontFamily:"'Geist',sans-serif"}}>
+                <Icon name="download" size={16}/> Baixar Vídeo Modificado
+              </a>
+            </div>
+          )}
+
+          {/* Info */}
+          {!preview&&(
+            <div style={cardStyle}>
+              <div style={{fontSize:13,fontWeight:600,color:C.text,marginBottom:14}}>Como funciona?</div>
+              {[
+                {icon:"🔐",title:"Hash do arquivo",desc:"Cada vídeo tem uma impressão digital única. Alterando pixels, a hash muda completamente."},
+                {icon:"🧹",title:"Metadados removidos",desc:"Remove câmera, GPS, data de gravação, software, ID do dispositivo."},
+                {icon:"🎨",title:"Alterações invisíveis",desc:"As mudanças são tão pequenas que o olho humano não percebe, mas enganam o detector."},
+                {icon:"🔒",title:"100% privado",desc:"O vídeo é processado no seu navegador. Nada é enviado para servidores."},
+              ].map(({icon,title,desc})=>(
+                <div key={title} style={{display:"flex",gap:12,padding:"12px 0",borderBottom:`0.5px solid ${C.border}`}}>
+                  <span style={{fontSize:20,flexShrink:0}}>{icon}</span>
+                  <div>
+                    <div style={{fontSize:13,fontWeight:500,color:C.text}}>{title}</div>
+                    <div style={{fontSize:12,color:C.textMuted,marginTop:3,lineHeight:1.5}}>{desc}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};
+
 const CURRENCIES=[
   {code:"BRL",symbol:"R$",flag:"🇧🇷",name:"Real"},
   {code:"USD",symbol:"US$",flag:"🇺🇸",name:"Dólar"},
@@ -3590,6 +3874,7 @@ export default function App() {
     precificacao:<PrecificacaoPage/>,
     custos:<CustosProdutosPage sb={sb} user={user}/>,
     youtube:<YoutubePage sb={sb} user={user}/>,
+    videohash:<VideoHashPage/>,
   };
 
   return (
