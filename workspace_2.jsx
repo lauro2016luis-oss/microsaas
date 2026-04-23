@@ -3106,35 +3106,8 @@ const VideoHashPage=()=>{
   const [processing,setProcessing]=useState(false);
   const [progress,setProgress]=useState(0);
   const [result,setResult]=useState(null);
-  const [ffReady,setFfReady]=useState(false);
-  const [ffLoading,setFfLoading]=useState(false);
   const [drag,setDrag]=useState(false);
-  const ffRef=useRef(null);
   const {show,El}=useToast();
-
-  const loadFF=async()=>{
-    if(ffRef.current)return ffRef.current;
-    setFfLoading(true);
-    try{
-      if(!window.FFmpeg){
-        await new Promise((res,rej)=>{
-          const s=document.createElement("script");
-          s.src="https://unpkg.com/@ffmpeg/ffmpeg@0.11.6/dist/ffmpeg.min.js";
-          s.onload=res; s.onerror=rej;
-          document.head.appendChild(s);
-        });
-      }
-      const {createFFmpeg,fetchFile}=window.FFmpeg;
-      const ff=createFFmpeg({log:false,progress:({ratio})=>setProgress(Math.round(ratio*100))});
-      await ff.load();
-      ffRef.current=ff;
-      window._ffFetch=fetchFile;
-      setFfReady(true);
-    }catch(e){show("Erro ao carregar FFmpeg: "+e.message,"error");}
-    setFfLoading(false);
-  };
-
-  useEffect(()=>{loadFF();},[]);
 
   const handleFile=(f)=>{
     if(!f||!f.type.startsWith("video/"))return show("Selecione um arquivo de vídeo","error");
@@ -3144,35 +3117,95 @@ const VideoHashPage=()=>{
 
   const process=async()=>{
     if(!file)return;
-    if(!ffRef.current){show("FFmpeg ainda carregando...","error");return;}
     setProcessing(true); setProgress(0); setResult(null);
     try{
-      const ff=ffRef.current;
-      const fetch=window._ffFetch;
-      const ext=file.name.split(".").pop().toLowerCase()||"mp4";
-      const inp=`input.${ext}`; const out=`output.${ext}`;
-      ff.FS("writeFile",inp,await fetch(file));
+      const srcUrl=URL.createObjectURL(file);
+      // --- Hidden video element ---
+      const video=document.createElement("video");
+      video.src=srcUrl; video.muted=true; video.playsInline=true;
+      await new Promise((res,rej)=>{video.onloadedmetadata=res;video.onerror=()=>rej(new Error("Erro ao carregar vídeo"));});
 
-      // Monta filtros de vídeo
-      const vf=[];
-      const b=opts.brightness/100; const co=1+opts.contrast/100; const sat=1+opts.saturation/100;
-      if(b!==0||co!==1||sat!==1) vf.push(`eq=brightness=${b.toFixed(3)}:contrast=${co.toFixed(3)}:saturation=${sat.toFixed(3)}`);
-      if(opts.crop>0) vf.push(`crop=iw-${opts.crop*2}:ih-${opts.crop*2}:${opts.crop}:${opts.crop}`);
-      if(opts.flipH) vf.push("hflip");
-      if(opts.noiseLevel>0) vf.push(`noise=alls=${opts.noiseLevel}:allf=t+u`);
+      const origW=video.videoWidth; const origH=video.videoHeight;
+      const cropPx=opts.crop; // pixels to remove from each side
+      const w=Math.max(2,origW-cropPx*2); const h=Math.max(2,origH-cropPx*2);
 
-      const args=["-i",inp];
-      if(opts.clearMeta) args.push("-map_metadata","-1");
-      if(vf.length>0) args.push("-vf",vf.join(","));
-      if(opts.fps!=="original") args.push("-r",opts.fps);
-      args.push("-c:a","copy","-y",out);
+      // --- Canvas setup ---
+      const canvas=document.createElement("canvas");
+      canvas.width=w; canvas.height=h;
+      const ctx=canvas.getContext("2d",{willReadFrequently:opts.noiseLevel>0});
 
-      await ff.run(...args);
-      const data=ff.FS("readFile",out);
-      const blob=new Blob([data.buffer],{type:file.type});
+      // CSS filter for brightness / contrast / saturation
+      const bri=1+opts.brightness/100;
+      const con=1+opts.contrast/100;
+      const sat=1+opts.saturation/100;
+      ctx.filter=`brightness(${bri.toFixed(3)}) contrast(${con.toFixed(3)}) saturate(${sat.toFixed(3)})`;
+
+      // --- Audio passthrough via AudioContext ---
+      let combinedStream;
+      const targetFps=opts.fps==="original"?30:parseFloat(opts.fps);
+      const videoStream=canvas.captureStream(targetFps);
+      try{
+        const audioCtx=new AudioContext();
+        const src=audioCtx.createMediaElementSource(video);
+        const dest=audioCtx.createMediaStreamDestination();
+        src.connect(dest); src.connect(audioCtx.destination);
+        combinedStream=new MediaStream([...videoStream.getVideoTracks(),...dest.stream.getAudioTracks()]);
+      }catch(_){
+        combinedStream=videoStream; // fallback: no audio
+      }
+
+      // --- MediaRecorder ---
+      const mimeType=MediaRecorder.isTypeSupported("video/webm;codecs=vp9")?"video/webm;codecs=vp9":"video/webm";
+      const recorder=new MediaRecorder(combinedStream,{mimeType});
+      const chunks=[];
+      recorder.ondataavailable=e=>{if(e.data&&e.data.size>0)chunks.push(e.data);};
+      const recDone=new Promise(res=>{recorder.onstop=res;});
+      recorder.start(200); // collect every 200ms
+
+      // --- Draw loop ---
+      let ended=false;
+      video.onended=()=>{ended=true;};
+      const noiseAmt=opts.noiseLevel*6;
+
+      const drawFrame=()=>{
+        if(video.videoWidth===0)return;
+        ctx.save();
+        if(opts.flipH){ctx.translate(w,0);ctx.scale(-1,1);}
+        ctx.drawImage(video,cropPx,cropPx,origW-cropPx*2,origH-cropPx*2,0,0,w,h);
+        ctx.restore();
+        // Pixel noise (subtle, changes hash without visible change)
+        if(noiseAmt>0){
+          const id=ctx.getImageData(0,0,w,h);
+          const d=id.data;
+          for(let i=0;i<d.length;i+=4){
+            const n=(Math.random()-0.5)*noiseAmt;
+            d[i]=Math.min(255,Math.max(0,d[i]+n));
+            d[i+1]=Math.min(255,Math.max(0,d[i+1]+n));
+            d[i+2]=Math.min(255,Math.max(0,d[i+2]+n));
+          }
+          ctx.putImageData(id,0,0);
+        }
+      };
+
+      await new Promise(res=>{
+        const loop=()=>{
+          if(ended){drawFrame();res();return;}
+          drawFrame();
+          if(video.duration>0)setProgress(Math.round(video.currentTime/video.duration*95));
+          requestAnimationFrame(loop);
+        };
+        video.play().then(()=>requestAnimationFrame(loop));
+      });
+
+      setProgress(98);
+      recorder.stop();
+      await recDone;
+      URL.revokeObjectURL(srcUrl);
+
+      const blob=new Blob(chunks,{type:mimeType});
       const url=URL.createObjectURL(blob);
-      const origHash=`${file.size}-${file.lastModified}`;
-      setResult({url,name:`video_${Date.now()}.${ext}`,size:blob.size,origSize:file.size,origHash});
+      setResult({url,name:`video_${Date.now()}.webm`,size:blob.size,origSize:file.size});
+      setProgress(100);
       show("Vídeo processado com sucesso! ✅");
     }catch(e){show("Erro: "+e.message,"error");}
     setProcessing(false);
@@ -3198,11 +3231,10 @@ const VideoHashPage=()=>{
       <div style={{textAlign:"center",marginBottom:28}}>
         <h1 style={{fontSize:22,fontWeight:600,color:C.text,letterSpacing:"-0.03em"}}>Mudar Hash & Metadados</h1>
         <p style={{fontSize:13,color:C.textMuted,marginTop:4}}>Modifica a impressão digital do vídeo para repostar sem ser detectado como duplicado</p>
-        {/* Status FFmpeg */}
-        <div style={{display:"inline-flex",alignItems:"center",gap:7,marginTop:10,padding:"5px 14px",borderRadius:20,background:ffReady?"rgba(34,197,94,0.08)":ffLoading?"rgba(245,158,11,0.08)":"rgba(239,68,68,0.08)",border:`0.5px solid ${ffReady?"rgba(34,197,94,0.3)":ffLoading?"rgba(245,158,11,0.3)":"rgba(239,68,68,0.3)"}`}}>
-          <span style={{width:7,height:7,borderRadius:"50%",background:ffReady?C.green:ffLoading?C.amber:C.red}}/>
-          <span style={{fontSize:12,color:ffReady?C.green:ffLoading?C.amber:C.red}}>{ffReady?"FFmpeg pronto":ffLoading?"Carregando FFmpeg...":"FFmpeg não carregado"}</span>
-          {!ffReady&&!ffLoading&&<button onClick={loadFF} style={{fontSize:11,color:C.accent,background:"none",border:"none",cursor:"pointer",textDecoration:"underline"}}>tentar novamente</button>}
+        {/* Status motor */}
+        <div style={{display:"inline-flex",alignItems:"center",gap:7,marginTop:10,padding:"5px 14px",borderRadius:20,background:"rgba(34,197,94,0.08)",border:"0.5px solid rgba(34,197,94,0.3)"}}>
+          <span style={{width:7,height:7,borderRadius:"50%",background:C.green}}/>
+          <span style={{fontSize:12,color:C.green}}>Processamento 100% no navegador • sem upload</span>
         </div>
       </div>
 
@@ -3280,8 +3312,8 @@ const VideoHashPage=()=>{
           </div>
 
           {/* Botão processar */}
-          <button onClick={process} disabled={!file||processing||!ffReady}
-            style={{padding:"12px 0",borderRadius:12,background:!file||!ffReady?C.surface:processing?C.accentDim:C.accent,border:`0.5px solid ${!file||!ffReady?C.border:C.accent}`,color:!file||!ffReady?C.textMuted:"#fff",fontSize:14,fontWeight:700,cursor:!file||processing||!ffReady?"not-allowed":"pointer",fontFamily:"'Geist',sans-serif",display:"flex",alignItems:"center",justifyContent:"center",gap:8,transition:"all 0.15s"}}>
+          <button onClick={process} disabled={!file||processing}
+            style={{padding:"12px 0",borderRadius:12,background:!file?C.surface:processing?C.accentDim:C.accent,border:`0.5px solid ${!file?C.border:C.accent}`,color:!file?C.textMuted:"#fff",fontSize:14,fontWeight:700,cursor:!file||processing?"not-allowed":"pointer",fontFamily:"'Geist',sans-serif",display:"flex",alignItems:"center",justifyContent:"center",gap:8,transition:"all 0.15s"}}>
             {processing?(<><Spinner size={16}/> Processando... {progress}%</>):"⚡ Processar Vídeo"}
           </button>
 
