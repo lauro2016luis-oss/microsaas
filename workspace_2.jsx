@@ -3151,6 +3151,7 @@ const VideoHashPage=()=>{
       const filterStr=`brightness(${bri.toFixed(3)}) contrast(${con.toFixed(3)}) saturate(${sat.toFixed(3)})`;
       const noiseAmt=opts.noiseLevel*5;
 
+      // drawFrame: CSS filter (GPU) + ruído leve por fillRect — zero getImageData, zero lag
       const drawFrame=()=>{
         if(!video.videoWidth)return;
         ctx.filter=filterStr;
@@ -3159,16 +3160,11 @@ const VideoHashPage=()=>{
         ctx.drawImage(video,cropPx,cropPx,origW-cropPx*2,origH-cropPx*2,0,0,w,h);
         ctx.restore();
         ctx.filter="none";
+        // Ruído invisível: overlay semitransparente com cor aleatória muda o hash sem custo de CPU
         if(noiseAmt>0){
-          const id=ctx.getImageData(0,0,w,h);
-          const d=id.data;
-          for(let i=0;i<d.length;i+=4){
-            const n=(Math.random()-.5)*noiseAmt;
-            d[i]=Math.min(255,Math.max(0,d[i]+n));
-            d[i+1]=Math.min(255,Math.max(0,d[i+1]+n));
-            d[i+2]=Math.min(255,Math.max(0,d[i+2]+n));
-          }
-          ctx.putImageData(id,0,0);
+          const alpha=noiseAmt*0.0008; // ≤ 0.4% opacidade — imperceptível ao olho
+          ctx.fillStyle=`rgba(${(Math.random()*255)|0},${(Math.random()*255)|0},${(Math.random()*255)|0},${alpha.toFixed(4)})`;
+          ctx.fillRect(0,0,w,h);
         }
       };
 
@@ -3189,7 +3185,7 @@ const VideoHashPage=()=>{
         audioCtx=new (window.AudioContext||window.webkitAudioContext)();
         const audioSrc=audioCtx.createMediaElementSource(video);
         const audioDest=audioCtx.createMediaStreamDestination();
-        audioSrc.connect(audioDest); // captura áudio → stream (sem tocar no speaker)
+        audioSrc.connect(audioDest);
         recStream=new MediaStream([...videoStream.getVideoTracks(),...audioDest.stream.getAudioTracks()]);
       }catch(_){}
 
@@ -3198,22 +3194,24 @@ const VideoHashPage=()=>{
       const chunks=[];
       recorder.ondataavailable=e=>{if(e.data&&e.data.size>0)chunks.push(e.data);};
       const recDone=new Promise(res=>{recorder.onstop=res;});
-      recorder.start(50); // chunk a cada 50ms
+      recorder.start(100);
 
-      // ── 6. Loop de captura via setInterval (não sofre throttle do rAF) ──
+      // ── 6. requestVideoFrameCallback: sincroniza exatamente com cada frame decodificado ──
+      const hasVFC=typeof video.requestVideoFrameCallback==="function";
       await new Promise((res,rej)=>{
-        video.onended=()=>{
-          if(timer){clearInterval(timer);timer=null;}
-          drawFrame(); // último frame
-          res();
-        };
+        video.onended=()=>{drawFrame();res();};
         video.onerror=rej;
-        const ms=Math.round(1000/targetFps);
-        timer=setInterval(()=>{
+        const tick=()=>{
+          if(video.ended)return;
           drawFrame();
           if(video.duration>0)setProgress(Math.round(video.currentTime/video.duration*94));
-        },ms);
-        video.play().catch(rej);
+          if(hasVFC)video.requestVideoFrameCallback(tick);
+          else requestAnimationFrame(tick);
+        };
+        video.play().then(()=>{
+          if(hasVFC)video.requestVideoFrameCallback(tick);
+          else requestAnimationFrame(tick);
+        }).catch(rej);
       });
 
       setProgress(97);
