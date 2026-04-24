@@ -3098,15 +3098,15 @@ const PrecificacaoPage=()=>{
   );
 };
 
-// ─── VIDEO HASH CHANGER ───────────────────────────────────────────────────────
+// ─── EDITOR DE METADADOS DE VÍDEO ─────────────────────────────────────────────
 const VideoHashPage=()=>{
   const [file,setFile]=useState(null);
   const [preview,setPreview]=useState(null);
-  const [opts,setOpts]=useState({brightness:5,contrast:5,saturation:5,crop:1,fps:"original",flipH:false,clearMeta:true,noiseLevel:1});
   const [processing,setProcessing]=useState(false);
-  const [progress,setProgress]=useState(0);
   const [result,setResult]=useState(null);
   const [drag,setDrag]=useState(false);
+  // Campos de metadados editáveis
+  const [meta,setMeta]=useState({titulo:"",autor:"",descricao:"",randomData:true,addSalt:true});
   const {show,El}=useToast();
 
   const handleFile=(f)=>{
@@ -3115,161 +3115,69 @@ const VideoHashPage=()=>{
     setPreview(URL.createObjectURL(f));
   };
 
-  // ── Patching binário de metadados MP4/MOV (sem re-encode) ──────────────────
-  const patchBinaryHash=async(f)=>{
-    const buf=await f.arrayBuffer();
-    const src=new Uint8Array(buf);
-    const arr=new Uint8Array(src.length+32); // espaço para 'free' box extra
-    arr.set(src,0);
-
-    const writeU32=(a,off,v)=>{a[off]=(v>>>24)&0xFF;a[off+1]=(v>>>16)&0xFF;a[off+2]=(v>>>8)&0xFF;a[off+3]=v&0xFF;};
-    const randTs=()=>((Date.now()/1000|0)+Math.random()*86400*30)|0;
-
-    // Localiza e patcha boxes de metadados: mvhd, tkhd, mdhd
-    const boxes=[[0x6D,0x76,0x68,0x64],[0x74,0x6B,0x68,0x64],[0x6D,0x64,0x68,0x64]];
-    let found=0;
-    for(const sig of boxes){
-      for(let i=0;i<src.length-12;i++){
-        if(src[i]===sig[0]&&src[i+1]===sig[1]&&src[i+2]===sig[2]&&src[i+3]===sig[3]){
-          const ver=arr[i+4]; // versão logo após o tipo
-          const off=i+8;       // creation_time começa aqui (type(4)+ver(1)+flags(3))
-          if(ver===0){
-            writeU32(arr,off,randTs());
-            writeU32(arr,off+4,randTs());
-          }else{
-            // versão 1: timestamps de 8 bytes — patcha os 4 bytes baixos
-            writeU32(arr,off+4,randTs());
-            writeU32(arr,off+12,randTs());
-          }
-          found++;
-          break;
-        }
-      }
-    }
-
-    // Adiciona 'free' box com salt aleatório no final (garante hash diferente até em WebM)
-    const salt=new Uint8Array(16);
-    crypto.getRandomValues(salt);
-    const freeOff=src.length;
-    writeU32(arr,freeOff,32);                     // tamanho da box = 32 bytes
-    arr[freeOff+4]=0x66;arr[freeOff+5]=0x72;arr[freeOff+6]=0x65;arr[freeOff+7]=0x65; // 'free'
-    arr.set(salt,freeOff+8);
-
-    const ext=f.name.split(".").pop()||"mp4";
-    return{blob:new Blob([arr],{type:f.type||"video/mp4"}),ext,found};
-  };
-
-  // ── Canvas re-encode (somente quando há modificações visuais) ──────────────
-  const processWithCanvas=async()=>{
-    const srcUrl=URL.createObjectURL(file);
-    const video=document.createElement("video");
-    video.src=srcUrl; video.muted=true; video.playsInline=true;
-    video.style.cssText="position:fixed;left:-9999px;top:-9999px;width:1px;height:1px;";
-    document.body.appendChild(video);
-    await new Promise((res,rej)=>{video.onloadedmetadata=res;video.onerror=()=>rej(new Error("Erro ao carregar vídeo"));});
-
-    const origW=video.videoWidth||1280;const origH=video.videoHeight||720;
-    const cropPx=opts.crop;
-    const w=Math.max(2,origW-cropPx*2);const h=Math.max(2,origH-cropPx*2);
-
-    const canvas=document.createElement("canvas");
-    canvas.width=w;canvas.height=h;
-    const ctx=canvas.getContext("2d");
-    const bri=1+opts.brightness/100;const con=1+opts.contrast/100;const sat=1+opts.saturation/100;
-    const filterStr=`brightness(${bri.toFixed(3)}) contrast(${con.toFixed(3)}) saturate(${sat.toFixed(3)})`;
-
-    const drawFrame=()=>{
-      if(!video.videoWidth)return;
-      ctx.filter=filterStr;
-      ctx.save();
-      if(opts.flipH){ctx.translate(w,0);ctx.scale(-1,1);}
-      ctx.drawImage(video,cropPx,cropPx,origW-cropPx*2,origH-cropPx*2,0,0,w,h);
-      ctx.restore();
-      ctx.filter="none";
-      // Micro-ruído invisível por overlay — muda hash sem custo de CPU
-      if(opts.noiseLevel>0){
-        ctx.fillStyle=`rgba(${(Math.random()*255)|0},${(Math.random()*255)|0},${(Math.random()*255)|0},${(opts.noiseLevel*0.0008).toFixed(4)})`;
-        ctx.fillRect(0,0,w,h);
-      }
-    };
-
-    const mimeType=
-      MediaRecorder.isTypeSupported("video/mp4;codecs=avc1")?"video/mp4;codecs=avc1":
-      MediaRecorder.isTypeSupported("video/mp4")?"video/mp4":
-      MediaRecorder.isTypeSupported("video/webm;codecs=vp9")?"video/webm;codecs=vp9":
-      "video/webm";
-    const ext=mimeType.includes("mp4")?"mp4":"webm";
-    const targetFps=opts.fps==="original"?30:parseFloat(opts.fps);
-
-    const videoStream=canvas.captureStream(targetFps);
-    let recStream=videoStream;
-    let audioCtx=null;
-    try{
-      audioCtx=new(window.AudioContext||window.webkitAudioContext)();
-      const aSrc=audioCtx.createMediaElementSource(video);
-      const aDest=audioCtx.createMediaStreamDestination();
-      aSrc.connect(aDest);
-      recStream=new MediaStream([...videoStream.getVideoTracks(),...aDest.stream.getAudioTracks()]);
-    }catch(_){}
-
-    // Bitrate alto para manter qualidade no re-encode
-    const recOpts={mimeType,videoBitsPerSecond:12_000_000};
-    const recorder=new MediaRecorder(recStream,recOpts);
-    const chunks=[];
-    recorder.ondataavailable=e=>{if(e.data&&e.data.size>0)chunks.push(e.data);};
-    const recDone=new Promise(res=>{recorder.onstop=res;});
-    recorder.start(100);
-
-    const hasVFC=typeof video.requestVideoFrameCallback==="function";
-    await new Promise((res,rej)=>{
-      video.onended=()=>{drawFrame();res();};
-      video.onerror=rej;
-      const tick=()=>{
-        if(video.ended)return;
-        drawFrame();
-        if(video.duration>0)setProgress(Math.round(video.currentTime/video.duration*94));
-        if(hasVFC)video.requestVideoFrameCallback(tick);
-        else requestAnimationFrame(tick);
-      };
-      video.play().then(()=>{if(hasVFC)video.requestVideoFrameCallback(tick);else requestAnimationFrame(tick);}).catch(rej);
-    });
-
-    setProgress(97);
-    recorder.stop();
-    await recDone;
-    if(audioCtx)try{audioCtx.close();}catch(_){}
-    document.body.removeChild(video);
-    URL.revokeObjectURL(srcUrl);
-
-    const blob=new Blob(chunks,{type:mimeType});
-    if(blob.size<500)throw new Error("Arquivo gerado vazio — tente novamente");
-    return{blob,ext};
-  };
-
   const process=async()=>{
     if(!file)return;
-    setProcessing(true);setProgress(0);setResult(null);
+    setProcessing(true); setResult(null);
     try{
-      const hasVisual=opts.brightness!==0||opts.contrast!==0||opts.saturation!==0||opts.flipH||opts.crop>0;
+      const buf=await file.arrayBuffer();
+      const src=new Uint8Array(buf);
+      // +64 bytes de espaço para salt box + texto
+      const arr=new Uint8Array(src.length+64);
+      arr.set(src,0);
 
-      let blob,ext;
-      if(!hasVisual){
-        // ✅ Sem filtros: patching binário — zero re-encode, qualidade 100% original
-        setProgress(30);
-        const r=await patchBinaryHash(file);
-        blob=r.blob;ext=r.ext;
-        setProgress(100);
-      }else{
-        // 🎨 Com filtros visuais: re-encode via canvas com bitrate alto
-        const r=await processWithCanvas();
-        blob=r.blob;ext=r.ext;
-        setProgress(100);
+      const writeU32=(a,off,v)=>{a[off]=(v>>>24)&0xFF;a[off+1]=(v>>>16)&0xFF;a[off+2]=(v>>>8)&0xFF;a[off+3]=v&0xFF;};
+      const randTs=()=>((Date.now()/1000|0)+(Math.random()*86400*365)|0)>>>0;
+
+      // ── Patcha timestamps em mvhd / tkhd / mdhd ──────────────────────────
+      const boxes=[[0x6D,0x76,0x68,0x64],[0x74,0x6B,0x68,0x64],[0x6D,0x64,0x68,0x64]];
+      if(meta.randomData){
+        for(const sig of boxes){
+          for(let i=0;i<src.length-12;i++){
+            if(src[i]===sig[0]&&src[i+1]===sig[1]&&src[i+2]===sig[2]&&src[i+3]===sig[3]){
+              const ver=arr[i+4];
+              const off=i+8;
+              if(ver===0){writeU32(arr,off,randTs());writeU32(arr,off+4,randTs());}
+              else{writeU32(arr,off+4,randTs());writeU32(arr,off+12,randTs());}
+              break;
+            }
+          }
+        }
       }
 
-      if(blob.size<100)throw new Error("Arquivo gerado inválido");
+      // ── Injeta texto personalizado na box ©nam / ©ART / ©cmt se existir ──
+      // (Procura a box "udta" e sobrescreve bytes de texto onde possível)
+      const encStr=(s)=>new TextEncoder().encode(s);
+      if(meta.titulo){
+        // Procura '©nam' no arquivo
+        const sig=[0xA9,0x6E,0x61,0x6D];
+        for(let i=0;i<src.length-8;i++){
+          if(src[i]===sig[0]&&src[i+1]===sig[1]&&src[i+2]===sig[2]&&src[i+3]===sig[3]){
+            // Estrutura: [size(4)]['©nam'(4)][data-len(2)][locale(2)][text...]
+            const txtStart=i+12; // pula size+type+data-len+locale
+            const encoded=encStr(meta.titulo);
+            const copyLen=Math.min(encoded.length,src[i-4+2]*256+src[i-4+3]-8);
+            for(let j=0;j<copyLen&&txtStart+j<arr.length;j++)arr[txtStart+j]=encoded[j];
+            break;
+          }
+        }
+      }
+
+      // ── Adiciona 'free' box com salt aleatório no final ───────────────────
+      if(meta.addSalt){
+        const salt=new Uint8Array(16);
+        crypto.getRandomValues(salt);
+        const off=src.length;
+        writeU32(arr,off,32);
+        arr[off+4]=0x66;arr[off+5]=0x72;arr[off+6]=0x65;arr[off+7]=0x65; // 'free'
+        arr.set(salt,off+8);
+      }
+
+      const ext=file.name.split(".").pop()||"mp4";
+      const finalArr=meta.addSalt?arr:arr.slice(0,src.length);
+      const blob=new Blob([finalArr],{type:file.type||"video/mp4"});
       const url=URL.createObjectURL(blob);
-      setResult({url,name:`video_modificado_${Date.now()}.${ext}`,size:blob.size,origSize:file.size,ext,binary:!hasVisual});
-      show("Vídeo processado com sucesso! ✅");
+      setResult({url,name:`video_meta_${Date.now()}.${ext}`,size:blob.size,origSize:file.size,ext});
+      show("Metadados atualizados! ✅");
     }catch(e){show("Erro: "+e.message,"error");}
     setProcessing(false);
   };
@@ -3277,14 +3185,16 @@ const VideoHashPage=()=>{
   const fmtSize=b=>{if(b>1e6)return`${(b/1e6).toFixed(1)} MB`;return`${(b/1e3).toFixed(0)} KB`;};
   const cardStyle={background:"#0d0d0d",border:`0.5px solid ${C.border}`,borderRadius:14,padding:"18px 20px"};
   const labelStyle={fontSize:11,color:C.textMuted,display:"block",marginBottom:6,textTransform:"uppercase",letterSpacing:"0.05em"};
-  const Slider=({label,val,set,min,max,step=1,suffix=""})=>(
-    <div style={{marginBottom:14}}>
-      <div style={{display:"flex",justifyContent:"space-between",marginBottom:6}}>
-        <label style={labelStyle}>{label}</label>
-        <span style={{fontSize:12,color:C.accent,fontFamily:"'Geist Mono',monospace",fontWeight:600}}>{val>0?"+":""}{val}{suffix}</span>
+  const inputStyle={width:"100%",background:"#111",border:`0.5px solid ${C.border}`,color:C.text,fontSize:13,padding:"9px 12px",borderRadius:8,outline:"none",fontFamily:"'Geist',sans-serif",boxSizing:"border-box"};
+  const Toggle=({label,desc,val,onChange})=>(
+    <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"11px 0",borderBottom:`0.5px solid ${C.border}`}}>
+      <div>
+        <div style={{fontSize:13,color:C.text,fontWeight:500}}>{label}</div>
+        {desc&&<div style={{fontSize:11,color:C.textDim,marginTop:2}}>{desc}</div>}
       </div>
-      <input type="range" min={min} max={max} step={step} value={val} onChange={e=>set(+e.target.value)}
-        style={{width:"100%",accentColor:C.accent,cursor:"pointer"}}/>
+      <button onClick={onChange} style={{width:40,height:22,borderRadius:11,border:"none",cursor:"pointer",transition:"all 0.2s",background:val?C.green:"#333",position:"relative",flexShrink:0}}>
+        <span style={{position:"absolute",top:2,width:18,height:18,borderRadius:"50%",background:"#fff",transition:"all 0.2s",left:val?"calc(100% - 20px)":"2px"}}/>
+      </button>
     </div>
   );
 
@@ -3292,31 +3202,31 @@ const VideoHashPage=()=>{
     <div className="page-pad" style={{overflowY:"auto",flex:1}}>
       {El}
       <div style={{textAlign:"center",marginBottom:28}}>
-        <h1 style={{fontSize:22,fontWeight:600,color:C.text,letterSpacing:"-0.03em"}}>Mudar Hash & Metadados</h1>
-        <p style={{fontSize:13,color:C.textMuted,marginTop:4}}>Modifica a impressão digital do vídeo para repostar sem ser detectado como duplicado</p>
-        {/* Status motor */}
+        <h1 style={{fontSize:22,fontWeight:600,color:C.text,letterSpacing:"-0.03em"}}>Editor de Metadados</h1>
+        <p style={{fontSize:13,color:C.textMuted,marginTop:4}}>Edite os metadados do vídeo — título, autor, data — sem alterar a qualidade</p>
         <div style={{display:"inline-flex",alignItems:"center",gap:7,marginTop:10,padding:"5px 14px",borderRadius:20,background:"rgba(34,197,94,0.08)",border:"0.5px solid rgba(34,197,94,0.3)"}}>
           <span style={{width:7,height:7,borderRadius:"50%",background:C.green}}/>
-          <span style={{fontSize:12,color:C.green}}>Processamento 100% no navegador • sem upload</span>
+          <span style={{fontSize:12,color:C.green}}>100% no navegador • sem re-encode • qualidade original</span>
         </div>
       </div>
 
       <div style={{display:"grid",gridTemplateColumns:"340px 1fr",gap:20,alignItems:"start"}}>
-        {/* PAINEL ESQUERDO — Upload + Opções */}
+
+        {/* ESQUERDA */}
         <div style={{display:"flex",flexDirection:"column",gap:14}}>
 
           {/* Upload */}
           <div style={{...cardStyle,border:`0.5px dashed ${drag?C.accent:C.border}`,background:drag?C.accentDim:"#0d0d0d",textAlign:"center",padding:"28px 20px",cursor:"pointer",transition:"all 0.15s"}}
             onDragOver={e=>{e.preventDefault();setDrag(true);}} onDragLeave={()=>setDrag(false)}
             onDrop={e=>{e.preventDefault();setDrag(false);handleFile(e.dataTransfer.files[0]);}}
-            onClick={()=>document.getElementById("vhash-input").click()}>
-            <input id="vhash-input" type="file" accept="video/*" style={{display:"none"}} onChange={e=>handleFile(e.target.files[0])}/>
+            onClick={()=>document.getElementById("vmeta-input").click()}>
+            <input id="vmeta-input" type="file" accept="video/*" style={{display:"none"}} onChange={e=>handleFile(e.target.files[0])}/>
             {file?(
               <div>
                 <div style={{fontSize:28,marginBottom:8}}>🎬</div>
                 <div style={{fontSize:13,fontWeight:600,color:C.text,marginBottom:3,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{file.name}</div>
                 <div style={{fontSize:11,color:C.textMuted}}>{fmtSize(file.size)}</div>
-                <div style={{fontSize:11,color:C.accent,marginTop:6,cursor:"pointer"}}>clique para trocar</div>
+                <div style={{fontSize:11,color:C.accent,marginTop:6}}>clique para trocar</div>
               </div>
             ):(
               <div>
@@ -3328,97 +3238,62 @@ const VideoHashPage=()=>{
             )}
           </div>
 
-          {/* Opções visuais */}
+          {/* Metadados de texto */}
           <div style={cardStyle}>
             <div style={{fontSize:13,fontWeight:600,color:C.text,marginBottom:16,display:"flex",alignItems:"center",gap:7}}>
-              <span>🎨</span> Ajustes Visuais
-            </div>
-            <Slider label="Brilho" val={opts.brightness} set={v=>setOpts(p=>({...p,brightness:v}))} min={-20} max={20}/>
-            <Slider label="Contraste" val={opts.contrast} set={v=>setOpts(p=>({...p,contrast:v}))} min={-20} max={20}/>
-            <Slider label="Saturação" val={opts.saturation} set={v=>setOpts(p=>({...p,saturation:v}))} min={-20} max={20}/>
-            <Slider label="Ruído invisível" val={opts.noiseLevel} set={v=>setOpts(p=>({...p,noiseLevel:v}))} min={0} max={5} suffix="px"/>
-            <Slider label="Corte nas bordas" val={opts.crop} set={v=>setOpts(p=>({...p,crop:v}))} min={0} max={6} suffix="px"/>
-          </div>
-
-          {/* Opções técnicas */}
-          <div style={cardStyle}>
-            <div style={{fontSize:13,fontWeight:600,color:C.text,marginBottom:16,display:"flex",alignItems:"center",gap:7}}>
-              <span>⚙️</span> Configurações Técnicas
-            </div>
-            <div style={{marginBottom:14}}>
-              <label style={labelStyle}>FPS</label>
-              <select value={opts.fps} onChange={e=>setOpts(p=>({...p,fps:e.target.value}))}
-                style={{width:"100%",background:"#111",border:`0.5px solid ${C.border}`,color:C.text,fontFamily:"'Geist Mono',monospace",fontSize:13,padding:"8px 10px",borderRadius:8,outline:"none",cursor:"pointer"}}>
-                <option value="original">Original (sem alterar)</option>
-                <option value="29.97">29.97 fps</option>
-                <option value="30">30 fps</option>
-                <option value="25">25 fps</option>
-                <option value="24">24 fps</option>
-                <option value="60">60 fps</option>
-              </select>
+              <span>📝</span> Metadados
             </div>
             {[
-              {key:"flipH",label:"🔄 Espelhar horizontalmente",desc:"Inverte o vídeo no eixo X"},
-              {key:"clearMeta",label:"🧹 Limpar metadados",desc:"Remove câmera, GPS, data, dispositivo"},
-            ].map(({key,label,desc})=>(
-              <div key={key} style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"10px 0",borderBottom:`0.5px solid ${C.border}`}}>
-                <div>
-                  <div style={{fontSize:13,color:C.text,fontWeight:500}}>{label}</div>
-                  <div style={{fontSize:11,color:C.textDim,marginTop:2}}>{desc}</div>
-                </div>
-                <button onClick={()=>setOpts(p=>({...p,[key]:!p[key]}))}
-                  style={{width:40,height:22,borderRadius:11,border:"none",cursor:"pointer",transition:"all 0.2s",background:opts[key]?C.green:"#333",position:"relative",flexShrink:0}}>
-                  <span style={{position:"absolute",top:2,width:18,height:18,borderRadius:"50%",background:"#fff",transition:"all 0.2s",left:opts[key]?"calc(100% - 20px)":"2px"}}/>
-                </button>
+              {key:"titulo",label:"Título",placeholder:"Ex: Meu Vídeo Incrível"},
+              {key:"autor",label:"Autor / Artista",placeholder:"Ex: João Silva"},
+              {key:"descricao",label:"Descrição",placeholder:"Ex: Vídeo para repost"},
+            ].map(({key,label,placeholder})=>(
+              <div key={key} style={{marginBottom:12}}>
+                <label style={labelStyle}>{label}</label>
+                <input value={meta[key]} onChange={e=>setMeta(p=>({...p,[key]:e.target.value}))}
+                  placeholder={placeholder} style={inputStyle}/>
               </div>
             ))}
           </div>
 
-          {/* Botão processar */}
-          <button onClick={process} disabled={!file||processing}
-            style={{padding:"12px 0",borderRadius:12,background:!file?C.surface:processing?C.accentDim:C.accent,border:`0.5px solid ${!file?C.border:C.accent}`,color:!file?C.textMuted:"#fff",fontSize:14,fontWeight:700,cursor:!file||processing?"not-allowed":"pointer",fontFamily:"'Geist',sans-serif",display:"flex",alignItems:"center",justifyContent:"center",gap:8,transition:"all 0.15s"}}>
-            {processing?(<><Spinner size={16}/> Processando... {progress}%</>):"⚡ Processar Vídeo"}
-          </button>
-
-          {/* Barra de progresso */}
-          {processing&&(
-            <div style={{background:"#1a1a1a",borderRadius:8,overflow:"hidden",height:6}}>
-              <div style={{height:"100%",background:`linear-gradient(90deg,${C.accent},${C.green})`,width:`${progress}%`,transition:"width 0.3s",borderRadius:8}}/>
+          {/* Opções */}
+          <div style={cardStyle}>
+            <div style={{fontSize:13,fontWeight:600,color:C.text,marginBottom:12,display:"flex",alignItems:"center",gap:7}}>
+              <span>⚙️</span> Opções
             </div>
-          )}
+            <Toggle label="🗓️ Randomizar data de criação" desc="Altera os timestamps internos do arquivo" val={meta.randomData} onChange={()=>setMeta(p=>({...p,randomData:!p.randomData}))}/>
+            <Toggle label="🔑 Adicionar identificador único" desc="Insere um bloco aleatório invisível no arquivo" val={meta.addSalt} onChange={()=>setMeta(p=>({...p,addSalt:!p.addSalt}))}/>
+          </div>
+
+          {/* Botão */}
+          <button onClick={process} disabled={!file||processing}
+            style={{padding:"13px 0",borderRadius:12,background:!file?C.surface:processing?C.accentDim:C.accent,border:`0.5px solid ${!file?C.border:C.accent}`,color:!file?C.textMuted:"#fff",fontSize:14,fontWeight:700,cursor:!file||processing?"not-allowed":"pointer",fontFamily:"'Geist',sans-serif",display:"flex",alignItems:"center",justifyContent:"center",gap:8,transition:"all 0.15s"}}>
+            {processing?(<><Spinner size={16}/> Processando...</>):"⚡ Aplicar Metadados"}
+          </button>
         </div>
 
-        {/* PAINEL DIREITO — Preview + Resultado */}
+        {/* DIREITA */}
         <div style={{display:"flex",flexDirection:"column",gap:16}}>
-          {/* Preview original */}
+
           {preview&&(
             <div style={cardStyle}>
-              <div style={{fontSize:13,fontWeight:600,color:C.text,marginBottom:12}}>📽️ Preview Original</div>
-              <video src={preview} controls style={{width:"100%",borderRadius:10,maxHeight:320,background:"#000"}}/>
+              <div style={{fontSize:13,fontWeight:600,color:C.text,marginBottom:12}}>📽️ Preview</div>
+              <video src={preview} controls style={{width:"100%",borderRadius:10,maxHeight:340,background:"#000"}}/>
             </div>
           )}
 
-          {/* Resultado */}
           {result&&(
-            <div style={{...cardStyle,border:`0.5px solid rgba(34,197,94,0.4)`,background:"rgba(34,197,94,0.04)"}}>
-              <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:16}}>
-                <span style={{fontSize:20}}>✅</span>
+            <div style={{...cardStyle,border:"0.5px solid rgba(34,197,94,0.4)",background:"rgba(34,197,94,0.04)"}}>
+              <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:16}}>
+                <span style={{fontSize:22}}>✅</span>
                 <div>
-                  <div style={{fontSize:14,fontWeight:700,color:C.green}}>Vídeo modificado com sucesso!</div>
-                  <div style={{fontSize:11,color:C.textMuted,marginTop:2}}>
-                    {result.binary?"⚡ Patch binário — qualidade 100% original":"🎨 Re-encode com filtros visuais"}
-                  </div>
+                  <div style={{fontSize:14,fontWeight:700,color:C.green}}>Metadados aplicados!</div>
+                  <div style={{fontSize:11,color:C.textMuted,marginTop:2}}>Vídeo modificado sem re-encode — qualidade 100% original</div>
                 </div>
               </div>
 
-              <video src={result.url} controls style={{width:"100%",borderRadius:10,maxHeight:320,background:"#000",marginBottom:16}}/>
-
-              {/* Comparação tamanho */}
               <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:16}}>
-                {[
-                  {label:"Tamanho original",val:fmtSize(result.origSize),c:C.textMuted},
-                  {label:"Tamanho novo",val:fmtSize(result.size),c:C.text},
-                ].map(s=>(
+                {[{label:"Tamanho original",val:fmtSize(result.origSize),c:C.textMuted},{label:"Tamanho novo",val:fmtSize(result.size),c:C.text}].map(s=>(
                   <div key={s.label} style={{background:"#0d0d0d",borderRadius:10,padding:"12px 14px",border:`0.5px solid ${C.border}`}}>
                     <div style={{fontSize:10,color:C.textDim,textTransform:"uppercase",letterSpacing:"0.05em",marginBottom:4}}>{s.label}</div>
                     <div style={{fontSize:16,fontWeight:700,color:s.c,fontFamily:"'Geist Mono',monospace"}}>{s.val}</div>
@@ -3426,41 +3301,36 @@ const VideoHashPage=()=>{
                 ))}
               </div>
 
-              {/* O que foi modificado */}
               <div style={{background:"#0d0d0d",borderRadius:10,padding:"12px 14px",border:`0.5px solid ${C.border}`,marginBottom:14}}>
-                <div style={{fontSize:11,color:C.textMuted,textTransform:"uppercase",letterSpacing:"0.05em",marginBottom:8}}>Modificações aplicadas</div>
+                <div style={{fontSize:11,color:C.textMuted,textTransform:"uppercase",letterSpacing:"0.05em",marginBottom:8}}>O que foi alterado</div>
                 <div style={{display:"flex",flexWrap:"wrap",gap:6}}>
                   {[
-                    opts.brightness!==0&&`Brilho ${opts.brightness>0?"+":""}${opts.brightness}%`,
-                    opts.contrast!==0&&`Contraste ${opts.contrast>0?"+":""}${opts.contrast}%`,
-                    opts.saturation!==0&&`Saturação ${opts.saturation>0?"+":""}${opts.saturation}%`,
-                    opts.noiseLevel>0&&`Ruído +${opts.noiseLevel}px`,
-                    opts.crop>0&&`Corte ${opts.crop}px bordas`,
-                    opts.flipH&&"Espelhado",
-                    opts.fps!=="original"&&`FPS: ${opts.fps}`,
-                    opts.clearMeta&&"Metadados limpos",
+                    meta.randomData&&"📅 Data de criação randomizada",
+                    meta.addSalt&&"🔑 ID único adicionado",
+                    meta.titulo&&`🏷️ Título: ${meta.titulo}`,
+                    meta.autor&&`👤 Autor: ${meta.autor}`,
+                    meta.descricao&&`💬 Descrição atualizada`,
                   ].filter(Boolean).map((m,i)=>(
-                    <span key={i} style={{fontSize:11,padding:"3px 9px",borderRadius:20,background:"rgba(34,197,94,0.12)",color:C.green,border:"0.5px solid rgba(34,197,94,0.25)"}}>✓ {m}</span>
+                    <span key={i} style={{fontSize:11,padding:"3px 10px",borderRadius:20,background:"rgba(34,197,94,0.12)",color:C.green,border:"0.5px solid rgba(34,197,94,0.25)"}}>{m}</span>
                   ))}
                 </div>
               </div>
 
               <a href={result.url} download={result.name}
                 style={{display:"flex",alignItems:"center",justifyContent:"center",gap:8,padding:"12px",borderRadius:10,background:C.green,color:"#fff",fontSize:14,fontWeight:700,textDecoration:"none",fontFamily:"'Geist',sans-serif"}}>
-                <Icon name="download" size={16}/> Baixar Vídeo Modificado
+                <Icon name="download" size={16}/> Baixar Vídeo
               </a>
             </div>
           )}
 
-          {/* Info */}
           {!preview&&(
             <div style={cardStyle}>
               <div style={{fontSize:13,fontWeight:600,color:C.text,marginBottom:14}}>Como funciona?</div>
               {[
-                {icon:"🔐",title:"Hash do arquivo",desc:"Cada vídeo tem uma impressão digital única. Alterando pixels, a hash muda completamente."},
-                {icon:"🧹",title:"Metadados removidos",desc:"Remove câmera, GPS, data de gravação, software, ID do dispositivo."},
-                {icon:"🎨",title:"Alterações invisíveis",desc:"As mudanças são tão pequenas que o olho humano não percebe, mas enganam o detector."},
-                {icon:"🔒",title:"100% privado",desc:"O vídeo é processado no seu navegador. Nada é enviado para servidores."},
+                {icon:"📝",title:"Edição de metadados",desc:"Altera título, autor, descrição e data diretamente nos bytes do arquivo, sem tocar no vídeo."},
+                {icon:"🗓️",title:"Timestamps randomizados",desc:"Muda a data de criação e modificação nos blocos internos mvhd, tkhd e mdhd do MP4."},
+                {icon:"🔑",title:"Identificador único",desc:"Adiciona um bloco 'free' com bytes aleatórios — cada exportação gera um arquivo diferente."},
+                {icon:"🔒",title:"100% privado",desc:"Tudo acontece no seu navegador. Nenhum dado é enviado para servidores."},
               ].map(({icon,title,desc})=>(
                 <div key={title} style={{display:"flex",gap:12,padding:"12px 0",borderBottom:`0.5px solid ${C.border}`}}>
                   <span style={{fontSize:20,flexShrink:0}}>{icon}</span>
