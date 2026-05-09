@@ -2360,7 +2360,7 @@ const ProdutosPage=({sb,user})=>{
 
   useEffect(()=>{
     loadHistory();
-    sb.from("shopify_configs").select("shop_domain").eq("user_id",user.id).then(({data})=>{
+    sb.from("shopify_configs").select("shop_domain,store_name").eq("user_id",user.id).then(({data})=>{
       setShopifyConfigs(data||[]);
       if(data?.length>0)setTargetDomain(data[0].shop_domain);
     });
