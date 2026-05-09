@@ -1212,15 +1212,21 @@ function main() {
               <Input value={manualStoreName} onChange={setManualStoreName} placeholder="Ex: Loja Principal, Loja 2..."/>
             </div>
             <div>
-              <label style={{fontSize:12,color:C.textMuted,display:"block",marginBottom:6}}>Dominio da loja <span style={{color:C.red}}>*</span></label>
-              <Input value={manualDomain} onChange={setManualDomain} placeholder="minhaloja.myshopify.com"/>
-              <div style={{fontSize:11,color:C.textMuted,marginTop:4}}>Ex: minha-loja.myshopify.com — sem https://</div>
+              <label style={{fontSize:12,color:C.textMuted,display:"block",marginBottom:6}}>Domínio da loja Shopify <span style={{color:C.red}}>*</span></label>
+              <Input value={manualDomain} onChange={setManualDomain} placeholder="minha-loja.myshopify.com"/>
+              <div style={{fontSize:11,color:C.textMuted,marginTop:5,lineHeight:1.6}}>
+                ⚠️ <strong style={{color:C.text}}>Use apenas o domínio Shopify</strong> — termina sempre em <span style={{color:C.accent,fontFamily:"monospace"}}>.myshopify.com</span><br/>
+                ✅ Correto: <span style={{color:C.green,fontFamily:"monospace"}}>minha-loja.myshopify.com</span><br/>
+                ❌ Errado: <span style={{color:C.red,fontFamily:"monospace"}}>microsaas-qy8v.vercel.app</span> ou <span style={{color:C.red,fontFamily:"monospace"}}>https://...</span>
+              </div>
             </div>
             <div style={{display:"flex",gap:8,justifyContent:"flex-end"}}>
               <Btn variant="outline" onClick={()=>{setShowShopifySettings(false);setManualDomain("");setManualStoreName("");}}>Cancelar</Btn>
               <Btn variant="primary" onClick={()=>{
                 if(!manualDomain.trim()){show("Digite o dominio da loja","error");return;}
-                const d=manualDomain.trim().replace(/^https?:\/\//,"").replace(/\/$/,"");
+                let d=manualDomain.trim().replace(/^https?:\/\//,"").replace(/\/$/,"").toLowerCase();
+                if(!d.includes("."))d=d+".myshopify.com";
+                if(!d.endsWith(".myshopify.com")){show("Domínio inválido. Use o formato: minha-loja.myshopify.com","error");return;}
                 const n=manualStoreName.trim();
                 connectShopifyOAuth(d,n);
                 setShowShopifySettings(false);setManualDomain("");setManualStoreName("");
