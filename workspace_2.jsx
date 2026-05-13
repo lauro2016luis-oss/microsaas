@@ -135,7 +135,7 @@ const Spinner=({size=18})=>(
 
 // ─── SHARED ───────────────────────────────────────────────────────────────────
 const Badge=({label,color="gray"})=>{
-  const S={gray:{bg:"#1a1a1a",text:"#888",border:"#2a2a2a"},green:{bg:C.greenDim,text:C.green,border:"rgba(34,197,94,0.2)"},red:{bg:C.redDim,text:C.red,border:"rgba(239,68,68,0.2)"},amber:{bg:C.amberDim,text:C.amber,border:"rgba(245,158,11,0.2)"},blue:{bg:C.blueDim,text:C.blue,border:"rgba(59,130,246,0.2)"},purple:{bg:C.accentDim,text:C.accent,border:C.accentBorder}};
+  const S={gray:{bg:"#1a1a1a",text:"#888",border:"#2e3348"},green:{bg:C.greenDim,text:C.green,border:"rgba(34,197,94,0.2)"},red:{bg:C.redDim,text:C.red,border:"rgba(239,68,68,0.2)"},amber:{bg:C.amberDim,text:C.amber,border:"rgba(245,158,11,0.2)"},blue:{bg:C.blueDim,text:C.blue,border:"rgba(59,130,246,0.2)"},purple:{bg:C.accentDim,text:C.accent,border:C.accentBorder}};
   const s=S[color]||S.gray;
   return <span style={{fontSize:11,fontFamily:"'JetBrains Mono',monospace",padding:"2px 7px",borderRadius:4,background:s.bg,color:s.text,border:`1px solid ${s.border}`,whiteSpace:"nowrap"}}>{label}</span>;
 };
@@ -144,23 +144,33 @@ const priorityColor=p=>({Alta:"red",Média:"amber",Baixa:"blue"}[p]||"gray");
 
 const Btn=({children,onClick,variant="ghost",small=false,icon,loading=false,disabled=false})=>{
   const [h,setH]=useState(false);
-  const base={display:"inline-flex",alignItems:"center",gap:6,cursor:disabled||loading?"not-allowed":"pointer",border:"none",outline:"none",fontFamily:"'DM Sans',sans-serif",fontSize:small?12:13,fontWeight:500,borderRadius:8,padding:small?"5px 10px":"8px 14px",transition:"all 0.15s",opacity:disabled?0.5:1};
-  const V={ghost:{background:h?"#1a1a1a":"transparent",color:h?C.text:C.textMuted,border:`1px solid ${h?C.borderHover:"transparent"}`},outline:{background:h?"#161616":"transparent",color:C.text,border:`1px solid ${h?C.borderHover:C.border}`},primary:{background:h?"#6c5ce7":C.accent,color:"#fff",border:"none"},danger:{background:h?"#dc2626":C.redDim,color:h?"#fff":C.red,border:`1px solid rgba(239,68,68,0.3)`}};
-  return <button style={{...base,...V[variant]}} onClick={disabled||loading?undefined:onClick} onMouseEnter={()=>setH(true)} onMouseLeave={()=>setH(false)}>{loading?<Spinner size={13}/>:icon&&<Icon name={icon} size={14}/>}{children}</button>;
+  const base={display:"inline-flex",alignItems:"center",gap:6,cursor:disabled||loading?"not-allowed":"pointer",border:"none",outline:"none",fontFamily:"'DM Sans',sans-serif",fontSize:small?11:13,fontWeight:600,borderRadius:8,padding:small?"5px 10px":"8px 14px",transition:"all 0.15s",opacity:disabled?0.5:1,letterSpacing:"-0.01em"};
+  const V={
+    ghost:{background:h?C.surface2:"transparent",color:h?C.text:C.textMuted,border:`1px solid ${h?C.border:"transparent"}`},
+    outline:{background:h?C.surface2:"transparent",color:C.text,border:`1px solid ${h?C.borderHover:C.border}`},
+    primary:{background:h?"linear-gradient(135deg,#7c7ff5,#9d6ef5)":"linear-gradient(135deg,#6366f1,#8b5cf6)",color:"#fff",border:"none",boxShadow:h?"0 4px 16px rgba(99,102,241,0.45),inset 0 1px 0 rgba(255,255,255,0.15)":"0 2px 8px rgba(99,102,241,0.3),inset 0 1px 0 rgba(255,255,255,0.1)"},
+    danger:{background:h?"rgba(244,63,94,0.18)":C.redDim,color:C.red,border:`1px solid ${h?C.redBorder:"rgba(244,63,94,0.2)"}`},
+  };
+  return <button style={{...base,...V[variant]}} onClick={disabled||loading?undefined:onClick} onMouseEnter={()=>setH(true)} onMouseLeave={()=>setH(false)}>{loading?<Spinner size={13}/>:icon&&<Icon name={icon} size={small?12:14}/>}{children}</button>;
 };
 
 const Input=({value,onChange,placeholder,style={},type="text",onKeyDown})=>(
   <input type={type} value={value} onChange={e=>onChange(e.target.value)} placeholder={placeholder} onKeyDown={onKeyDown}
-    style={{background:"#0d0d0d",border:`1px solid ${C.border}`,color:C.text,fontFamily:"'DM Sans',sans-serif",fontSize:13,padding:"9px 12px",borderRadius:8,outline:"none",width:"100%",...style}}
-    onFocus={e=>e.target.style.borderColor=C.accentBorder} onBlur={e=>e.target.style.borderColor=C.border}/>
+    style={{background:C.surface2,border:`1px solid ${C.border}`,color:C.text,fontFamily:"'DM Sans',sans-serif",fontSize:13,padding:"9px 12px",borderRadius:9,outline:"none",width:"100%",...style}}
+    onFocus={e=>{e.target.style.borderColor=C.accentBorder;e.target.style.boxShadow=`0 0 0 3px ${C.accentGlow}`;}}
+    onBlur={e=>{e.target.style.borderColor=C.border;e.target.style.boxShadow="none";}}/>
 );
 
 const Modal=({title,onClose,children})=>(
-  <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.85)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:1000,padding:"16px 12px"}} onClick={onClose}>
-    <div className="fade-in" style={{background:"#111",border:`1px solid ${C.border}`,borderRadius:16,padding:20,maxWidth:520,width:"100%",maxHeight:"92vh",overflowY:"auto"}} onClick={e=>e.stopPropagation()}>
+  <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.75)",backdropFilter:"blur(6px)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:1000,padding:"16px 12px"}} onClick={onClose}>
+    <div className="fade-in" style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:18,padding:24,maxWidth:520,width:"100%",maxHeight:"92vh",overflowY:"auto",boxShadow:"0 24px 64px rgba(0,0,0,0.7),inset 0 1px 0 rgba(255,255,255,0.03)"}} onClick={e=>e.stopPropagation()}>
       <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:20}}>
-        <h3 style={{fontSize:16,fontWeight:500,color:C.text}}>{title}</h3>
-        <button onClick={onClose} style={{background:"none",border:"none",color:C.textMuted,cursor:"pointer",padding:4}}><Icon name="x"/></button>
+        <h3 style={{fontSize:15,fontWeight:700,color:C.text,letterSpacing:"-0.02em"}}>{title}</h3>
+        <button onClick={onClose} style={{background:C.surface2,border:`1px solid ${C.border}`,borderRadius:8,color:C.textMuted,cursor:"pointer",padding:"5px 6px",display:"flex",alignItems:"center",transition:"all 0.15s"}}
+          onMouseEnter={e=>{e.currentTarget.style.color=C.text;e.currentTarget.style.borderColor=C.borderHover;}}
+          onMouseLeave={e=>{e.currentTarget.style.color=C.textMuted;e.currentTarget.style.borderColor=C.border;}}>
+          <Icon name="x" size={14}/>
+        </button>
       </div>
       {children}
     </div>
@@ -168,10 +178,13 @@ const Modal=({title,onClose,children})=>(
 );
 
 const Toast=({msg,type="success",onDone})=>{
-  useEffect(()=>{const t=setTimeout(onDone,2500);return()=>clearTimeout(t);},[]);
-  const S={success:{bg:C.greenDim,color:C.green,border:"rgba(34,197,94,0.3)"},error:{bg:C.redDim,color:C.red,border:"rgba(239,68,68,0.3)"},info:{bg:C.accentDim,color:C.accent,border:C.accentBorder}};
+  useEffect(()=>{const t=setTimeout(onDone,2800);return()=>clearTimeout(t);},[]);
+  const S={success:{color:C.green,border:C.greenBorder,dot:C.green},error:{color:C.red,border:C.redBorder,dot:C.red},info:{color:C.accent,border:C.accentBorder,dot:C.accent}};
   const s=S[type]||S.info;
-  return <div className="fade-in" style={{position:"fixed",bottom:24,right:24,zIndex:2000,padding:"10px 16px",borderRadius:10,background:s.bg,color:s.color,border:`1px solid ${s.border}`,fontSize:13,fontWeight:500}}>{msg}</div>;
+  return <div className="slide-up" style={{position:"fixed",bottom:24,right:24,zIndex:2000,padding:"12px 16px",borderRadius:12,background:C.surface,color:s.color,border:`1px solid ${s.border}`,fontSize:13,fontWeight:600,display:"flex",alignItems:"center",gap:10,boxShadow:"0 8px 32px rgba(0,0,0,0.6),inset 0 1px 0 rgba(255,255,255,0.03)",fontFamily:"'DM Sans',sans-serif"}}>
+    <span style={{width:7,height:7,borderRadius:"50%",background:s.dot,flexShrink:0}}/>
+    {msg}
+  </div>;
 };
 const useToast=()=>{
   const [t,setT]=useState(null);
@@ -289,7 +302,7 @@ const LoginPage=({sb})=>{
                 </div>
               </div>
             )}
-            <button onClick={handle} disabled={loading} style={{width:"100%",padding:"10px",borderRadius:9,background:loading?"#333":C.accent,color:"#fff",border:"none",fontSize:14,fontWeight:500,cursor:loading?"not-allowed":"pointer",fontFamily:"'DM Sans',sans-serif",display:"flex",alignItems:"center",justifyContent:"center",gap:8,transition:"background 0.15s"}}
+            <button onClick={handle} disabled={loading} style={{width:"100%",padding:"10px",borderRadius:9,background:loading?"#2e3348":C.accent,color:"#fff",border:"none",fontSize:14,fontWeight:500,cursor:loading?"not-allowed":"pointer",fontFamily:"'DM Sans',sans-serif",display:"flex",alignItems:"center",justifyContent:"center",gap:8,transition:"background 0.15s"}}
               onMouseEnter={e=>{if(!loading)e.currentTarget.style.background="#6c5ce7";}}
               onMouseLeave={e=>{if(!loading)e.currentTarget.style.background=C.accent;}}>
               {loading?<Spinner size={14}/>:null}{btnLabels[mode]}
@@ -459,8 +472,8 @@ const LineChart=({data})=>{
     const hasNeg=values.some(v=>v<0);
 
     const gradient=ctx.createLinearGradient(0,0,0,200);
-    gradient.addColorStop(0,"rgba(34,197,94,0.25)");
-    gradient.addColorStop(1,"rgba(34,197,94,0)");
+    gradient.addColorStop(0,"rgba(16,185,129,0.22)");
+    gradient.addColorStop(1,"rgba(16,185,129,0)");
 
     chartRef.current=new window.Chart(ctx,{
       type:"line",
@@ -469,16 +482,16 @@ const LineChart=({data})=>{
         datasets:[{
           label:"Lucro",
           data:values,
-          borderColor:"#22c55e",
+          borderColor:"#10b981",
           borderWidth:2,
           backgroundColor:gradient,
           fill:true,
-          tension:0.4,
-          pointBackgroundColor:"#22c55e",
-          pointBorderColor:"#080808",
+          tension:0.45,
+          pointBackgroundColor:"#10b981",
+          pointBorderColor:"#07080d",
           pointBorderWidth:2,
-          pointRadius:4,
-          pointHoverRadius:6,
+          pointRadius:3,
+          pointHoverRadius:5,
         }]
       },
       options:{
@@ -489,10 +502,10 @@ const LineChart=({data})=>{
           legend:{display:false},
           tooltip:{
             backgroundColor:"#1a1a1a",
-            borderColor:"#2a2a2a",
+            borderColor:"#2e3348",
             borderWidth:1,
-            titleColor:"#888",
-            bodyColor:"#e8e8e8",
+            titleColor:"#5c6378",
+            bodyColor:"#eef0f6",
             padding:10,
             callbacks:{
               label:(ctx)=>`Lucro: R$ ${ctx.parsed.y.toLocaleString("pt-BR",{minimumFractionDigits:2})}`
@@ -501,14 +514,14 @@ const LineChart=({data})=>{
         },
         scales:{
           x:{
-            grid:{color:"rgba(255,255,255,0.04)"},
-            ticks:{color:"#555",font:{size:11},maxRotation:0},
+            grid:{color:"rgba(255,255,255,0.03)"},
+            ticks:{color:"#3a3f52",font:{size:10},maxRotation:0},
             border:{color:"transparent"}
           },
           y:{
-            grid:{color:"rgba(255,255,255,0.04)"},
+            grid:{color:"rgba(255,255,255,0.03)"},
             ticks:{
-              color:"#555",font:{size:11},
+              color:"#3a3f52",font:{size:10},
               callback:(v)=>`R$ ${v>=1000?Math.round(v/1000)+"k":v}`
             },
             border:{color:"transparent"}
@@ -1044,12 +1057,12 @@ function main() {
                   <span style={{fontSize:13,fontWeight:600,color:C.text,maxWidth:200,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{nomeAtivo}</span>
                   <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={C.textDim} strokeWidth="2.5"><polyline points="6 9 12 15 18 9"/></svg>
                 </div>
-                <div className="loja-dropdown" style={{display:"none",position:"absolute",top:"calc(100% + 4px)",left:0,zIndex:400,background:"#141414",border:`1px solid ${C.border}`,borderRadius:14,padding:6,minWidth:240,boxShadow:"0 12px 40px rgba(0,0,0,0.8)"}}>
+                <div className="loja-dropdown" style={{display:"none",position:"absolute",top:"calc(100% + 4px)",left:0,zIndex:400,background:C.surface2,border:`1px solid ${C.border}`,borderRadius:14,padding:6,minWidth:240,boxShadow:"0 12px 40px rgba(0,0,0,0.8)"}}>
                   {/* Todas */}
                   <button onClick={()=>setFiltroLoja("Todas")}
                     style={{display:"flex",alignItems:"center",gap:10,width:"100%",padding:"9px 12px",background:filtroLoja==="Todas"?C.accentDim:"transparent",border:"none",borderRadius:9,cursor:"pointer",color:filtroLoja==="Todas"?C.accent:C.textMuted,fontSize:12,fontFamily:"'DM Sans',sans-serif",fontWeight:500,textAlign:"left"}}
                     onMouseEnter={e=>{if(filtroLoja!=="Todas")e.currentTarget.style.background="#1e1e1e";}} onMouseLeave={e=>{if(filtroLoja!=="Todas")e.currentTarget.style.background="transparent";}}>
-                    <span style={{width:8,height:8,borderRadius:"50%",background:filtroLoja==="Todas"?C.accent:"#444",flexShrink:0}}/>
+                    <span style={{width:8,height:8,borderRadius:"50%",background:filtroLoja==="Todas"?C.accent:"#374151",flexShrink:0}}/>
                     🏪 Todas as lojas
                     {filtroLoja==="Todas"&&<svg style={{marginLeft:"auto"}} width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><polyline points="20 6 9 17 4 12"/></svg>}
                   </button>
@@ -1116,7 +1129,7 @@ function main() {
                         value={editingStoreNameVal}
                         onChange={e=>setEditingStoreNameVal(e.target.value)}
                         onKeyDown={e=>{if(e.key==="Enter")saveStoreNameInline(cfg.id,editingStoreNameVal);if(e.key==="Escape"){setEditingStoreNameId(null);setEditingStoreNameVal("");}}}
-                        style={{background:"#111",border:`1px solid ${C.accentBorder}`,borderRadius:6,padding:"3px 8px",fontSize:12,color:C.text,fontFamily:"'DM Sans',sans-serif",outline:"none",width:"100%",maxWidth:140}}
+                        style={{background:C.surface,border:`1px solid ${C.accentBorder}`,borderRadius:6,padding:"3px 8px",fontSize:12,color:C.text,fontFamily:"'DM Sans',sans-serif",outline:"none",width:"100%",maxWidth:140}}
                         placeholder="Nome da loja"
                       />
                       <button onClick={()=>saveStoreNameInline(cfg.id,editingStoreNameVal)} style={{background:C.accent,border:"none",borderRadius:5,padding:"3px 8px",fontSize:11,color:"#000",cursor:"pointer",fontWeight:600}}>✓</button>
@@ -1203,7 +1216,7 @@ function main() {
         const CALLBACK_URL="https://vvdhnwknluxsaxcqvlyh.supabase.co/functions/v1/shopify-callback";
         const copy=(txt)=>{navigator.clipboard.writeText(txt).then(()=>show("Copiado! ✅"));};
         const CopyRow=({label,value})=>(
-          <div style={{display:"flex",alignItems:"center",gap:6,background:"#0d0d0d",border:`1px solid ${C.border}`,borderRadius:8,padding:"7px 10px"}}>
+          <div style={{display:"flex",alignItems:"center",gap:6,background:C.surface2,border:`1px solid ${C.border}`,borderRadius:8,padding:"7px 10px"}}>
             <code style={{flex:1,fontSize:11,color:C.accent,fontFamily:"'JetBrains Mono',monospace",wordBreak:"break-all",lineHeight:"1.5"}}>{value}</code>
             <button onClick={()=>copy(value)} title="Copiar" style={{background:"transparent",border:"none",cursor:"pointer",color:C.textMuted,padding:"2px 4px",borderRadius:4,flexShrink:0,display:"flex",alignItems:"center"}} onMouseEnter={e=>e.currentTarget.style.color=C.text} onMouseLeave={e=>e.currentTarget.style.color=C.textMuted}>
               <Icon name="copy" size={13}/>
@@ -1221,7 +1234,7 @@ function main() {
           <div style={{display:"flex",flexDirection:"column",gap:16}}>
 
             {/* TUTORIAL */}
-            <div style={{background:"#0a0a0a",border:`1px solid ${C.border}`,borderRadius:12,overflow:"hidden"}}>
+            <div style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:12,overflow:"hidden"}}>
               <div style={{padding:"10px 14px",borderBottom:`1px solid ${C.border}`,display:"flex",alignItems:"center",gap:8}}>
                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke={C.amber} strokeWidth="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
                 <span style={{fontSize:12,fontWeight:600,color:C.text}}>Primeira vez? Siga o tutorial abaixo</span>
@@ -1351,11 +1364,11 @@ function main() {
           <div style={{display:"flex",flexDirection:"column",gap:16}}>
 
             {/* Passo 1 — Chave */}
-            <div style={{background:"#0d0d0d",borderRadius:10,padding:16,border:`1px solid ${C.border}`}}>
+            <div style={{background:C.surface2,borderRadius:10,padding:16,border:`1px solid ${C.border}`}}>
               <div style={{fontSize:12,fontWeight:600,color:C.text,marginBottom:10}}>PASSO 1 — Sua chave de API</div>
               {apiKey?(
                 <div style={{display:"flex",gap:8,alignItems:"center"}}>
-                  <code style={{flex:1,fontSize:11,fontFamily:"'JetBrains Mono',monospace",color:C.green,background:"#111",padding:"8px 12px",borderRadius:7,border:`1px solid ${C.border}`,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{apiKey}</code>
+                  <code style={{flex:1,fontSize:11,fontFamily:"'JetBrains Mono',monospace",color:C.green,background:C.surface,padding:"8px 12px",borderRadius:7,border:`1px solid ${C.border}`,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{apiKey}</code>
                   <button onClick={()=>copyText(apiKey,setKeyCopied)} style={{padding:"7px 14px",borderRadius:7,background:keyCopied?C.greenDim:C.accentDim,border:`1px solid ${keyCopied?"rgba(34,197,94,0.3)":C.accentBorder}`,color:keyCopied?C.green:C.accent,cursor:"pointer",fontSize:12,fontFamily:"'DM Sans',sans-serif",whiteSpace:"nowrap"}}>
                     {keyCopied?"Copiado!":"Copiar"}
                   </button>
@@ -1370,14 +1383,14 @@ function main() {
 
             {/* Passo 2 — Script */}
             {apiKey&&(
-              <div style={{background:"#0d0d0d",borderRadius:10,padding:16,border:`1px solid ${C.border}`}}>
+              <div style={{background:C.surface2,borderRadius:10,padding:16,border:`1px solid ${C.border}`}}>
                 <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
                   <div style={{fontSize:12,fontWeight:600,color:C.text}}>PASSO 2 — Script para colar no Google Ads</div>
                   <button onClick={()=>copyText(getGadsScript(apiKey),setScriptCopied)} style={{padding:"5px 12px",borderRadius:7,background:scriptCopied?C.greenDim:C.accentDim,border:`1px solid ${scriptCopied?"rgba(34,197,94,0.3)":C.accentBorder}`,color:scriptCopied?C.green:C.accent,cursor:"pointer",fontSize:11,fontFamily:"'DM Sans',sans-serif",whiteSpace:"nowrap"}}>
                     {scriptCopied?"Copiado!":"Copiar script"}
                   </button>
                 </div>
-                <pre style={{fontSize:10,fontFamily:"'JetBrains Mono',monospace",color:"#888",background:"#080808",padding:12,borderRadius:8,overflowX:"auto",maxHeight:180,overflowY:"auto",border:`1px solid ${C.border}`,margin:0,lineHeight:"1.6"}}>
+                <pre style={{fontSize:10,fontFamily:"'JetBrains Mono',monospace",color:"#888",background:C.bg,padding:12,borderRadius:8,overflowX:"auto",maxHeight:180,overflowY:"auto",border:`1px solid ${C.border}`,margin:0,lineHeight:"1.6"}}>
                   {getGadsScript(apiKey).slice(0,400)+"..."}
                 </pre>
               </div>
@@ -1417,13 +1430,13 @@ function main() {
             {/* Seletor de moeda */}
             <div style={{position:"relative"}}>
               <button onClick={()=>{setShowMoedaDD(v=>!v);setShowLojaDD(false);}}
-                style={{display:"flex",alignItems:"center",gap:7,padding:"6px 12px",borderRadius:10,background:"#161616",border:`1px solid ${C.border}`,color:C.text,cursor:"pointer",fontSize:13,fontFamily:"'DM Sans',sans-serif",fontWeight:500}}>
+                style={{display:"flex",alignItems:"center",gap:7,padding:"6px 12px",borderRadius:10,background:C.surface2,border:`1px solid ${C.border}`,color:C.text,cursor:"pointer",fontSize:13,fontFamily:"'DM Sans',sans-serif",fontWeight:500}}>
                 <span>{moedaFlags[filtroMoeda]||"💱"}</span>
                 <span>{filtroMoeda}</span>
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="6 9 12 15 18 9"/></svg>
               </button>
               {showMoedaDD&&(
-                <div className="fade-in" style={{position:"absolute",top:"calc(100% + 6px)",left:0,zIndex:300,background:"#161616",border:`1px solid ${C.border}`,borderRadius:12,padding:6,minWidth:130,boxShadow:"0 8px 32px rgba(0,0,0,0.6)"}}>
+                <div className="fade-in" style={{position:"absolute",top:"calc(100% + 6px)",left:0,zIndex:300,background:C.surface2,border:`1px solid ${C.border}`,borderRadius:12,padding:6,minWidth:130,boxShadow:"0 8px 32px rgba(0,0,0,0.6)"}}>
                   {moedas.map(m=>(
                     <button key={m} onClick={()=>{setFiltroMoeda(m);setShowMoedaDD(false);}}
                       style={{display:"flex",alignItems:"center",gap:8,width:"100%",padding:"8px 12px",background:filtroMoeda===m?C.accentDim:"transparent",border:"none",borderRadius:8,cursor:"pointer",color:filtroMoeda===m?C.accent:C.text,fontSize:13,fontFamily:"'DM Sans',sans-serif"}}>
@@ -1453,13 +1466,13 @@ function main() {
                 </button>
               ))}
               {filtroPeriodo==="custom"&&(
-                <div className="fade-in" style={{position:"absolute",top:"calc(100% + 8px)",right:0,zIndex:200,background:"#161616",border:`1px solid ${C.accentBorder}`,borderRadius:14,padding:16,minWidth:280,boxShadow:"0 8px 32px rgba(0,0,0,0.5)"}}>
+                <div className="fade-in" style={{position:"absolute",top:"calc(100% + 8px)",right:0,zIndex:200,background:C.surface2,border:`1px solid ${C.accentBorder}`,borderRadius:14,padding:16,minWidth:280,boxShadow:"0 8px 32px rgba(0,0,0,0.5)"}}>
                   <div style={{fontSize:12,fontWeight:600,color:C.text,marginBottom:12}}>Selecionar período</div>
                   <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:12}}>
                     <div><label style={{fontSize:11,color:C.textMuted,display:"block",marginBottom:5}}>Data início</label>
-                      <input type="date" value={filtroDataInicio} onChange={e=>setFiltroDataInicio(e.target.value)} style={{background:"#0d0d0d",border:`1px solid ${C.border}`,color:C.text,fontFamily:"'JetBrains Mono',monospace",fontSize:12,padding:"7px 10px",borderRadius:8,outline:"none",width:"100%"}}/></div>
+                      <input type="date" value={filtroDataInicio} onChange={e=>setFiltroDataInicio(e.target.value)} style={{background:C.surface2,border:`1px solid ${C.border}`,color:C.text,fontFamily:"'JetBrains Mono',monospace",fontSize:12,padding:"7px 10px",borderRadius:8,outline:"none",width:"100%"}}/></div>
                     <div><label style={{fontSize:11,color:C.textMuted,display:"block",marginBottom:5}}>Data fim</label>
-                      <input type="date" value={filtroDataFim} onChange={e=>setFiltroDataFim(e.target.value)} style={{background:"#0d0d0d",border:`1px solid ${C.border}`,color:C.text,fontFamily:"'JetBrains Mono',monospace",fontSize:12,padding:"7px 10px",borderRadius:8,outline:"none",width:"100%"}}/></div>
+                      <input type="date" value={filtroDataFim} onChange={e=>setFiltroDataFim(e.target.value)} style={{background:C.surface2,border:`1px solid ${C.border}`,color:C.text,fontFamily:"'JetBrains Mono',monospace",fontSize:12,padding:"7px 10px",borderRadius:8,outline:"none",width:"100%"}}/></div>
                   </div>
                   {filtroDataInicio&&filtroDataFim&&<div style={{fontSize:11,color:C.green,background:C.greenDim,padding:"6px 10px",borderRadius:7,border:"1px solid rgba(34,197,94,0.2)",marginBottom:8}}>✅ {filtroDataInicio.split("-").reverse().join("/")} → {filtroDataFim.split("-").reverse().join("/")}</div>}
                   <div style={{display:"flex",gap:6,justifyContent:"flex-end"}}>
@@ -1501,7 +1514,7 @@ function main() {
             border:`1px solid ${s.cardBorder}`,
             borderRadius:16,padding:"18px 20px",
             position:"relative",overflow:"hidden",
-            boxShadow:s.featured?`0 4px 24px rgba(0,0,0,0.3),inset 0 1px 0 rgba(255,255,255,0.04)`:"0 2px 12px rgba(0,0,0,0.2),inset 0 1px 0 rgba(255,255,255,0.03)"}}>
+            boxShadow:s.featured?`0 4px 24px rgba(0,0,0,0.3),inset 0 1px 0 rgba(255,255,255,0.03)`:"0 2px 12px rgba(0,0,0,0.2),inset 0 1px 0 rgba(255,255,255,0.03)"}}>
             {/* Top gradient shine */}
             <div style={{position:"absolute",top:0,left:0,right:0,height:"1px",background:`linear-gradient(90deg,transparent,${s.mainColor}33,transparent)`,pointerEvents:"none"}}/>
             <div style={{display:"flex",alignItems:"flex-start",justifyContent:"space-between",marginBottom:16}}>
@@ -1558,7 +1571,7 @@ function main() {
             <div style={{fontSize:11,fontWeight:600,color:C.textMuted,textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:12}}>Operacional</div>
             {[
               {l:"Tarefas hoje",v:hojeList.length,c:C.accent,dot:C.accent},
-              {l:"Atrasadas",v:atrasadas.length,c:atrasadas.length>0?C.red:C.textMuted,dot:atrasadas.length>0?C.red:"#333"},
+              {l:"Atrasadas",v:atrasadas.length,c:atrasadas.length>0?C.red:C.textMuted,dot:atrasadas.length>0?C.red:"#2e3348"},
               {l:"Payments",v:payments.length,c:C.green,dot:C.green},
               {l:"Links",v:links.length,c:C.blue,dot:C.blue},
             ].map(s=>(
@@ -1668,13 +1681,13 @@ function main() {
             <div>
               <label style={{fontSize:12,color:C.textMuted,display:"block",marginBottom:6}}>Loja</label>
               {lojasCad.length===0?(
-                <div style={{padding:"10px 12px",background:"#0d0d0d",borderRadius:8,border:`1px solid ${C.border}`,fontSize:12,color:C.amber,display:"flex",alignItems:"center",gap:8}}>
+                <div style={{padding:"10px 12px",background:C.surface2,borderRadius:8,border:`1px solid ${C.border}`,fontSize:12,color:C.amber,display:"flex",alignItems:"center",gap:8}}>
                   <Icon name="alert" size={13}/>
                   Nenhuma loja cadastrada. Vá em <strong style={{color:C.accent,cursor:"pointer"}} onClick={()=>setModalResultado(false)}>Lojas</strong> para cadastrar.
                 </div>
               ):(
                 <select value={form.store_name} onChange={e=>setForm(p=>({...p,store_name:e.target.value}))}
-                  style={{background:"#0d0d0d",border:`1px solid ${C.border}`,color:form.store_name?C.text:C.textMuted,fontFamily:"'DM Sans',sans-serif",fontSize:13,padding:"9px 12px",borderRadius:8,outline:"none",width:"100%",cursor:"pointer"}}
+                  style={{background:C.surface2,border:`1px solid ${C.border}`,color:form.store_name?C.text:C.textMuted,fontFamily:"'DM Sans',sans-serif",fontSize:13,padding:"9px 12px",borderRadius:8,outline:"none",width:"100%",cursor:"pointer"}}
                   onFocus={e=>e.target.style.borderColor=C.accentBorder} onBlur={e=>e.target.style.borderColor=C.border}>
                   <option value="">Selecionar loja...</option>
                   {lojasCad.map(l=><option key={l.id} value={l.nome}>{l.nome} · {l.moeda}</option>)}
@@ -1688,7 +1701,7 @@ function main() {
               </div>
               <div>
                 <label style={{fontSize:12,color:C.textMuted,display:"block",marginBottom:6}}>Moeda</label>
-                <select value={form.currency} onChange={e=>setForm(p=>({...p,currency:e.target.value}))} style={{background:"#0d0d0d",border:`1px solid ${C.border}`,color:C.text,fontFamily:"'DM Sans',sans-serif",fontSize:13,padding:"9px 12px",borderRadius:8,outline:"none",width:"100%"}}>
+                <select value={form.currency} onChange={e=>setForm(p=>({...p,currency:e.target.value}))} style={{background:C.surface2,border:`1px solid ${C.border}`,color:C.text,fontFamily:"'DM Sans',sans-serif",fontSize:13,padding:"9px 12px",borderRadius:8,outline:"none",width:"100%"}}>
                   {moedas.map(m=><option key={m}>{m}</option>)}
                 </select>
               </div>
@@ -1701,7 +1714,7 @@ function main() {
               <label style={{fontSize:12,color:C.textMuted,display:"block",marginBottom:6}}>Gasto em Ads</label>
               <Input value={form.ad_spend} onChange={v=>setForm(p=>({...p,ad_spend:v}))} placeholder="Ex: 400.00"/>
             </div>
-            <div style={{padding:"12px 14px",background:"#0d0d0d",borderRadius:9,border:`1px solid ${C.border}`,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+            <div style={{padding:"12px 14px",background:C.surface2,borderRadius:9,border:`1px solid ${C.border}`,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
               <span style={{fontSize:13,color:C.textMuted}}>Lucro calculado</span>
               <span style={{fontSize:18,fontWeight:600,fontFamily:"'JetBrains Mono',monospace",color:(parseFloat(form.revenue.replace(",","."))||0)-(parseFloat((form.ad_spend||"0").replace(",","."))||0)>=0?C.green:C.red}}>
                 {fmtVal((parseFloat(form.revenue.replace(",","."))||0)-(parseFloat((form.ad_spend||"0").replace(",","."))||0))}
@@ -1773,7 +1786,7 @@ const LinksPage=({sb,user})=>{
     const col=cols.find(c=>c.id===l.categoria)||cols[0];
     return(
       <div data-card draggable onDragStart={e=>onDS(e,l)} onDragEnd={onDE}
-        style={{background:"#0d0d0d",border:`1px solid ${hov?C.borderHover:C.border}`,borderRadius:12,padding:"14px",cursor:"grab",userSelect:"none",transition:"all 0.15s"}}
+        style={{background:C.surface2,border:`1px solid ${hov?C.borderHover:C.border}`,borderRadius:12,padding:"14px",cursor:"grab",userSelect:"none",transition:"all 0.15s"}}
         onMouseEnter={()=>setHov(true)} onMouseLeave={()=>setHov(false)}>
         {/* Ícone + título */}
         <div style={{display:"flex",alignItems:"flex-start",gap:10,marginBottom:10}}>
@@ -1786,7 +1799,7 @@ const LinksPage=({sb,user})=>{
           </div>
         </div>
         {/* Notas */}
-        {l.notes&&<div style={{fontSize:11,color:C.textMuted,marginBottom:10,lineHeight:1.5,background:"#111",borderRadius:6,padding:"6px 8px"}}>{l.notes}</div>}
+        {l.notes&&<div style={{fontSize:11,color:C.textMuted,marginBottom:10,lineHeight:1.5,background:C.surface,borderRadius:6,padding:"6px 8px"}}>{l.notes}</div>}
         {/* Tags */}
         {(l.tags||[]).length>0&&(
           <div style={{display:"flex",gap:4,flexWrap:"wrap",marginBottom:10}}>
@@ -1873,10 +1886,10 @@ const LinksPage=({sb,user})=>{
             <Input value={form.url} onChange={v=>setForm(p=>({...p,url:v}))} placeholder="https://..." onKeyDown={e=>e.key==="Enter"&&add()}/>
             <Input value={form.title} onChange={v=>setForm(p=>({...p,title:v}))} placeholder="Título (opcional)"/>
             <Input value={form.tags} onChange={v=>setForm(p=>({...p,tags:v}))} placeholder="Etiquetas (vírgula)"/>
-            <textarea value={form.notes} onChange={e=>setForm(p=>({...p,notes:e.target.value}))} placeholder="Observações..." rows={3} style={{background:"#0d0d0d",border:`1px solid ${C.border}`,color:C.text,fontFamily:"'DM Sans',sans-serif",fontSize:13,padding:"8px 12px",borderRadius:8,outline:"none",resize:"none"}}/>
+            <textarea value={form.notes} onChange={e=>setForm(p=>({...p,notes:e.target.value}))} placeholder="Observações..." rows={3} style={{background:C.surface2,border:`1px solid ${C.border}`,color:C.text,fontFamily:"'DM Sans',sans-serif",fontSize:13,padding:"8px 12px",borderRadius:8,outline:"none",resize:"none"}}/>
             <div>
               <label style={{fontSize:12,color:C.textMuted,display:"block",marginBottom:6}}>Status</label>
-              <select value={form.status} onChange={e=>setForm(p=>({...p,status:e.target.value}))} style={{background:"#0d0d0d",border:`1px solid ${C.border}`,color:C.text,fontFamily:"'DM Sans',sans-serif",fontSize:13,padding:"8px 12px",borderRadius:8,outline:"none",width:"100%"}}>
+              <select value={form.status} onChange={e=>setForm(p=>({...p,status:e.target.value}))} style={{background:C.surface2,border:`1px solid ${C.border}`,color:C.text,fontFamily:"'DM Sans',sans-serif",fontSize:13,padding:"8px 12px",borderRadius:8,outline:"none",width:"100%"}}>
                 {["Novo","Revisando","Aprovado","Rejeitado"].map(s=><option key={s}>{s}</option>)}
               </select>
             </div>
@@ -1949,7 +1962,7 @@ const MineracaoKanban=({sb,user})=>{
                 <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:10,padding:"8px 12px",background:C.surface,borderRadius:8,border:`1px solid ${C.border}`}}>
                   <span style={{fontSize:14}}>{col.icon}</span>
                   <span style={{fontSize:12,fontWeight:600,color:col.color,textTransform:"uppercase",letterSpacing:"0.06em",flex:1}}>{col.label}</span>
-                  <span style={{fontSize:11,color:C.textDim,background:"#1a1a1a",padding:"1px 7px",borderRadius:10,fontFamily:"'JetBrains Mono',monospace"}}>{ct.length}</span>
+                  <span style={{fontSize:11,color:C.textDim,background:C.surface3,padding:"1px 7px",borderRadius:10,fontFamily:"'JetBrains Mono',monospace"}}>{ct.length}</span>
                 </div>
                 <div ref={el=>{if(el)colRefs.current[col.id]=el;}} onDragOver={e=>onDO(e,colRefs.current[col.id])} onDrop={e=>onDrop(e,col.id,colRefs.current[col.id])} style={{display:"flex",flexDirection:"column",gap:8,minHeight:120,borderRadius:10,padding:4,border:"1px solid transparent",transition:"all 0.15s"}}>
                   {ct.map(t=>(
@@ -1992,7 +2005,7 @@ const MineracaoKanban=({sb,user})=>{
             <Input value={form.name} onChange={v=>setForm(p=>({...p,name:v}))} placeholder="Nome do produto..."/>
             <Input value={form.store_url} onChange={v=>setForm(p=>({...p,store_url:v}))} placeholder="Link da loja / produto (opcional)"/>
             <Input value={form.image_url} onChange={v=>setForm(p=>({...p,image_url:v}))} placeholder="URL da imagem (opcional)"/>
-            <textarea value={form.notes} onChange={e=>setForm(p=>({...p,notes:e.target.value}))} placeholder="Observações..." rows={3} style={{background:"#0d0d0d",border:`1px solid ${C.border}`,color:C.text,fontFamily:"'DM Sans',sans-serif",fontSize:13,padding:"8px 12px",borderRadius:8,outline:"none",resize:"none"}}/>
+            <textarea value={form.notes} onChange={e=>setForm(p=>({...p,notes:e.target.value}))} placeholder="Observações..." rows={3} style={{background:C.surface2,border:`1px solid ${C.border}`,color:C.text,fontFamily:"'DM Sans',sans-serif",fontSize:13,padding:"8px 12px",borderRadius:8,outline:"none",resize:"none"}}/>
             <div>
               <label style={{fontSize:12,color:C.textMuted,display:"block",marginBottom:6}}>Status inicial</label>
               <div style={{display:"flex",gap:8}}>
@@ -2017,7 +2030,7 @@ const MineracaoKanban=({sb,user})=>{
             <Input value={detail.name} onChange={v=>setDetail(p=>({...p,name:v}))} placeholder="Nome do produto..."/>
             <Input value={detail.store_url||""} onChange={v=>setDetail(p=>({...p,store_url:v}))} placeholder="Link da loja / produto"/>
             <Input value={detail.image_url||""} onChange={v=>setDetail(p=>({...p,image_url:v}))} placeholder="URL da imagem"/>
-            <textarea value={detail.notes||""} onChange={e=>setDetail(p=>({...p,notes:e.target.value}))} placeholder="Observações..." rows={3} style={{background:"#0d0d0d",border:`1px solid ${C.border}`,color:C.text,fontFamily:"'DM Sans',sans-serif",fontSize:13,padding:"8px 12px",borderRadius:8,outline:"none",resize:"none"}}/>
+            <textarea value={detail.notes||""} onChange={e=>setDetail(p=>({...p,notes:e.target.value}))} placeholder="Observações..." rows={3} style={{background:C.surface2,border:`1px solid ${C.border}`,color:C.text,fontFamily:"'DM Sans',sans-serif",fontSize:13,padding:"8px 12px",borderRadius:8,outline:"none",resize:"none"}}/>
             <div>
               <label style={{fontSize:12,color:C.textMuted,display:"block",marginBottom:6}}>Mover para</label>
               <div style={{display:"flex",gap:8}}>
@@ -2138,10 +2151,10 @@ const TarefasPage=({sb,user})=>{
         <Modal title="Nova Tarefa" onClose={()=>setModal(false)}>
           <div style={{display:"flex",flexDirection:"column",gap:12}}>
             <Input value={form.title} onChange={v=>setForm(p=>({...p,title:v}))} placeholder="Título da tarefa..."/>
-            <textarea value={form.description} onChange={e=>setForm(p=>({...p,description:e.target.value}))} placeholder="Descrição..." rows={2} style={{background:"#0d0d0d",border:`1px solid ${C.border}`,color:C.text,fontFamily:"'DM Sans',sans-serif",fontSize:13,padding:"8px 12px",borderRadius:8,outline:"none",resize:"none"}}/>
+            <textarea value={form.description} onChange={e=>setForm(p=>({...p,description:e.target.value}))} placeholder="Descrição..." rows={2} style={{background:C.surface2,border:`1px solid ${C.border}`,color:C.text,fontFamily:"'DM Sans',sans-serif",fontSize:13,padding:"8px 12px",borderRadius:8,outline:"none",resize:"none"}}/>
             <div className="modal-grid-2">
-              <select value={form.status} onChange={e=>setForm(p=>({...p,status:e.target.value}))} style={{background:"#0d0d0d",border:`1px solid ${C.border}`,color:C.text,fontFamily:"'DM Sans',sans-serif",fontSize:13,padding:"8px 12px",borderRadius:8,outline:"none"}}>{["A fazer","Hoje","Atrasado","Concluído"].map(s=><option key={s}>{s}</option>)}</select>
-              <select value={form.priority} onChange={e=>setForm(p=>({...p,priority:e.target.value}))} style={{background:"#0d0d0d",border:`1px solid ${C.border}`,color:C.text,fontFamily:"'DM Sans',sans-serif",fontSize:13,padding:"8px 12px",borderRadius:8,outline:"none"}}>{["Baixa","Média","Alta"].map(s=><option key={s}>{s}</option>)}</select>
+              <select value={form.status} onChange={e=>setForm(p=>({...p,status:e.target.value}))} style={{background:C.surface2,border:`1px solid ${C.border}`,color:C.text,fontFamily:"'DM Sans',sans-serif",fontSize:13,padding:"8px 12px",borderRadius:8,outline:"none"}}>{["A fazer","Hoje","Atrasado","Concluído"].map(s=><option key={s}>{s}</option>)}</select>
+              <select value={form.priority} onChange={e=>setForm(p=>({...p,priority:e.target.value}))} style={{background:C.surface2,border:`1px solid ${C.border}`,color:C.text,fontFamily:"'DM Sans',sans-serif",fontSize:13,padding:"8px 12px",borderRadius:8,outline:"none"}}>{["Baixa","Média","Alta"].map(s=><option key={s}>{s}</option>)}</select>
             </div>
             <div><label style={{fontSize:12,color:C.textMuted,display:"block",marginBottom:6}}>Data de vencimento</label><Input type="date" value={form.due_date} onChange={v=>setForm(p=>({...p,due_date:v}))}/></div>
             <div style={{display:"flex",gap:8,justifyContent:"flex-end"}}><Btn variant="outline" onClick={()=>setModal(false)}>Cancelar</Btn><Btn variant="primary" onClick={add} loading={saving}>Criar Tarefa</Btn></div>
@@ -2192,7 +2205,7 @@ const VideosPage=({sb,user})=>{
           ))}
         </div>
       )}
-      {sel&&(<Modal title={sel.title} onClose={()=>setSel(null)}><div style={{background:"#0a0a0a",borderRadius:10,height:180,display:"flex",alignItems:"center",justifyContent:"center",marginBottom:16,color:C.accent}}><Icon name="play" size={36}/></div><div style={{fontSize:13,color:C.textMuted,marginBottom:10}}>{sel.description}</div><div style={{display:"flex",gap:6,flexWrap:"wrap"}}>{(sel.tags||[]).map(t=><Badge key={t} label={t}/>)}</div></Modal>)}
+      {sel&&(<Modal title={sel.title} onClose={()=>setSel(null)}><div style={{background:C.surface,borderRadius:10,height:180,display:"flex",alignItems:"center",justifyContent:"center",marginBottom:16,color:C.accent}}><Icon name="play" size={36}/></div><div style={{fontSize:13,color:C.textMuted,marginBottom:10}}>{sel.description}</div><div style={{display:"flex",gap:6,flexWrap:"wrap"}}>{(sel.tags||[]).map(t=><Badge key={t} label={t}/>)}</div></Modal>)}
       {modal&&(<Modal title="Adicionar Vídeo" onClose={()=>setModal(false)}><div style={{display:"flex",flexDirection:"column",gap:12}}><Input value={form.title} onChange={v=>setForm(p=>({...p,title:v}))} placeholder="Título..."/><Input value={form.description} onChange={v=>setForm(p=>({...p,description:v}))} placeholder="Descrição..."/><Input value={form.tags} onChange={v=>setForm(p=>({...p,tags:v}))} placeholder="Etiquetas (vírgula)"/><div style={{display:"flex",gap:8,justifyContent:"flex-end"}}><Btn variant="outline" onClick={()=>setModal(false)}>Cancelar</Btn><Btn variant="primary" onClick={add}>Salvar</Btn></div></div></Modal>)}
     </div>
   );
@@ -2250,7 +2263,7 @@ const ArquivosPage=({sb,user})=>{
       </div>
       <div style={{display:"flex",gap:10,marginBottom:14}}><div style={{position:"relative",flex:1,maxWidth:340}}><span style={{position:"absolute",left:10,top:"50%",transform:"translateY(-50%)",color:C.textMuted}}><Icon name="search" size={14}/></span><input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Buscar..." style={{width:"100%",background:C.surface,border:`1px solid ${C.border}`,color:C.text,fontFamily:"'DM Sans',sans-serif",fontSize:13,padding:"8px 12px 8px 32px",borderRadius:8,outline:"none"}}/></div></div>
       {!search&&(<div style={{display:"flex",alignItems:"center",gap:6,marginBottom:14,padding:"8px 12px",background:C.surface,borderRadius:8,border:`1px solid ${C.border}`,flexWrap:"wrap"}}><button onClick={()=>navC(-1)} style={{background:"none",border:"none",color:cur?C.textMuted:C.text,cursor:"pointer",fontFamily:"'DM Sans',sans-serif",fontSize:13,padding:"2px 4px",display:"flex",alignItems:"center",gap:6}}><Icon name="home" size={13}/> Início</button>{bc.map((b,i)=><span key={b.id} style={{display:"flex",alignItems:"center",gap:6}}><span style={{color:C.textDim}}><Icon name="chevronRight" size={12}/></span><button onClick={()=>navC(i)} style={{background:"none",border:"none",color:i===bc.length-1?C.text:C.textMuted,cursor:"pointer",fontFamily:"'DM Sans',sans-serif",fontSize:13,padding:"2px 4px"}}>{b.name}</button></span>)}</div>)}
-      {newP&&(<div style={{display:"flex",gap:8,marginBottom:14,padding:12,background:C.surface,borderRadius:10,border:`1px solid ${C.accentBorder}`}}><input autoFocus value={newPN} onChange={e=>setNewPN(e.target.value)} onKeyDown={e=>e.key==="Enter"&&mkP()} placeholder="Nome da pasta..." style={{flex:1,background:"#0d0d0d",border:`1px solid ${C.border}`,color:C.text,fontFamily:"'DM Sans',sans-serif",fontSize:13,padding:"7px 12px",borderRadius:7,outline:"none"}}/><Btn variant="primary" small onClick={mkP}>Criar</Btn><Btn variant="outline" small onClick={()=>{setNewP(false);setNewPN("");}}>Cancelar</Btn></div>)}
+      {newP&&(<div style={{display:"flex",gap:8,marginBottom:14,padding:12,background:C.surface,borderRadius:10,border:`1px solid ${C.accentBorder}`}}><input autoFocus value={newPN} onChange={e=>setNewPN(e.target.value)} onKeyDown={e=>e.key==="Enter"&&mkP()} placeholder="Nome da pasta..." style={{flex:1,background:C.surface2,border:`1px solid ${C.border}`,color:C.text,fontFamily:"'DM Sans',sans-serif",fontSize:13,padding:"7px 12px",borderRadius:7,outline:"none"}}/><Btn variant="primary" small onClick={mkP}>Criar</Btn><Btn variant="outline" small onClick={()=>{setNewP(false);setNewPN("");}}>Cancelar</Btn></div>)}
       {loading?<div style={{textAlign:"center",padding:40}}><Spinner size={24}/></div>:(
         <div style={{border:`1px dashed ${drag?C.accentBorder:"transparent"}`,borderRadius:12,background:drag?C.accentDim:"transparent",transition:"all 0.2s",padding:4}} onDragOver={e=>{e.preventDefault();setDrag(true);}} onDragLeave={()=>setDrag(false)} onDrop={e=>{e.preventDefault();setDrag(false);upload(e.dataTransfer.files);}}>
           {items.length===0&&<div style={{textAlign:"center",padding:"50px 0",color:C.textDim}}><Icon name="folder" size={28}/><div style={{fontSize:13,marginTop:10}}>Solte arquivos aqui ou crie uma pasta</div></div>}
@@ -2265,7 +2278,7 @@ const ArquivosPage=({sb,user})=>{
                     </div>
                     <div style={{display:"flex",gap:3}}><button onClick={()=>{setRenaming({id:item.id,t:isP?"pasta":"arquivo"});setRv(item.name);}} style={{background:"none",border:"none",color:C.textDim,cursor:"pointer",padding:3}}><Icon name="edit" size={12}/></button><button onClick={()=>isP?delP(item.id):delA(item.id,item.file_url)} style={{background:"none",border:"none",color:C.textDim,cursor:"pointer",padding:3}}><Icon name="trash" size={12}/></button></div>
                   </div>
-                  {renaming&&renaming.id===item.id?<input autoFocus value={rv} onChange={e=>setRv(e.target.value)} onBlur={doRen} onKeyDown={e=>e.key==="Enter"&&doRen()} style={{background:"#0a0a0a",border:`1px solid ${C.accentBorder}`,color:C.text,fontFamily:"'DM Sans',sans-serif",fontSize:12,padding:"3px 6px",borderRadius:5,outline:"none",width:"100%"}}/>:<div style={{fontSize:12,fontWeight:500,color:C.text,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{item.name}</div>}
+                  {renaming&&renaming.id===item.id?<input autoFocus value={rv} onChange={e=>setRv(e.target.value)} onBlur={doRen} onKeyDown={e=>e.key==="Enter"&&doRen()} style={{background:C.surface,border:`1px solid ${C.accentBorder}`,color:C.text,fontFamily:"'DM Sans',sans-serif",fontSize:12,padding:"3px 6px",borderRadius:5,outline:"none",width:"100%"}}/>:<div style={{fontSize:12,fontWeight:500,color:C.text,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{item.name}</div>}
                   <div style={{fontSize:10,color:C.textDim,marginTop:3,fontFamily:"'JetBrains Mono',monospace"}}>{isP?"pasta":fLabel(item.file_type)}</div>
                   {isP&&<div style={{fontSize:10,color:C.textMuted,marginTop:4}}>clique duplo para abrir</div>}
                   {!isP&&item.file_url&&item.file_type!=="image"&&<a href={item.file_url} target="_blank" rel="noreferrer" style={{fontSize:10,color:C.accent,display:"block",marginTop:4}}>Abrir ↗</a>}
@@ -2357,7 +2370,7 @@ const PaymentsPage=({sb,user,privacyMode})=>{
             </div>
           )}
         </div>
-        {p.notas&&<div style={{fontSize:11,color:C.textMuted,padding:"7px 10px",background:"#0d0d0d",borderRadius:7,lineHeight:1.5,marginTop:8}}>{p.notas}</div>}
+        {p.notas&&<div style={{fontSize:11,color:C.textMuted,padding:"7px 10px",background:C.surface2,borderRadius:7,lineHeight:1.5,marginTop:8}}>{p.notas}</div>}
         <div style={{display:"flex",justifyContent:"flex-end",gap:6,marginTop:12}}>
           <button onClick={()=>openEdit(p)} style={{background:"none",border:"none",color:C.textDim,cursor:"pointer",padding:4}}><Icon name="edit" size={13}/></button>
           <button onClick={()=>del(p.id)} style={{background:"none",border:"none",color:C.textDim,cursor:"pointer",padding:4}}><Icon name="trash" size={13}/></button>
@@ -2442,7 +2455,7 @@ const PaymentsPage=({sb,user,privacyMode})=>{
               </div>
             </div>
             <div><label style={{fontSize:12,color:C.textMuted,display:"block",marginBottom:6}}>Data de saída do aquecimento</label><Input type="date" value={form.data_saida} onChange={v=>setForm(p=>({...p,data_saida:v}))}/></div>
-            <div><label style={{fontSize:12,color:C.textMuted,display:"block",marginBottom:6}}>Observações</label><textarea value={form.notas} onChange={e=>setForm(p=>({...p,notas:e.target.value}))} placeholder="Limite, banco, observações..." rows={3} style={{background:"#0d0d0d",border:`1px solid ${C.border}`,color:C.text,fontFamily:"'DM Sans',sans-serif",fontSize:13,padding:"8px 12px",borderRadius:8,outline:"none",resize:"none",width:"100%"}} onFocus={e=>e.target.style.borderColor=C.accentBorder} onBlur={e=>e.target.style.borderColor=C.border}/></div>
+            <div><label style={{fontSize:12,color:C.textMuted,display:"block",marginBottom:6}}>Observações</label><textarea value={form.notas} onChange={e=>setForm(p=>({...p,notas:e.target.value}))} placeholder="Limite, banco, observações..." rows={3} style={{background:C.surface2,border:`1px solid ${C.border}`,color:C.text,fontFamily:"'DM Sans',sans-serif",fontSize:13,padding:"8px 12px",borderRadius:8,outline:"none",resize:"none",width:"100%"}} onFocus={e=>e.target.style.borderColor=C.accentBorder} onBlur={e=>e.target.style.borderColor=C.border}/></div>
             <div style={{display:"flex",gap:8,justifyContent:"flex-end",paddingTop:4}}><Btn variant="outline" onClick={()=>{setModal(false);setEditItem(null);}}>Cancelar</Btn><Btn variant="primary" onClick={submit} loading={saving}>{editItem?"Salvar alterações":"Adicionar"}</Btn></div>
           </div>
         </Modal>
@@ -2542,7 +2555,7 @@ const ProdutosPage=({sb,user})=>{
           <input value={url} onChange={e=>setUrl(e.target.value)}
             onKeyDown={e=>e.key==="Enter"&&fetchPreview()}
             placeholder="https://loja.myshopify.com/products/nome-do-produto"
-            style={{flex:1,minWidth:200,background:"#0d0d0d",border:`1px solid ${C.border}`,color:C.text,fontFamily:"'DM Sans',sans-serif",fontSize:13,padding:"10px 14px",borderRadius:9,outline:"none"}}
+            style={{flex:1,minWidth:200,background:C.surface2,border:`1px solid ${C.border}`,color:C.text,fontFamily:"'DM Sans',sans-serif",fontSize:13,padding:"10px 14px",borderRadius:9,outline:"none"}}
             onFocus={e=>e.target.style.borderColor=C.accentBorder}
             onBlur={e=>e.target.style.borderColor=C.border}/>
           <button onClick={fetchPreview} disabled={fetching}
@@ -2583,7 +2596,7 @@ const ProdutosPage=({sb,user})=>{
                   <div style={{fontSize:11,color:C.textMuted,marginTop:6}}>{preview.images.length} imagem{preview.images.length!==1?"ns":""}</div>
                 </div>
               ):(
-                <div style={{width:"100%",aspectRatio:"1",borderRadius:10,background:"#0d0d0d",border:`1px solid ${C.border}`,display:"flex",alignItems:"center",justifyContent:"center",color:C.textDim,fontSize:12}}>Sem imagem</div>
+                <div style={{width:"100%",aspectRatio:"1",borderRadius:10,background:C.surface2,border:`1px solid ${C.border}`,display:"flex",alignItems:"center",justifyContent:"center",color:C.textDim,fontSize:12}}>Sem imagem</div>
               )}
             </div>
 
@@ -2600,7 +2613,7 @@ const ProdutosPage=({sb,user})=>{
                   <div style={{fontSize:12,color:C.textMuted,marginBottom:6}}>Variantes ({preview.variants.length})</div>
                   <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
                     {preview.variants.slice(0,8).map((v,i)=>(
-                      <div key={i} style={{padding:"4px 10px",background:"#0d0d0d",border:`1px solid ${C.border}`,borderRadius:6,fontSize:11,color:C.text}}>
+                      <div key={i} style={{padding:"4px 10px",background:C.surface2,border:`1px solid ${C.border}`,borderRadius:6,fontSize:11,color:C.text}}>
                         {v.option1!=="Default Title"?v.option1:""} <span style={{color:C.green,fontFamily:"'JetBrains Mono',monospace"}}>{v.price}</span>
                       </div>
                     ))}
@@ -2619,7 +2632,7 @@ const ProdutosPage=({sb,user})=>{
               <div style={{display:"flex",gap:8,alignItems:"center",flexWrap:"wrap",marginTop:4}}>
                 {shopifyConfigs.length>0&&(
                   <select value={targetDomain} onChange={e=>setTargetDomain(e.target.value)}
-                    style={{background:"#0d0d0d",border:`1px solid ${C.border}`,color:C.text,fontFamily:"'DM Sans',sans-serif",fontSize:12,padding:"8px 12px",borderRadius:8,outline:"none",cursor:"pointer"}}>
+                    style={{background:C.surface2,border:`1px solid ${C.border}`,color:C.text,fontFamily:"'DM Sans',sans-serif",fontSize:12,padding:"8px 12px",borderRadius:8,outline:"none",cursor:"pointer"}}>
                     {shopifyConfigs.map(c=><option key={c.shop_domain} value={c.shop_domain}>{c.store_name?`${c.store_name} (${c.shop_domain})`:c.shop_domain}</option>)}
                   </select>
                 )}
@@ -2647,7 +2660,7 @@ const ProdutosPage=({sb,user})=>{
         ):(
           <div style={{display:"flex",flexDirection:"column",gap:8}}>
             {history.map(p=>(
-              <div key={p.id} style={{display:"flex",alignItems:"center",gap:12,padding:"10px 14px",background:"#0d0d0d",borderRadius:10,border:`1px solid ${C.border}`}}>
+              <div key={p.id} style={{display:"flex",alignItems:"center",gap:12,padding:"10px 14px",background:C.surface2,borderRadius:10,border:`1px solid ${C.border}`}}>
                 {p.image_url?(
                   <img src={p.image_url} style={{width:40,height:40,borderRadius:7,objectFit:"cover",flexShrink:0}} onError={e=>{e.currentTarget.style.display="none";}}/>
                 ):(
@@ -2756,11 +2769,11 @@ const YoutubePage=({sb,user})=>{
               <span style={{position:"absolute",left:11,top:"50%",transform:"translateY(-50%)",color:C.textDim}}><Icon name="youtube" size={13}/></span>
               <input value={ytUrl} onChange={e=>{setYtUrl(e.target.value);setErr("");setYtResult(null);}}
                 placeholder="https://youtube.com/watch?v=... ou /shorts/..."
-                style={{width:"100%",background:"#0d0d0d",border:`1px solid ${err?C.red:C.border}`,color:C.text,fontFamily:"'DM Sans',sans-serif",fontSize:13,padding:"9px 12px 9px 32px",borderRadius:8,outline:"none"}}
+                style={{width:"100%",background:C.surface2,border:`1px solid ${err?C.red:C.border}`,color:C.text,fontFamily:"'DM Sans',sans-serif",fontSize:13,padding:"9px 12px 9px 32px",borderRadius:8,outline:"none"}}
                 onFocus={e=>e.target.style.borderColor=C.accentBorder} onBlur={e=>e.target.style.borderColor=err?C.red:C.border}
                 onKeyDown={e=>e.key==="Enter"&&downloadYT()}/>
             </div>
-            {ytUrl&&<button onClick={()=>{setYtUrl("");setYtResult(null);setErr("");}} style={{background:"#1a1a1a",border:`1px solid ${C.border}`,color:C.textMuted,borderRadius:8,padding:"0 10px",cursor:"pointer"}}><Icon name="x" size={13}/></button>}
+            {ytUrl&&<button onClick={()=>{setYtUrl("");setYtResult(null);setErr("");}} style={{background:C.surface3,border:`1px solid ${C.border}`,color:C.textMuted,borderRadius:8,padding:"0 10px",cursor:"pointer"}}><Icon name="x" size={13}/></button>}
           </div>
           {ytUrl&&isShorts(ytUrl)&&<div style={{marginTop:6,fontSize:11,color:C.accent}}>⚡ Shorts detectado</div>}
         </div>
@@ -2814,11 +2827,11 @@ const YoutubePage=({sb,user})=>{
               <span style={{position:"absolute",left:11,top:"50%",transform:"translateY(-50%)",color:"#ee1d52",fontSize:14}}>♪</span>
               <input value={ttUrl} onChange={e=>{setTtUrl(e.target.value);setErr("");setTtResult(null);}}
                 placeholder="https://www.tiktok.com/@user/video/..."
-                style={{width:"100%",background:"#0d0d0d",border:`1px solid ${err?C.red:C.border}`,color:C.text,fontFamily:"'DM Sans',sans-serif",fontSize:13,padding:"9px 12px 9px 32px",borderRadius:8,outline:"none"}}
+                style={{width:"100%",background:C.surface2,border:`1px solid ${err?C.red:C.border}`,color:C.text,fontFamily:"'DM Sans',sans-serif",fontSize:13,padding:"9px 12px 9px 32px",borderRadius:8,outline:"none"}}
                 onFocus={e=>e.target.style.borderColor="rgba(238,29,82,0.4)"} onBlur={e=>e.target.style.borderColor=err?C.red:C.border}
                 onKeyDown={e=>e.key==="Enter"&&downloadTT()}/>
             </div>
-            {ttUrl&&<button onClick={()=>{setTtUrl("");setTtResult(null);setErr("");}} style={{background:"#1a1a1a",border:`1px solid ${C.border}`,color:C.textMuted,borderRadius:8,padding:"0 10px",cursor:"pointer"}}><Icon name="x" size={13}/></button>}
+            {ttUrl&&<button onClick={()=>{setTtUrl("");setTtResult(null);setErr("");}} style={{background:C.surface3,border:`1px solid ${C.border}`,color:C.textMuted,borderRadius:8,padding:"0 10px",cursor:"pointer"}}><Icon name="x" size={13}/></button>}
           </div>
         </div>
         <div style={{marginBottom:14,padding:"10px 14px",background:"rgba(238,29,82,0.06)",border:"1px solid rgba(238,29,82,0.2)",borderRadius:9,fontSize:11,color:C.textMuted,display:"flex",alignItems:"center",gap:7}}>
@@ -2898,9 +2911,9 @@ const PrecificacaoPage=()=>{
   const sym=getCurr(custoCurr).symbol;
   const fmt=(v)=>`${sym} ${(v||0).toFixed(2)}`;
 
-  const cardStyle={background:"#0d0d0d",border:`1px solid ${C.border}`,borderRadius:14,padding:"18px 20px"};
+  const cardStyle={background:C.surface2,border:`1px solid ${C.border}`,borderRadius:14,padding:"18px 20px"};
   const labelStyle={fontSize:11,color:C.textMuted,display:"block",marginBottom:6,textTransform:"uppercase",letterSpacing:"0.05em"};
-  const inpStyle={width:"100%",background:"#111",border:`1px solid ${C.border}`,color:C.text,fontFamily:"'JetBrains Mono',monospace",fontSize:14,padding:"9px 12px",borderRadius:8,outline:"none"};
+  const inpStyle={width:"100%",background:C.surface,border:`1px solid ${C.border}`,color:C.text,fontFamily:"'JetBrains Mono',monospace",fontSize:14,padding:"9px 12px",borderRadius:8,outline:"none"};
   const thStyle={padding:"10px 14px",textAlign:"right",color:C.textMuted,fontWeight:500,fontSize:11,textTransform:"uppercase",letterSpacing:"0.05em",whiteSpace:"nowrap"};
   const tdStyle={padding:"12px 14px",textAlign:"right",fontFamily:"'JetBrains Mono',monospace",fontSize:13};
 
@@ -2909,12 +2922,12 @@ const PrecificacaoPage=()=>{
     return(
       <div style={{position:"relative"}}>
         <button onClick={()=>setShowCurrPicker(showCurrPicker===pickerId?null:pickerId)}
-          style={{display:"flex",alignItems:"center",gap:5,padding:"9px 10px",background:"#111",border:`1px solid ${C.border}`,borderRadius:8,cursor:"pointer",color:C.text,fontSize:12,fontFamily:"'DM Sans',sans-serif",whiteSpace:"nowrap"}}>
+          style={{display:"flex",alignItems:"center",gap:5,padding:"9px 10px",background:C.surface,border:`1px solid ${C.border}`,borderRadius:8,cursor:"pointer",color:C.text,fontSize:12,fontFamily:"'DM Sans',sans-serif",whiteSpace:"nowrap"}}>
           <span>{c.flag}</span><span style={{fontWeight:600}}>{c.code}</span>
           <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="6 9 12 15 18 9"/></svg>
         </button>
         {showCurrPicker===pickerId&&(
-          <div style={{position:"absolute",top:"calc(100% + 4px)",left:0,zIndex:100,background:"#111",border:`1px solid ${C.border}`,borderRadius:10,padding:6,minWidth:130,boxShadow:"0 8px 24px rgba(0,0,0,0.6)"}}>
+          <div style={{position:"absolute",top:"calc(100% + 4px)",left:0,zIndex:100,background:C.surface,border:`1px solid ${C.border}`,borderRadius:10,padding:6,minWidth:130,boxShadow:"0 8px 24px rgba(0,0,0,0.6)"}}>
             {CURR_LIST.map(x=>(
               <button key={x.code} onClick={()=>{onChange(x.code);setShowCurrPicker(null);}}
                 style={{display:"flex",alignItems:"center",gap:8,width:"100%",padding:"7px 10px",background:curr===x.code?C.accentDim:"transparent",border:"none",borderRadius:7,cursor:"pointer",color:curr===x.code?C.accent:C.text,fontSize:12,fontFamily:"'DM Sans',sans-serif"}}>
@@ -2978,7 +2991,7 @@ const PrecificacaoPage=()=>{
               <CurrBtn curr={custoCurr} onChange={setCustoCurr} pickerId="precoCustom"/>
               <input type="number" step="0.01" min="0" value={precoCustom} onChange={e=>setPrecoCustom(e.target.value)}
                 placeholder="Ex: 89.99"
-                style={{...inpStyle,flex:1,borderColor:precoCustom?C.accent:C.border,background:"#0d0d0d"}}
+                style={{...inpStyle,flex:1,borderColor:precoCustom?C.accent:C.border,background:C.surface2}}
                 onFocus={e=>e.target.style.borderColor=C.accent} onBlur={e=>e.target.style.borderColor=precoCustom?C.accent:C.border}/>
             </div>
             {parseFloat(precoCustom)>0&&(()=>{
@@ -3001,7 +3014,7 @@ const PrecificacaoPage=()=>{
               <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:10}}>
                 <span style={{fontSize:13,color:C.textMuted,minWidth:80}}>IOF</span>
                 <select value={iof} onChange={e=>setIof(e.target.value)}
-                  style={{background:"#111",border:`1px solid ${C.border}`,color:C.text,fontFamily:"'JetBrains Mono',monospace",fontSize:13,padding:"8px 10px",borderRadius:8,outline:"none",cursor:"pointer",minWidth:120}}>
+                  style={{background:C.surface,border:`1px solid ${C.border}`,color:C.text,fontFamily:"'JetBrains Mono',monospace",fontSize:13,padding:"8px 10px",borderRadius:8,outline:"none",cursor:"pointer",minWidth:120}}>
                   <option value="0">0% (Nenhum)</option>
                   <option value="0.38">0,38% (Boleto/PIX)</option>
                   <option value="1.1">1,10% (Cartão)</option>
@@ -3294,16 +3307,16 @@ const VideoHashPage=()=>{
   };
 
   const fmtSize=b=>{if(b>1e6)return`${(b/1e6).toFixed(1)} MB`;return`${(b/1e3).toFixed(0)} KB`;};
-  const cardStyle={background:"#0d0d0d",border:`1px solid ${C.border}`,borderRadius:14,padding:"18px 20px"};
+  const cardStyle={background:C.surface2,border:`1px solid ${C.border}`,borderRadius:14,padding:"18px 20px"};
   const labelStyle={fontSize:11,color:C.textMuted,display:"block",marginBottom:6,textTransform:"uppercase",letterSpacing:"0.05em"};
-  const inputStyle={width:"100%",background:"#111",border:`1px solid ${C.border}`,color:C.text,fontSize:13,padding:"9px 12px",borderRadius:8,outline:"none",fontFamily:"'DM Sans',sans-serif",boxSizing:"border-box"};
+  const inputStyle={width:"100%",background:C.surface,border:`1px solid ${C.border}`,color:C.text,fontSize:13,padding:"9px 12px",borderRadius:8,outline:"none",fontFamily:"'DM Sans',sans-serif",boxSizing:"border-box"};
   const Toggle=({label,desc,val,onChange})=>(
     <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"11px 0",borderBottom:`1px solid ${C.border}`}}>
       <div>
         <div style={{fontSize:13,color:C.text,fontWeight:500}}>{label}</div>
         {desc&&<div style={{fontSize:11,color:C.textDim,marginTop:2}}>{desc}</div>}
       </div>
-      <button onClick={onChange} style={{width:40,height:22,borderRadius:11,border:"none",cursor:"pointer",transition:"all 0.2s",background:val?C.green:"#333",position:"relative",flexShrink:0}}>
+      <button onClick={onChange} style={{width:40,height:22,borderRadius:11,border:"none",cursor:"pointer",transition:"all 0.2s",background:val?C.green:"#2e3348",position:"relative",flexShrink:0}}>
         <span style={{position:"absolute",top:2,width:18,height:18,borderRadius:"50%",background:"#fff",transition:"all 0.2s",left:val?"calc(100% - 20px)":"2px"}}/>
       </button>
     </div>
@@ -3405,14 +3418,14 @@ const VideoHashPage=()=>{
 
               <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:16}}>
                 {[{label:"Tamanho original",val:fmtSize(result.origSize),c:C.textMuted},{label:"Tamanho novo",val:fmtSize(result.size),c:C.text}].map(s=>(
-                  <div key={s.label} style={{background:"#0d0d0d",borderRadius:10,padding:"12px 14px",border:`1px solid ${C.border}`}}>
+                  <div key={s.label} style={{background:C.surface2,borderRadius:10,padding:"12px 14px",border:`1px solid ${C.border}`}}>
                     <div style={{fontSize:10,color:C.textDim,textTransform:"uppercase",letterSpacing:"0.05em",marginBottom:4}}>{s.label}</div>
                     <div style={{fontSize:16,fontWeight:700,color:s.c,fontFamily:"'JetBrains Mono',monospace"}}>{s.val}</div>
                   </div>
                 ))}
               </div>
 
-              <div style={{background:"#0d0d0d",borderRadius:10,padding:"12px 14px",border:`1px solid ${C.border}`,marginBottom:14}}>
+              <div style={{background:C.surface2,borderRadius:10,padding:"12px 14px",border:`1px solid ${C.border}`,marginBottom:14}}>
                 <div style={{fontSize:11,color:C.textMuted,textTransform:"uppercase",letterSpacing:"0.05em",marginBottom:8}}>O que foi alterado</div>
                 <div style={{display:"flex",flexWrap:"wrap",gap:6}}>
                   {[
@@ -3422,7 +3435,7 @@ const VideoHashPage=()=>{
                     meta.autor&&`👤 Autor: ${meta.autor}`,
                     meta.descricao&&`💬 Descrição atualizada`,
                   ].filter(Boolean).map((m,i)=>(
-                    <span key={i} style={{fontSize:11,padding:"3px 10px",borderRadius:20,background:"rgba(34,197,94,0.12)",color:C.green,border:"1px solid rgba(34,197,94,0.25)"}}>{m}</span>
+                    <span key={i} style={{fontSize:11,padding:"3px 10px",borderRadius:20,background:"rgba(34,197,94,0.12)",color:C.green,border:"1px solid rgba(16,185,129,0.22)"}}>{m}</span>
                   ))}
                 </div>
               </div>
@@ -3553,7 +3566,7 @@ const CustosProdutosPage=({sb,user})=>{
     .filter(p=>!filterSemCusto||!(costs[p.product_id]&&(costs[p.product_id].custo>0||costs[p.product_id].frete>0)));
   const fmtDate=d=>{if(!d)return"—";const dt=new Date(d);return`${dt.toLocaleDateString("pt-BR")} às ${dt.toLocaleTimeString("pt-BR",{hour:"2-digit",minute:"2-digit"})}`;};
 
-  const selStyle={background:"#0d0d0d",border:`1px solid ${C.border}`,color:C.text,fontFamily:"'DM Sans',sans-serif",fontSize:13,padding:"8px 12px",borderRadius:8,outline:"none",cursor:"pointer"};
+  const selStyle={background:C.surface2,border:`1px solid ${C.border}`,color:C.text,fontFamily:"'DM Sans',sans-serif",fontSize:13,padding:"8px 12px",borderRadius:8,outline:"none",cursor:"pointer"};
 
   return(
     <div className="page-pad" style={{overflowY:"auto",flex:1}}>
@@ -3594,7 +3607,7 @@ const CustosProdutosPage=({sb,user})=>{
                 background:!filterVendas&&!filterSemCusto?C.surface:"transparent",
                 border:`1px solid ${!filterVendas&&!filterSemCusto?C.borderHover:C.border}`,
                 color:!filterVendas&&!filterSemCusto?C.text:C.textMuted}}>
-              Todos <span style={{background:"#1a1a1a",padding:"1px 6px",borderRadius:10,fontSize:10,color:C.textDim}}>{products.length}</span>
+              Todos <span style={{background:C.surface3,padding:"1px 6px",borderRadius:10,fontSize:10,color:C.textDim}}>{products.length}</span>
             </button>
             {/* Com vendas */}
             <button onClick={()=>{setFilterVendas(v=>!v);setFilterSemCusto(false);}}
@@ -3630,7 +3643,7 @@ const CustosProdutosPage=({sb,user})=>{
             <div className="table-wrap" style={{border:`1px solid ${C.border}`,borderRadius:12,overflow:"hidden"}}>
               <table style={{width:"100%",borderCollapse:"collapse",fontSize:13}}>
                 <thead>
-                  <tr style={{background:"#0d0d0d",borderBottom:`1px solid ${C.border}`}}>
+                  <tr style={{background:C.surface2,borderBottom:`1px solid ${C.border}`}}>
                     <th style={{padding:"10px 16px",textAlign:"left",color:C.textMuted,fontWeight:500,fontSize:11,textTransform:"uppercase",letterSpacing:"0.05em"}}>#</th>
                     <th style={{padding:"10px 16px",textAlign:"left",color:C.textMuted,fontWeight:500,fontSize:11,textTransform:"uppercase",letterSpacing:"0.05em"}}>Produto</th>
                     <th style={{padding:"10px 16px",textAlign:"center",color:C.textMuted,fontWeight:500,fontSize:11,textTransform:"uppercase",letterSpacing:"0.05em"}} className="hide-mobile">Variantes</th>
@@ -3664,7 +3677,7 @@ const CustosProdutosPage=({sb,user})=>{
                         <td style={{padding:"12px 16px",textAlign:"center",color:C.textMuted,fontSize:12,fontFamily:"'JetBrains Mono',monospace"}} className="hide-mobile">{p.variants_count}</td>
                         <td style={{padding:"12px 16px",textAlign:"center"}} className="hide-mobile">
                           {p.total_sales>0?(
-                            <span style={{display:"inline-flex",alignItems:"center",gap:4,background:"rgba(34,197,94,0.12)",border:"1px solid rgba(34,197,94,0.25)",borderRadius:20,padding:"2px 10px",fontSize:12,fontWeight:600,color:C.green,fontFamily:"'JetBrains Mono',monospace"}}>
+                            <span style={{display:"inline-flex",alignItems:"center",gap:4,background:"rgba(34,197,94,0.12)",border:"1px solid rgba(16,185,129,0.22)",borderRadius:20,padding:"2px 10px",fontSize:12,fontWeight:600,color:C.green,fontFamily:"'JetBrains Mono',monospace"}}>
                               <span style={{fontSize:9,opacity:0.8}}>▲</span>{p.total_sales}
                             </span>
                           ):(
@@ -3675,7 +3688,7 @@ const CustosProdutosPage=({sb,user})=>{
                           {hasCost?(
                             <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:2}}>
                               <span style={{fontSize:12,fontWeight:600,color:C.text,fontFamily:"'JetBrains Mono',monospace"}}>{fmtCurr(c.custo,c.currency)}</span>
-                              <span style={{fontSize:10,color:C.textDim,background:"#1a1a1a",padding:"1px 5px",borderRadius:4}}>{getCurr(c.currency).flag} {c.currency||"BRL"}</span>
+                              <span style={{fontSize:10,color:C.textDim,background:C.surface3,padding:"1px 5px",borderRadius:4}}>{getCurr(c.currency).flag} {c.currency||"BRL"}</span>
                             </div>
                           ):(
                             <span style={{fontSize:11,color:C.textDim}}>—</span>
@@ -3714,7 +3727,7 @@ const CustosProdutosPage=({sb,user})=>{
         <Modal title="Editar Custo do Produto" onClose={()=>setEditing(null)}>
           <div style={{display:"flex",flexDirection:"column",gap:14}}>
             {/* Produto info */}
-            <div style={{display:"flex",alignItems:"center",gap:12,padding:"10px 12px",background:"#0d0d0d",borderRadius:10,border:`1px solid ${C.border}`}}>
+            <div style={{display:"flex",alignItems:"center",gap:12,padding:"10px 12px",background:C.surface2,borderRadius:10,border:`1px solid ${C.border}`}}>
               {editing.image?(
                 <img src={editing.image} alt="" style={{width:44,height:44,borderRadius:8,objectFit:"cover",flexShrink:0}} onError={e=>e.target.style.display="none"}/>
               ):(
@@ -3751,7 +3764,7 @@ const CustosProdutosPage=({sb,user})=>{
                   <span style={{position:"absolute",left:10,top:"50%",transform:"translateY(-50%)",fontSize:12,color:C.textDim,fontFamily:"'JetBrains Mono',monospace"}}>{curr.symbol}</span>
                   <input type="number" step="0.01" min="0" value={editing.custo} onChange={e=>setEditing(p=>({...p,custo:e.target.value}))}
                     placeholder="0,00"
-                    style={{width:"100%",background:"#0d0d0d",border:`1px solid ${C.border}`,color:C.text,fontFamily:"'JetBrains Mono',monospace",fontSize:14,padding:`10px 12px 10px ${curr.symbol.length>1?"36px":"26px"}`,borderRadius:8,outline:"none"}}
+                    style={{width:"100%",background:C.surface2,border:`1px solid ${C.border}`,color:C.text,fontFamily:"'JetBrains Mono',monospace",fontSize:14,padding:`10px 12px 10px ${curr.symbol.length>1?"36px":"26px"}`,borderRadius:8,outline:"none"}}
                     onFocus={e=>e.target.style.borderColor=C.accentBorder} onBlur={e=>e.target.style.borderColor=C.border}/>
                 </div>
               </div>
@@ -3761,7 +3774,7 @@ const CustosProdutosPage=({sb,user})=>{
                   <span style={{position:"absolute",left:10,top:"50%",transform:"translateY(-50%)",fontSize:12,color:C.textDim,fontFamily:"'JetBrains Mono',monospace"}}>{curr.symbol}</span>
                   <input type="number" step="0.01" min="0" value={editing.frete} onChange={e=>setEditing(p=>({...p,frete:e.target.value}))}
                     placeholder="0,00"
-                    style={{width:"100%",background:"#0d0d0d",border:`1px solid ${C.border}`,color:C.text,fontFamily:"'JetBrains Mono',monospace",fontSize:14,padding:`10px 12px 10px ${curr.symbol.length>1?"36px":"26px"}`,borderRadius:8,outline:"none"}}
+                    style={{width:"100%",background:C.surface2,border:`1px solid ${C.border}`,color:C.text,fontFamily:"'JetBrains Mono',monospace",fontSize:14,padding:`10px 12px 10px ${curr.symbol.length>1?"36px":"26px"}`,borderRadius:8,outline:"none"}}
                     onFocus={e=>e.target.style.borderColor=C.accentBorder} onBlur={e=>e.target.style.borderColor=C.border}/>
                 </div>
               </div>
@@ -3874,7 +3887,7 @@ const LojasPage=({sb,user})=>{
                     </button>
                   </div>
                 </div>
-                {l.notas&&<div style={{fontSize:12,color:C.textMuted,padding:"8px 10px",background:"#0d0d0d",borderRadius:7,lineHeight:1.5}}>{l.notas}</div>}
+                {l.notas&&<div style={{fontSize:12,color:C.textMuted,padding:"8px 10px",background:C.surface2,borderRadius:7,lineHeight:1.5}}>{l.notas}</div>}
                 <div style={{fontSize:10,color:C.textDim,marginTop:10,fontFamily:"'JetBrains Mono',monospace"}}>cadastrada em {l.created_at?.slice(0,10)}</div>
               </div>
             ))}
@@ -3901,7 +3914,7 @@ const LojasPage=({sb,user})=>{
             </div>
             <div>
               <label style={{fontSize:12,color:C.textMuted,display:"block",marginBottom:6}}>Observações</label>
-              <textarea value={form.notas} onChange={e=>setForm(p=>({...p,notas:e.target.value}))} placeholder="Nicho, plataforma, observações..." rows={3} style={{background:"#0d0d0d",border:`1px solid ${C.border}`,color:C.text,fontFamily:"'DM Sans',sans-serif",fontSize:13,padding:"8px 12px",borderRadius:8,outline:"none",resize:"none",width:"100%"}}
+              <textarea value={form.notas} onChange={e=>setForm(p=>({...p,notas:e.target.value}))} placeholder="Nicho, plataforma, observações..." rows={3} style={{background:C.surface2,border:`1px solid ${C.border}`,color:C.text,fontFamily:"'DM Sans',sans-serif",fontSize:13,padding:"8px 12px",borderRadius:8,outline:"none",resize:"none",width:"100%"}}
                 onFocus={e=>e.target.style.borderColor=C.accentBorder} onBlur={e=>e.target.style.borderColor=C.border}/>
             </div>
             <div style={{display:"flex",gap:8,justifyContent:"flex-end",paddingTop:4}}>
