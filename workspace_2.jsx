@@ -9,25 +9,26 @@ const supabaseClient = createClient(SUPA_URL, SUPA_KEY);
 
 // ─── TOKENS ───────────────────────────────────────────────────────────────────
 const C = {
-  bg:"#07080d", surface:"#0d0e16", surfaceHover:"#111320",
-  surface2:"#13151f", surface3:"#171926",
-  border:"rgba(255,255,255,0.07)", borderHover:"rgba(255,255,255,0.13)",
-  text:"#eef0f6", textMuted:"#5c6378", textDim:"#2e3348",
-  accent:"#6366f1", accentDim:"rgba(99,102,241,0.12)", accentBorder:"rgba(99,102,241,0.35)",
-  accentGlow:"rgba(99,102,241,0.25)",
-  green:"#10b981", greenDim:"rgba(16,185,129,0.12)", greenBorder:"rgba(16,185,129,0.3)",
-  red:"#f43f5e", redDim:"rgba(244,63,94,0.12)", redBorder:"rgba(244,63,94,0.3)",
-  amber:"#f59e0b", amberDim:"rgba(245,158,11,0.12)",
-  blue:"#3b82f6", blueDim:"rgba(59,130,246,0.12)",
-  purple:"#a855f7", purpleDim:"rgba(168,85,247,0.12)",
-  teal:"#14b8a6", tealDim:"rgba(20,184,166,0.12)",
+  bg:"#080a12", surface:"#0e1018", surfaceHover:"#131626",
+  surface2:"#141722", surface3:"#181b2c",
+  border:"rgba(255,255,255,0.06)", borderHover:"rgba(255,255,255,0.12)",
+  text:"#e8ecf5", textMuted:"#5a6282", textDim:"#2d3353",
+  accent:"#5b5ef6", accentDim:"rgba(91,94,246,0.14)", accentBorder:"rgba(91,94,246,0.38)",
+  accentGlow:"rgba(91,94,246,0.28)",
+  green:"#12d18e", greenDim:"rgba(18,209,142,0.11)", greenBorder:"rgba(18,209,142,0.32)",
+  red:"#f5334f", redDim:"rgba(245,51,79,0.11)", redBorder:"rgba(245,51,79,0.32)",
+  amber:"#f5a623", amberDim:"rgba(245,166,35,0.12)",
+  blue:"#4f8ef7", blueDim:"rgba(79,142,247,0.12)",
+  purple:"#b06ef3", purpleDim:"rgba(176,110,243,0.12)",
+  teal:"#14d6c2", tealDim:"rgba(20,214,194,0.12)",
+  orange:"#ff6b35", orangeDim:"rgba(255,107,53,0.12)",
 };
 
 const FONT = `@import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700&family=JetBrains+Mono:wght@400;500;600&display=swap');`;
 const css = `
 ${FONT}
 *{box-sizing:border-box;margin:0;padding:0;}
-body,#root{background:#07080d;color:#eef0f6;font-family:'DM Sans',sans-serif;min-height:100vh;-webkit-font-smoothing:antialiased;}
+body,#root{background:#080a12;color:#e8ecf5;font-family:'DM Sans',sans-serif;min-height:100vh;-webkit-font-smoothing:antialiased;}
 ::-webkit-scrollbar{width:3px;height:3px;}
 ::-webkit-scrollbar-track{background:transparent;}
 ::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.08);border-radius:2px;}
@@ -38,15 +39,17 @@ input[type=date]::-webkit-calendar-picker-indicator{filter:invert(0.4);}
 @keyframes spin{to{transform:rotate(360deg)}}
 @keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
 @keyframes slideUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
-@keyframes pulseGlow{0%,100%{box-shadow:0 0 0 0 rgba(16,185,129,0.4)}50%{box-shadow:0 0 0 6px rgba(16,185,129,0)}}
+@keyframes pulseGlow{0%,100%{box-shadow:0 0 0 0 rgba(18,209,142,0.4)}50%{box-shadow:0 0 0 7px rgba(18,209,142,0)}}
+@keyframes shimmer{0%{background-position:-200% center}100%{background-position:200% center}}
+@keyframes borderGlow{0%,100%{opacity:0.5}50%{opacity:1}}
 .fade-in{animation:fadeIn 0.25s cubic-bezier(.16,1,.3,1)}
 .slide-up{animation:slideUp 0.35s cubic-bezier(.16,1,.3,1)}
 .sidebar{display:flex;}
 .bottom-nav{display:none;}
-.page-pad{padding:28px 32px;}
-.grid-kpi-4{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:16px;}
+.page-pad{padding:26px 30px;}
+.grid-kpi-4{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px;}
 .grid-pay-4{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:24px;}
-.grid-chart{display:grid;grid-template-columns:1fr 290px;gap:12px;margin-bottom:16px;}
+.grid-chart{display:grid;grid-template-columns:1fr 280px;gap:12px;margin-bottom:16px;}
 .grid-tasks-4{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;align-items:start;}
 .topbar-date{display:block;}
 .grid-integ{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
@@ -55,9 +58,11 @@ input[type=date]::-webkit-calendar-picker-indicator{filter:invert(0.4);}
 .modal-grid-2{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
 .page-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:24px;gap:12px;}
 .page-header-actions{display:flex;gap:8px;align-items:center;flex-shrink:0;}
-.kpi-card{transition:transform 0.2s cubic-bezier(.16,1,.3,1),box-shadow 0.2s;}
-.kpi-card:hover{transform:translateY(-1px);box-shadow:0 8px 32px rgba(0,0,0,0.4)!important;}
+.kpi-card{transition:transform 0.18s cubic-bezier(.16,1,.3,1),box-shadow 0.18s;}
+.kpi-card:hover{transform:translateY(-2px);}
 .nav-item{transition:all 0.15s cubic-bezier(.16,1,.3,1);}
+.sidebar-nav-icon{transition:transform 0.15s,background 0.15s;}
+.nav-item:hover .sidebar-nav-icon{transform:scale(1.08);}
 @media(max-width:768px){
   .sidebar{display:none!important;}
   .bottom-nav{display:flex!important;position:fixed;bottom:0;left:0;right:0;background:#0d0e16;border-top:0.5px solid rgba(255,255,255,0.07);z-index:100;padding:8px 4px 12px;justify-content:space-around;align-items:center;}
@@ -148,8 +153,8 @@ const Btn=({children,onClick,variant="ghost",small=false,icon,loading=false,disa
   const V={
     ghost:{background:h?C.surface2:"transparent",color:h?C.text:C.textMuted,border:`1px solid ${h?C.border:"transparent"}`},
     outline:{background:h?C.surface2:"transparent",color:C.text,border:`1px solid ${h?C.borderHover:C.border}`},
-    primary:{background:h?"linear-gradient(135deg,#7c7ff5,#9d6ef5)":"linear-gradient(135deg,#6366f1,#8b5cf6)",color:"#fff",border:"none",boxShadow:h?"0 4px 16px rgba(99,102,241,0.45),inset 0 1px 0 rgba(255,255,255,0.15)":"0 2px 8px rgba(99,102,241,0.3),inset 0 1px 0 rgba(255,255,255,0.1)"},
-    danger:{background:h?"rgba(244,63,94,0.18)":C.redDim,color:C.red,border:`1px solid ${h?C.redBorder:"rgba(244,63,94,0.2)"}`},
+    primary:{background:h?"linear-gradient(135deg,#6c6ff8,#ac6ef8)":"linear-gradient(135deg,#5b5ef6,#9b5cf6)",color:"#fff",border:"none",boxShadow:h?"0 4px 20px rgba(91,94,246,0.55),inset 0 1px 0 rgba(255,255,255,0.2)":"0 2px 12px rgba(91,94,246,0.35),inset 0 1px 0 rgba(255,255,255,0.15)"},
+    danger:{background:h?"rgba(245,51,79,0.18)":C.redDim,color:C.red,border:`1px solid ${h?C.redBorder:"rgba(245,51,79,0.2)"}`},
   };
   return <button style={{...base,...V[variant]}} onClick={disabled||loading?undefined:onClick} onMouseEnter={()=>setH(true)} onMouseLeave={()=>setH(false)}>{loading?<Spinner size={13}/>:icon&&<Icon name={icon} size={small?12:14}/>}{children}</button>;
 };
@@ -162,10 +167,10 @@ const Input=({value,onChange,placeholder,style={},type="text",onKeyDown})=>(
 );
 
 const Modal=({title,onClose,children})=>(
-  <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.75)",backdropFilter:"blur(6px)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:1000,padding:"16px 12px"}} onClick={onClose}>
-    <div className="fade-in" style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:18,padding:24,maxWidth:520,width:"100%",maxHeight:"92vh",overflowY:"auto",boxShadow:"0 24px 64px rgba(0,0,0,0.7),inset 0 1px 0 rgba(255,255,255,0.03)"}} onClick={e=>e.stopPropagation()}>
+  <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.8)",backdropFilter:"blur(8px)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:1000,padding:"16px 12px"}} onClick={onClose}>
+    <div className="fade-in" style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:18,padding:24,maxWidth:520,width:"100%",maxHeight:"92vh",overflowY:"auto",boxShadow:"0 32px 80px rgba(0,0,0,0.8),0 0 0 1px rgba(255,255,255,0.04)"}} onClick={e=>e.stopPropagation()}>
       <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:20}}>
-        <h3 style={{fontSize:15,fontWeight:700,color:C.text,letterSpacing:"-0.02em"}}>{title}</h3>
+        <h3 style={{fontSize:15,fontWeight:700,color:C.text,letterSpacing:"-0.03em"}}>{title}</h3>
         <button onClick={onClose} style={{background:C.surface2,border:`1px solid ${C.border}`,borderRadius:8,color:C.textMuted,cursor:"pointer",padding:"5px 6px",display:"flex",alignItems:"center",transition:"all 0.15s"}}
           onMouseEnter={e=>{e.currentTarget.style.color=C.text;e.currentTarget.style.borderColor=C.borderHover;}}
           onMouseLeave={e=>{e.currentTarget.style.color=C.textMuted;e.currentTarget.style.borderColor=C.border;}}>
@@ -343,42 +348,43 @@ const Sidebar=({page,setPage,storeName,setStoreName,sb,user})=>{
   const [editing,setEditing]=useState(false);
   const [inp,setInp]=useState(storeName);
   const nav=[
-    {id:"dashboard",label:"Painel",icon:"dashboard"},
-    {id:"produtos",label:"Produtos",icon:"package"},
-    {id:"links",label:"Links",icon:"link"},
-    {id:"tarefas",label:"Tarefas",icon:"task"},
-    {id:"precificacao",label:"Precificação",icon:"calculator"},
-    {id:"custos",label:"Custos de Produtos",icon:"package"},
-    {id:"arquivos",label:"Arquivos",icon:"file"},
-    {id:"payments",label:"Payments",icon:"payment"},
-    {id:"youtube",label:"Baixar Vídeo",icon:"download"},
-    {id:"videohash",label:"Editor de Metadados",icon:"zap"},
+    {id:"dashboard",label:"Painel",icon:"dashboard",color:"#5b5ef6",bg:"rgba(91,94,246,0.18)"},
+    {id:"produtos",label:"Produtos",icon:"package",color:"#12d18e",bg:"rgba(18,209,142,0.16)"},
+    {id:"links",label:"Links",icon:"link",color:"#4f8ef7",bg:"rgba(79,142,247,0.16)"},
+    {id:"tarefas",label:"Tarefas",icon:"task",color:"#f5a623",bg:"rgba(245,166,35,0.16)"},
+    {id:"precificacao",label:"Precificação",icon:"calculator",color:"#b06ef3",bg:"rgba(176,110,243,0.16)"},
+    {id:"custos",label:"Custos de Produtos",icon:"package",color:"#14d6c2",bg:"rgba(20,214,194,0.16)"},
+    {id:"arquivos",label:"Arquivos",icon:"file",color:"#ff6b35",bg:"rgba(255,107,53,0.16)"},
+    {id:"payments",label:"Payments",icon:"payment",color:"#f5334f",bg:"rgba(245,51,79,0.16)"},
+    {id:"youtube",label:"Baixar Vídeo",icon:"download",color:"#f5a623",bg:"rgba(245,166,35,0.16)"},
+    {id:"videohash",label:"Editor de Metadados",icon:"zap",color:"#5b5ef6",bg:"rgba(91,94,246,0.16)"},
   ];
   const save=()=>{if(inp.trim())setStoreName(inp.trim());setEditing(false);};
   const initial=(user?.email||"U")[0].toUpperCase();
   return (
-    <div style={{width:224,minWidth:224,background:C.surface,borderRight:`1px solid ${C.border}`,display:"flex",flexDirection:"column",padding:"18px 12px",position:"relative",overflow:"hidden"}}>
-      {/* Subtle gradient bg */}
-      <div style={{position:"absolute",top:-60,right:-60,width:160,height:160,borderRadius:"50%",background:"radial-gradient(circle,rgba(99,102,241,0.08) 0%,transparent 70%)",pointerEvents:"none"}}/>
+    <div style={{width:220,minWidth:220,background:C.surface,borderRight:`1px solid ${C.border}`,display:"flex",flexDirection:"column",padding:"16px 10px",position:"relative",overflow:"hidden"}}>
+      {/* Deep gradient orb background */}
+      <div style={{position:"absolute",top:-80,right:-50,width:200,height:200,borderRadius:"50%",background:"radial-gradient(circle,rgba(91,94,246,0.07) 0%,transparent 70%)",pointerEvents:"none"}}/>
+      <div style={{position:"absolute",bottom:-60,left:-40,width:160,height:160,borderRadius:"50%",background:"radial-gradient(circle,rgba(18,209,142,0.05) 0%,transparent 70%)",pointerEvents:"none"}}/>
 
       {/* Logo */}
-      <div style={{padding:"4px 8px",marginBottom:20,display:"flex",alignItems:"center",gap:10}}>
-        <div style={{width:34,height:34,borderRadius:11,background:"linear-gradient(135deg,#6366f1 0%,#8b5cf6 100%)",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,boxShadow:"0 4px 14px rgba(99,102,241,0.45)"}}>
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" fill="white"/></svg>
+      <div style={{padding:"4px 8px",marginBottom:18,display:"flex",alignItems:"center",gap:10}}>
+        <div style={{width:36,height:36,borderRadius:12,background:"linear-gradient(135deg,#5b5ef6 0%,#9b5cf6 100%)",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,boxShadow:"0 4px 18px rgba(91,94,246,0.5),0 0 0 1px rgba(91,94,246,0.3)"}}>
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" fill="white"/></svg>
         </div>
         <div>
-          <div style={{fontSize:14,fontWeight:700,color:C.text,letterSpacing:"-0.02em",lineHeight:1}}>Workspace</div>
-          <div style={{fontSize:9,color:C.accent,marginTop:3,letterSpacing:"0.1em",textTransform:"uppercase",fontWeight:600,display:"flex",alignItems:"center",gap:4}}>
-            <span style={{width:5,height:5,borderRadius:"50%",background:C.green,display:"inline-block",animation:"pulseGlow 2s infinite"}}/>PRO
+          <div style={{fontSize:14,fontWeight:700,color:C.text,letterSpacing:"-0.03em",lineHeight:1}}>Workspace</div>
+          <div style={{fontSize:9,color:"#7c7ef8",marginTop:3,letterSpacing:"0.12em",textTransform:"uppercase",fontWeight:700,display:"flex",alignItems:"center",gap:5}}>
+            <span style={{width:5,height:5,borderRadius:"50%",background:C.green,display:"inline-block",animation:"pulseGlow 2.5s infinite"}}/>PRO
           </div>
         </div>
       </div>
 
       {/* Loja ativa */}
-      <div style={{margin:"0 0 16px",padding:"10px 11px",borderRadius:12,background:C.surface2,border:`1px solid ${C.border}`,cursor:"pointer",transition:"border-color 0.15s"}}
+      <div style={{margin:"0 0 14px",padding:"9px 11px",borderRadius:11,background:C.surface2,border:`1px solid ${C.border}`,cursor:"pointer",transition:"border-color 0.15s,background 0.15s"}}
         onClick={()=>{setInp(storeName);setEditing(true);}}
-        onMouseEnter={e=>e.currentTarget.style.borderColor=C.borderHover}
-        onMouseLeave={e=>e.currentTarget.style.borderColor=C.border}>
+        onMouseEnter={e=>{e.currentTarget.style.borderColor=C.borderHover;e.currentTarget.style.background=C.surface3;}}
+        onMouseLeave={e=>{e.currentTarget.style.borderColor=C.border;e.currentTarget.style.background=C.surface2;}}>
         {editing?(
           <div style={{display:"flex",flexDirection:"column",gap:6}}>
             <input autoFocus value={inp} onChange={e=>setInp(e.target.value)} onKeyDown={e=>e.key==="Enter"&&save()}
@@ -390,61 +396,64 @@ const Sidebar=({page,setPage,storeName,setStoreName,sb,user})=>{
           </div>
         ):(
           <div style={{display:"flex",alignItems:"center",gap:9}}>
-            <div style={{width:30,height:30,borderRadius:9,background:"linear-gradient(135deg,rgba(99,102,241,0.25) 0%,rgba(139,92,246,0.15) 100%)",display:"flex",alignItems:"center",justifyContent:"center",color:C.accent,flexShrink:0,border:`1px solid ${C.accentBorder}`}}>
-              <Icon name="store" size={14}/>
+            <div style={{width:28,height:28,borderRadius:8,background:"rgba(91,94,246,0.2)",display:"flex",alignItems:"center",justifyContent:"center",color:C.accent,flexShrink:0,border:`1px solid ${C.accentBorder}`}}>
+              <Icon name="store" size={13}/>
             </div>
             <div style={{flex:1,minWidth:0}}>
-              <div style={{fontSize:9,color:C.textMuted,textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:2,fontWeight:500}}>Loja ativa</div>
+              <div style={{fontSize:9,color:C.textMuted,textTransform:"uppercase",letterSpacing:"0.1em",marginBottom:2,fontWeight:600}}>Loja ativa</div>
               <div style={{fontSize:12,fontWeight:600,color:C.text,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{storeName}</div>
             </div>
-            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke={C.textMuted} strokeWidth="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke={C.textMuted} strokeWidth="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
           </div>
         )}
       </div>
 
       {/* Nav label */}
-      <div style={{fontSize:9,color:C.textMuted,textTransform:"uppercase",letterSpacing:"0.1em",fontWeight:600,padding:"0 8px",marginBottom:6}}>Navegação</div>
+      <div style={{fontSize:9,color:C.textMuted,textTransform:"uppercase",letterSpacing:"0.12em",fontWeight:700,padding:"0 8px",marginBottom:5}}>Menu</div>
 
       {/* Nav */}
-      <nav style={{display:"flex",flexDirection:"column",gap:1}}>
+      <nav style={{display:"flex",flexDirection:"column",gap:1,flex:1}}>
         {nav.map(n=>{
           const active=page===n.id;
           return <button key={n.id} onClick={()=>setPage(n.id)} className="nav-item"
-            style={{display:"flex",alignItems:"center",gap:9,padding:"8px 10px",borderRadius:9,
-              background:active?"linear-gradient(135deg,rgba(99,102,241,0.18) 0%,rgba(99,102,241,0.08) 100%)":"transparent",
-              color:active?C.accent:C.textMuted,
-              border:`1px solid ${active?C.accentBorder:"transparent"}`,
+            style={{display:"flex",alignItems:"center",gap:9,padding:"7px 9px",borderRadius:9,
+              background:active?`linear-gradient(135deg,${n.bg},rgba(255,255,255,0.02))`:"transparent",
+              color:active?n.color:C.textMuted,
+              border:`1px solid ${active?"rgba(255,255,255,0.08)":"transparent"}`,
               cursor:"pointer",fontSize:12,fontFamily:"'DM Sans',sans-serif",fontWeight:active?600:400,textAlign:"left",
-              boxShadow:active?"inset 0 1px 0 rgba(99,102,241,0.2)":"none"}}
+              boxShadow:active?`inset 0 1px 0 rgba(255,255,255,0.04),0 2px 8px rgba(0,0,0,0.2)`:"none"}}
             onMouseEnter={e=>{if(!active){e.currentTarget.style.background=C.surface2;e.currentTarget.style.color=C.text;e.currentTarget.style.border=`1px solid ${C.border}`;}}}
             onMouseLeave={e=>{if(!active){e.currentTarget.style.background="transparent";e.currentTarget.style.color=C.textMuted;e.currentTarget.style.border="1px solid transparent";}}}
           >
-            <div style={{width:26,height:26,borderRadius:7,display:"flex",alignItems:"center",justifyContent:"center",
-              background:active?C.accentDim:"transparent",flexShrink:0,transition:"background 0.15s"}}>
+            <div className="sidebar-nav-icon" style={{width:26,height:26,borderRadius:8,display:"flex",alignItems:"center",justifyContent:"center",
+              background:active?n.bg:"rgba(255,255,255,0.04)",
+              color:active?n.color:"#4a5070",
+              flexShrink:0,boxShadow:active?`0 0 10px ${n.color}40`:"none"}}>
               <Icon name={n.icon} size={13}/>
             </div>
-            {n.label}
+            <span style={{overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{n.label}</span>
+            {active&&<div style={{width:3,height:16,borderRadius:2,background:n.color,marginLeft:"auto",flexShrink:0,boxShadow:`0 0 8px ${n.color}80`}}/>}
           </button>;
         })}
       </nav>
 
       {/* Divider */}
-      <div style={{height:"1px",background:C.border,margin:"14px 4px"}}/>
+      <div style={{height:"1px",background:`linear-gradient(90deg,transparent,${C.border},transparent)`,margin:"12px 4px"}}/>
 
       {/* Footer usuário */}
-      <div style={{padding:"9px 10px",borderRadius:11,background:C.surface2,border:`1px solid ${C.border}`,display:"flex",alignItems:"center",gap:9}}>
-        <div style={{width:30,height:30,borderRadius:9,background:"linear-gradient(135deg,#6366f1,#8b5cf6)",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,fontSize:12,fontWeight:700,color:"#fff",boxShadow:"0 2px 8px rgba(99,102,241,0.4)"}}>
+      <div style={{padding:"8px 10px",borderRadius:10,background:C.surface2,border:`1px solid ${C.border}`,display:"flex",alignItems:"center",gap:9}}>
+        <div style={{width:32,height:32,borderRadius:10,background:"linear-gradient(135deg,#5b5ef6,#9b5cf6)",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,fontSize:13,fontWeight:700,color:"#fff",boxShadow:"0 2px 10px rgba(91,94,246,0.45)"}}>
           {initial}
         </div>
         <div style={{flex:1,minWidth:0}}>
-          <div style={{fontSize:11,fontWeight:500,color:C.text,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{user?.email?.split("@")[0]||"Usuário"}</div>
-          <div style={{fontSize:9,color:C.green,marginTop:2,display:"flex",alignItems:"center",gap:4}}>
-            <span style={{width:5,height:5,borderRadius:"50%",background:C.green,display:"inline-block"}}/>online
+          <div style={{fontSize:11,fontWeight:600,color:C.text,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{user?.email?.split("@")[0]||"Usuário"}</div>
+          <div style={{fontSize:9,color:C.green,marginTop:2,display:"flex",alignItems:"center",gap:4,fontFamily:"'JetBrains Mono',monospace"}}>
+            <span style={{width:5,height:5,borderRadius:"50%",background:C.green,display:"inline-block",animation:"pulseGlow 2s infinite"}}/>online
           </div>
         </div>
         <button onClick={()=>sb.auth.signOut()} title="Sair"
           style={{background:"transparent",border:"none",color:C.textMuted,cursor:"pointer",padding:4,display:"flex",alignItems:"center",borderRadius:7,transition:"all 0.15s"}}
-          onMouseEnter={e=>{e.currentTarget.style.color=C.red;e.currentTarget.style.background="rgba(244,63,94,0.1)";}}
+          onMouseEnter={e=>{e.currentTarget.style.color=C.red;e.currentTarget.style.background="rgba(245,51,79,0.1)";}}
           onMouseLeave={e=>{e.currentTarget.style.color=C.textMuted;e.currentTarget.style.background="transparent";}}>
           <Icon name="logout" size={13}/>
         </button>
@@ -472,8 +481,9 @@ const LineChart=({data})=>{
     const hasNeg=values.some(v=>v<0);
 
     const gradient=ctx.createLinearGradient(0,0,0,200);
-    gradient.addColorStop(0,"rgba(16,185,129,0.22)");
-    gradient.addColorStop(1,"rgba(16,185,129,0)");
+    gradient.addColorStop(0,"rgba(18,209,142,0.25)");
+    gradient.addColorStop(0.6,"rgba(18,209,142,0.06)");
+    gradient.addColorStop(1,"rgba(18,209,142,0)");
 
     chartRef.current=new window.Chart(ctx,{
       type:"line",
@@ -482,16 +492,16 @@ const LineChart=({data})=>{
         datasets:[{
           label:"Lucro",
           data:values,
-          borderColor:"#10b981",
-          borderWidth:2,
+          borderColor:"#12d18e",
+          borderWidth:2.5,
           backgroundColor:gradient,
           fill:true,
-          tension:0.45,
-          pointBackgroundColor:"#10b981",
-          pointBorderColor:"#07080d",
+          tension:0.42,
+          pointBackgroundColor:"#12d18e",
+          pointBorderColor:"#0e1018",
           pointBorderWidth:2,
           pointRadius:3,
-          pointHoverRadius:5,
+          pointHoverRadius:6,
         }]
       },
       options:{
@@ -501,12 +511,13 @@ const LineChart=({data})=>{
         plugins:{
           legend:{display:false},
           tooltip:{
-            backgroundColor:"#1a1a1a",
-            borderColor:"#2e3348",
+            backgroundColor:"#141722",
+            borderColor:"rgba(255,255,255,0.08)",
             borderWidth:1,
-            titleColor:"#5c6378",
-            bodyColor:"#eef0f6",
-            padding:10,
+            titleColor:"#5a6282",
+            bodyColor:"#e8ecf5",
+            padding:12,
+            cornerRadius:10,
             callbacks:{
               label:(ctx)=>`Lucro: R$ ${ctx.parsed.y.toLocaleString("pt-BR",{minimumFractionDigits:2})}`
             }
@@ -515,13 +526,13 @@ const LineChart=({data})=>{
         scales:{
           x:{
             grid:{color:"rgba(255,255,255,0.03)"},
-            ticks:{color:"#3a3f52",font:{size:10},maxRotation:0},
+            ticks:{color:"#2d3353",font:{size:10,family:"'JetBrains Mono',monospace"},maxRotation:0},
             border:{color:"transparent"}
           },
           y:{
-            grid:{color:"rgba(255,255,255,0.03)"},
+            grid:{color:"rgba(255,255,255,0.04)"},
             ticks:{
-              color:"#3a3f52",font:{size:10},
+              color:"#2d3353",font:{size:10,family:"'JetBrains Mono',monospace"},
               callback:(v)=>`R$ ${v>=1000?Math.round(v/1000)+"k":v}`
             },
             border:{color:"transparent"}
@@ -1040,8 +1051,8 @@ function main() {
       <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:20,flexWrap:"wrap",gap:12}}>
         <div style={{display:"flex",alignItems:"center",gap:16}}>
           <div>
-            <h1 style={{fontSize:20,fontWeight:700,color:C.text,letterSpacing:"-0.03em"}}>{(()=>{const h=new Date().getHours();if(h>=5&&h<12)return"Bom dia 👋";if(h>=12&&h<18)return"Boa tarde 👋";if(h>=18&&h<24)return"Boa noite 👋";return"Boa madrugada 👋";})()}</h1>
-            <p style={{fontSize:12,color:C.textMuted,marginTop:3}}>Seu painel de controle.</p>
+            <h1 style={{fontSize:22,fontWeight:700,color:C.text,letterSpacing:"-0.04em",lineHeight:1.15}}>{(()=>{const h=new Date().getHours();if(h>=5&&h<12)return"Bom dia 👋";if(h>=12&&h<18)return"Boa tarde 👋";if(h>=18&&h<24)return"Boa noite 👋";return"Boa madrugada 👋";})()}</h1>
+            <p style={{fontSize:11,color:C.textMuted,marginTop:4,letterSpacing:"0.01em"}}>Seu painel de controle · {new Date().toLocaleDateString("pt-BR",{day:"numeric",month:"long"})}</p>
           </div>
 
           {/* SELETOR DE LOJA SHOPIFY — hover dropdown */}
@@ -1092,15 +1103,15 @@ function main() {
         </div>
 
         <button onClick={()=>setModalResultado(true)}
-          style={{display:"flex",alignItems:"center",gap:7,padding:"9px 18px",borderRadius:10,
-            background:"linear-gradient(135deg,#6366f1 0%,#8b5cf6 100%)",
+          style={{display:"flex",alignItems:"center",gap:7,padding:"9px 20px",borderRadius:10,
+            background:"linear-gradient(135deg,#5b5ef6 0%,#9b5cf6 100%)",
             color:"#fff",border:"none",fontSize:13,fontWeight:600,cursor:"pointer",
-            fontFamily:"'DM Sans',sans-serif",
-            boxShadow:"0 4px 16px rgba(99,102,241,0.4),inset 0 1px 0 rgba(255,255,255,0.15)",
+            fontFamily:"'DM Sans',sans-serif",letterSpacing:"-0.01em",
+            boxShadow:"0 4px 20px rgba(91,94,246,0.45),inset 0 1px 0 rgba(255,255,255,0.2),0 0 0 1px rgba(91,94,246,0.3)",
             transition:"all 0.15s"}}
-          onMouseEnter={e=>{e.currentTarget.style.boxShadow="0 6px 22px rgba(99,102,241,0.55),inset 0 1px 0 rgba(255,255,255,0.15)";e.currentTarget.style.transform="translateY(-1px)";}}
-          onMouseLeave={e=>{e.currentTarget.style.boxShadow="0 4px 16px rgba(99,102,241,0.4),inset 0 1px 0 rgba(255,255,255,0.15)";e.currentTarget.style.transform="none";}}>
-          <Icon name="plus" size={14}/> Registrar
+          onMouseEnter={e=>{e.currentTarget.style.boxShadow="0 6px 28px rgba(91,94,246,0.6),inset 0 1px 0 rgba(255,255,255,0.2),0 0 0 1px rgba(91,94,246,0.4)";e.currentTarget.style.transform="translateY(-1px)";}}
+          onMouseLeave={e=>{e.currentTarget.style.boxShadow="0 4px 20px rgba(91,94,246,0.45),inset 0 1px 0 rgba(255,255,255,0.2),0 0 0 1px rgba(91,94,246,0.3)";e.currentTarget.style.transform="none";}}>
+          <Icon name="plus" size={14}/> Registrar resultado
         </button>
       </div>
 
@@ -1110,7 +1121,7 @@ function main() {
         <div className="grid-integ">
 
           {/* ── COLUNA SHOPIFY ── */}
-          <div style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:12,overflow:"hidden"}}>
+          <div style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:13,overflow:"hidden",boxShadow:"0 2px 16px rgba(0,0,0,0.2)"}}>
             <div style={{padding:"12px 16px",borderBottom:shopifyCollapsed?`0.5px solid ${C.border}`:`0.5px solid ${C.border}`,display:"flex",alignItems:"center",gap:8,cursor:"pointer",userSelect:"none"}}
               onClick={()=>setShopifyCollapsed(v=>!v)}>
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M15.5 3.5C15.5 3.5 15 3 13.5 3C12 3 11 4.5 10.5 5.5L6 6.5L4 20H18L20 6.5L16.5 5.5C16.5 5.5 16.5 3.5 15.5 3.5Z" stroke={C.green} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/><path d="M10.5 5.5C10.5 5.5 11 9 14 9C17 9 16.5 5.5 16.5 5.5" stroke={C.green} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
@@ -1425,12 +1436,12 @@ function main() {
       )}
 
       {/* FILTROS MODERNOS */}
-      {(()=>{const moedaFlags={"BRL":"🇧🇷","USD":"🇺🇸","EUR":"🇪🇺","GBP":"🇬🇧"};return(<div style={{display:"flex",gap:8,marginBottom:14,alignItems:"center",flexWrap:"wrap",padding:"9px 12px",background:C.surface,borderRadius:13,border:`1px solid ${C.border}`,boxShadow:"0 2px 8px rgba(0,0,0,0.15)"}}>
+      {(()=>{const moedaFlags={"BRL":"🇧🇷","USD":"🇺🇸","EUR":"🇪🇺","GBP":"🇬🇧"};return(<div style={{display:"flex",gap:8,marginBottom:14,alignItems:"center",flexWrap:"wrap",padding:"8px 12px",background:C.surface,borderRadius:12,border:`1px solid ${C.border}`,boxShadow:"0 2px 12px rgba(0,0,0,0.2),0 0 0 1px rgba(255,255,255,0.02)"}}>
 
             {/* Seletor de moeda */}
             <div style={{position:"relative"}}>
               <button onClick={()=>{setShowMoedaDD(v=>!v);setShowLojaDD(false);}}
-                style={{display:"flex",alignItems:"center",gap:7,padding:"6px 12px",borderRadius:10,background:C.surface2,border:`1px solid ${C.border}`,color:C.text,cursor:"pointer",fontSize:13,fontFamily:"'DM Sans',sans-serif",fontWeight:500}}>
+                style={{display:"flex",alignItems:"center",gap:7,padding:"5px 11px",borderRadius:9,background:C.surface2,border:`1px solid ${C.border}`,color:C.text,cursor:"pointer",fontSize:12,fontFamily:"'DM Sans',sans-serif",fontWeight:500}}>
                 <span>{moedaFlags[filtroMoeda]||"💱"}</span>
                 <span>{filtroMoeda}</span>
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="6 9 12 15 18 9"/></svg>
@@ -1486,47 +1497,59 @@ function main() {
         );
       })()}
       {/* KPI CARDS */}
-      <div className="grid-kpi-4" style={{marginBottom:14}}>
+      <div className="grid-kpi-4" style={{marginBottom:16}}>
         {[
           {label:"Lucro",sub:periodoLabel,v:kpiLucro,
             mainColor:kpiLucro>=0?C.green:C.red,
-            cardBg:kpiLucro>=0?"linear-gradient(135deg,rgba(16,185,129,0.14) 0%,rgba(16,185,129,0.04) 100%)":"linear-gradient(135deg,rgba(244,63,94,0.14) 0%,rgba(244,63,94,0.04) 100%)",
+            cardBg:kpiLucro>=0?"linear-gradient(145deg,rgba(18,209,142,0.13) 0%,rgba(18,209,142,0.04) 60%,transparent 100%)":"linear-gradient(145deg,rgba(245,51,79,0.13) 0%,rgba(245,51,79,0.04) 60%,transparent 100%)",
             cardBorder:kpiLucro>=0?C.greenBorder:C.redBorder,
-            icoBg:kpiLucro>=0?"rgba(16,185,129,0.2)":"rgba(244,63,94,0.2)",
-            icoGlow:kpiLucro>=0?"0 0 16px rgba(16,185,129,0.35)":"0 0 16px rgba(244,63,94,0.35)",
-            featured:true,
-            icon:<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>},
+            icoBg:kpiLucro>=0?"rgba(18,209,142,0.18)":"rgba(245,51,79,0.18)",
+            icoGlow:kpiLucro>=0?"0 0 20px rgba(18,209,142,0.4)":"0 0 20px rgba(245,51,79,0.4)",
+            featured:true,changeDir:kpiLucro>=0,
+            icon:<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>},
           {label:"Faturamento",sub:periodoLabel,v:kpiFat,
-            mainColor:C.accent,cardBg:C.surface,cardBorder:C.border,
-            icoBg:"rgba(99,102,241,0.18)",icoGlow:"0 0 14px rgba(99,102,241,0.3)",
-            icon:<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>},
+            mainColor:"#5b5ef6",cardBg:C.surface,cardBorder:C.border,
+            icoBg:"rgba(91,94,246,0.18)",icoGlow:"0 0 16px rgba(91,94,246,0.35)",changeDir:true,
+            icon:<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>},
           {label:"Gasto em Ads",sub:periodoLabel,v:kpiAds,
-            mainColor:"#f97316",cardBg:C.surface,cardBorder:C.border,
-            icoBg:"rgba(249,115,22,0.18)",icoGlow:"0 0 14px rgba(249,115,22,0.3)",
-            icon:<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>},
+            mainColor:C.orange,cardBg:C.surface,cardBorder:C.border,
+            icoBg:"rgba(255,107,53,0.18)",icoGlow:"0 0 16px rgba(255,107,53,0.35)",changeDir:false,
+            icon:<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>},
           {label:"Lucro Total",sub:"acumulado",v:lucroTotal,
             mainColor:lucroTotal>=0?C.teal:C.red,cardBg:C.surface,cardBorder:C.border,
-            icoBg:"rgba(20,184,166,0.18)",icoGlow:"0 0 14px rgba(20,184,166,0.3)",
-            icon:<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>},
+            icoBg:"rgba(20,214,194,0.18)",icoGlow:"0 0 16px rgba(20,214,194,0.35)",changeDir:lucroTotal>=0,
+            icon:<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>},
         ].map((s,i)=>(
           <div key={i} className="kpi-card" style={{
-            background:s.cardBg,
+            background:s.cardBg||C.surface,
             border:`1px solid ${s.cardBorder}`,
-            borderRadius:16,padding:"18px 20px",
+            borderRadius:14,padding:"16px 18px",
             position:"relative",overflow:"hidden",
-            boxShadow:s.featured?`0 4px 24px rgba(0,0,0,0.3),inset 0 1px 0 rgba(255,255,255,0.03)`:"0 2px 12px rgba(0,0,0,0.2),inset 0 1px 0 rgba(255,255,255,0.03)"}}>
-            {/* Top gradient shine */}
-            <div style={{position:"absolute",top:0,left:0,right:0,height:"1px",background:`linear-gradient(90deg,transparent,${s.mainColor}33,transparent)`,pointerEvents:"none"}}/>
-            <div style={{display:"flex",alignItems:"flex-start",justifyContent:"space-between",marginBottom:16}}>
+            boxShadow:s.featured
+              ?`0 6px 32px rgba(0,0,0,0.4),0 0 0 1px rgba(255,255,255,0.03)`
+              :"0 2px 16px rgba(0,0,0,0.25),0 0 0 1px rgba(255,255,255,0.02)"}}>
+            {/* Top gradient shine line */}
+            <div style={{position:"absolute",top:0,left:0,right:0,height:"1px",background:`linear-gradient(90deg,transparent,${s.mainColor}55,transparent)`,pointerEvents:"none"}}/>
+            {/* Subtle corner glow */}
+            {s.featured&&<div style={{position:"absolute",top:-30,right:-30,width:100,height:100,borderRadius:"50%",background:`radial-gradient(circle,${s.mainColor}20 0%,transparent 70%)`,pointerEvents:"none"}}/>}
+
+            <div style={{display:"flex",alignItems:"flex-start",justifyContent:"space-between",marginBottom:14}}>
               <div>
-                <div style={{fontSize:11,color:C.textMuted,fontWeight:500,letterSpacing:"0.03em",marginBottom:3}}>{s.label}</div>
-                <div style={{fontSize:9,color:C.textMuted,opacity:0.6,textTransform:"uppercase",letterSpacing:"0.08em"}}>{s.sub}</div>
+                <div style={{fontSize:11,color:C.textMuted,fontWeight:500,letterSpacing:"0.04em",marginBottom:4}}>{s.label}</div>
+                <div style={{display:"inline-flex",alignItems:"center",gap:4,padding:"2px 7px",borderRadius:5,
+                  background:s.changeDir?"rgba(18,209,142,0.12)":"rgba(245,51,79,0.12)",
+                  border:`1px solid ${s.changeDir?"rgba(18,209,142,0.25)":"rgba(245,51,79,0.25)"}`}}>
+                  <svg width="8" height="8" viewBox="0 0 10 10" fill={s.changeDir?C.green:C.red}>
+                    {s.changeDir?<path d="M5 1l4 5H1z"/>:<path d="M5 9L1 4h8z"/>}
+                  </svg>
+                  <span style={{fontSize:9,fontWeight:700,color:s.changeDir?C.green:C.red,fontFamily:"'JetBrains Mono',monospace",letterSpacing:"0.02em"}}>{s.sub}</span>
+                </div>
               </div>
-              <div style={{width:36,height:36,borderRadius:10,background:s.icoBg,display:"flex",alignItems:"center",justifyContent:"center",color:s.mainColor,flexShrink:0,boxShadow:s.icoGlow}}>
+              <div style={{width:40,height:40,borderRadius:11,background:s.icoBg,display:"flex",alignItems:"center",justifyContent:"center",color:s.mainColor,flexShrink:0,boxShadow:s.icoGlow}}>
                 {s.icon}
               </div>
             </div>
-            <div style={{fontSize:"clamp(17px,2.2vw,24px)",fontWeight:700,color:s.mainColor,letterSpacing:"-0.04em",fontFamily:"'JetBrains Mono',monospace",wordBreak:"break-all",...pv}}>
+            <div style={{fontSize:"clamp(18px,2.4vw,26px)",fontWeight:700,color:s.mainColor,letterSpacing:"-0.04em",fontFamily:"'JetBrains Mono',monospace",wordBreak:"break-all",...pv}}>
               {fmtVal(s.v)}
             </div>
           </div>
@@ -1535,15 +1558,15 @@ function main() {
 
       {/* GRÁFICO + LUCRO POR LOJA */}
       <div className="grid-chart">
-        <div style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:16,padding:"20px 22px",boxShadow:"0 2px 12px rgba(0,0,0,0.2),inset 0 1px 0 rgba(255,255,255,0.03)"}}>
-          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:18}}>
+        <div style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:14,padding:"18px 20px",boxShadow:"0 4px 24px rgba(0,0,0,0.3),0 0 0 1px rgba(255,255,255,0.02)"}}>
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16}}>
             <div>
-              <h2 style={{fontSize:13,fontWeight:600,color:C.text,letterSpacing:"-0.01em"}}>Performance das Lojas</h2>
-              <p style={{fontSize:11,color:C.textMuted,marginTop:2}}>Lucro diário · últimos 30 dias</p>
+              <h2 style={{fontSize:13,fontWeight:700,color:C.text,letterSpacing:"-0.02em"}}>Performance das Lojas</h2>
+              <p style={{fontSize:10,color:C.textMuted,marginTop:3,letterSpacing:"0.02em"}}>Lucro diário · últimos 30 dias</p>
             </div>
-            <div style={{display:"flex",alignItems:"center",gap:6,padding:"4px 10px",borderRadius:20,background:C.surface2,border:`1px solid ${C.border}`}}>
-              <div style={{width:6,height:6,borderRadius:"50%",background:C.green}}/>
-              <span style={{fontSize:10,color:C.textMuted,fontFamily:"'JetBrains Mono',monospace",fontWeight:500}}>LIVE</span>
+            <div style={{display:"flex",alignItems:"center",gap:6,padding:"5px 11px",borderRadius:20,background:"rgba(18,209,142,0.1)",border:`1px solid ${C.greenBorder}`}}>
+              <div style={{width:6,height:6,borderRadius:"50%",background:C.green,animation:"pulseGlow 2s infinite"}}/>
+              <span style={{fontSize:10,color:C.green,fontFamily:"'JetBrains Mono',monospace",fontWeight:700,letterSpacing:"0.08em"}}>LIVE</span>
             </div>
           </div>
           <div style={{height:190,position:"relative"}}>
@@ -1552,14 +1575,16 @@ function main() {
         </div>
 
         <div style={{display:"flex",flexDirection:"column",gap:10}}>
-          <div style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:16,padding:"16px 18px",flex:1,boxShadow:"0 2px 12px rgba(0,0,0,0.2),inset 0 1px 0 rgba(255,255,255,0.03)"}}>
-            <div style={{fontSize:11,fontWeight:600,color:C.textMuted,textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:14}}>Lucro por loja</div>
+          <div style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:14,padding:"15px 17px",flex:1,boxShadow:"0 4px 24px rgba(0,0,0,0.3),0 0 0 1px rgba(255,255,255,0.02)"}}>
+            <div style={{fontSize:9,fontWeight:700,color:C.textMuted,textTransform:"uppercase",letterSpacing:"0.12em",marginBottom:13}}>Lucro por loja</div>
             {lucroPorLoja.length===0
               ?<div style={{fontSize:12,color:C.textMuted,padding:"12px 0",textAlign:"center"}}>Nenhum dado ainda</div>
               :lucroPorLoja.map(({loja,lucro},i)=>(
-                <div key={loja} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"9px 0",borderBottom:`1px solid ${C.border}`}}>
+                <div key={loja} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"8px 0",borderBottom:`1px solid ${C.border}`}}>
                   <div style={{display:"flex",alignItems:"center",gap:8}}>
-                    <div style={{width:7,height:7,borderRadius:"50%",background:lucro>=0?C.green:C.red,boxShadow:`0 0 6px ${lucro>=0?"rgba(16,185,129,0.5)":"rgba(244,63,94,0.5)"}`}}/>
+                    <div style={{width:24,height:24,borderRadius:6,background:lucro>=0?"rgba(18,209,142,0.15)":"rgba(245,51,79,0.15)",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+                      <div style={{width:6,height:6,borderRadius:"50%",background:lucro>=0?C.green:C.red,boxShadow:`0 0 8px ${lucro>=0?"rgba(18,209,142,0.6)":"rgba(245,51,79,0.6)"}`}}/>
+                    </div>
                     <span style={{fontSize:12,color:C.text,fontWeight:500,...pv}}>{loja}</span>
                   </div>
                   <span style={{fontSize:12,fontWeight:700,color:lucro>=0?C.green:C.red,fontFamily:"'JetBrains Mono',monospace",...pv}}>{fmtVal(lucro)}</span>
@@ -1567,20 +1592,20 @@ function main() {
               ))
             }
           </div>
-          <div style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:16,padding:"14px 16px",boxShadow:"0 2px 12px rgba(0,0,0,0.2),inset 0 1px 0 rgba(255,255,255,0.03)"}}>
-            <div style={{fontSize:11,fontWeight:600,color:C.textMuted,textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:12}}>Operacional</div>
+          <div style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:14,padding:"13px 15px",boxShadow:"0 4px 24px rgba(0,0,0,0.3),0 0 0 1px rgba(255,255,255,0.02)"}}>
+            <div style={{fontSize:9,fontWeight:700,color:C.textMuted,textTransform:"uppercase",letterSpacing:"0.12em",marginBottom:11}}>Operacional</div>
             {[
-              {l:"Tarefas hoje",v:hojeList.length,c:C.accent,dot:C.accent},
-              {l:"Atrasadas",v:atrasadas.length,c:atrasadas.length>0?C.red:C.textMuted,dot:atrasadas.length>0?C.red:"#2e3348"},
-              {l:"Payments",v:payments.length,c:C.green,dot:C.green},
-              {l:"Links",v:links.length,c:C.blue,dot:C.blue},
+              {l:"Tarefas hoje",v:hojeList.length,c:C.accent,bg:"rgba(91,94,246,0.15)",dot:C.accent},
+              {l:"Atrasadas",v:atrasadas.length,c:atrasadas.length>0?C.red:C.textMuted,bg:atrasadas.length>0?"rgba(245,51,79,0.15)":"rgba(255,255,255,0.04)",dot:atrasadas.length>0?C.red:C.textDim},
+              {l:"Payments",v:payments.length,c:C.green,bg:"rgba(18,209,142,0.15)",dot:C.green},
+              {l:"Links",v:links.length,c:C.blue,bg:"rgba(79,142,247,0.15)",dot:C.blue},
             ].map(s=>(
               <div key={s.l} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"7px 0",borderBottom:`1px solid ${C.border}`}}>
                 <div style={{display:"flex",alignItems:"center",gap:7}}>
-                  <div style={{width:6,height:6,borderRadius:"50%",background:s.dot,flexShrink:0}}/>
+                  <div style={{width:6,height:6,borderRadius:"50%",background:s.dot,flexShrink:0,boxShadow:s.dot!==C.textDim?`0 0 6px ${s.dot}80`:undefined}}/>
                   <span style={{fontSize:11,color:C.textMuted}}>{s.l}</span>
                 </div>
-                <span style={{color:s.c,fontWeight:700,fontSize:13,fontFamily:"'JetBrains Mono',monospace"}}>{s.v}</span>
+                <span style={{padding:"2px 8px",borderRadius:5,background:s.bg,color:s.c,fontWeight:700,fontSize:12,fontFamily:"'JetBrains Mono',monospace"}}>{s.v}</span>
               </div>
             ))}
           </div>
@@ -1588,7 +1613,7 @@ function main() {
       </div>
 
       {/* RESULTADOS RECENTES */}
-      <div style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:16,padding:"20px 22px",marginBottom:16,boxShadow:"0 2px 12px rgba(0,0,0,0.2),inset 0 1px 0 rgba(255,255,255,0.03)"}}>
+      <div style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:14,padding:"18px 20px",marginBottom:16,boxShadow:"0 4px 24px rgba(0,0,0,0.3),0 0 0 1px rgba(255,255,255,0.02)"}}>
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16}}>
           <div>
             <h2 style={{fontSize:13,fontWeight:600,color:C.text,letterSpacing:"-0.01em"}}>Resultados Recentes</h2>
@@ -3976,15 +4001,18 @@ export default function App() {
           <Sidebar page={page} setPage={setPage} storeName={storeName} setStoreName={setStoreName} sb={sb} user={user}/>
         </div>
         <main style={{flex:1,display:"flex",flexDirection:"column",overflow:"hidden"}}>
-          <div className="main-topbar" style={{borderBottom:`1px solid ${C.border}`,padding:"11px 36px",display:"flex",alignItems:"center",justifyContent:"space-between",background:C.bg,flexShrink:0,gap:8}}>
-            <div className="topbar-date" style={{fontSize:12,color:C.textMuted,fontFamily:"'JetBrains Mono',monospace",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{new Date().toLocaleDateString("pt-BR",{weekday:"long",year:"numeric",month:"long",day:"numeric"})}</div>
+          <div className="main-topbar" style={{borderBottom:`1px solid ${C.border}`,padding:"10px 28px",display:"flex",alignItems:"center",justifyContent:"space-between",background:C.surface,flexShrink:0,gap:8,boxShadow:"0 1px 0 rgba(255,255,255,0.02)"}}>
+            <div className="topbar-date" style={{fontSize:11,color:C.textMuted,fontFamily:"'JetBrains Mono',monospace",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",letterSpacing:"0.01em"}}>{new Date().toLocaleDateString("pt-BR",{weekday:"long",year:"numeric",month:"long",day:"numeric"})}</div>
             <div style={{display:"flex",alignItems:"center",gap:8,flexShrink:0}}>
               <button title={privacyMode?"Mostrar informações":"Ocultar informações"} onClick={()=>setPrivacyMode(p=>!p)}
-                style={{display:"flex",alignItems:"center",gap:6,padding:"4px 10px",borderRadius:7,background:privacyMode?"rgba(124,107,255,0.15)":"transparent",border:`1px solid ${privacyMode?C.accentBorder:C.border}`,color:privacyMode?C.accent:C.textMuted,cursor:"pointer",fontSize:11,fontFamily:"'DM Sans',sans-serif",transition:"all 0.15s"}}>
-                <Icon name={privacyMode?"eyeOff":"eye"} size={13}/>
+                style={{display:"flex",alignItems:"center",gap:6,padding:"5px 12px",borderRadius:8,background:privacyMode?"rgba(91,94,246,0.15)":"transparent",border:`1px solid ${privacyMode?C.accentBorder:C.border}`,color:privacyMode?C.accent:C.textMuted,cursor:"pointer",fontSize:11,fontFamily:"'DM Sans',sans-serif",transition:"all 0.15s"}}>
+                <Icon name={privacyMode?"eyeOff":"eye"} size={12}/>
                 <span className="topbar-date">{privacyMode?"visível":"ocultar"}</span>
               </button>
-              <div style={{fontSize:11,padding:"3px 10px",borderRadius:6,background:C.greenDim,color:C.green,border:"1px solid rgba(34,197,94,0.3)",fontFamily:"'JetBrains Mono',monospace"}}>● online</div>
+              <div style={{display:"flex",alignItems:"center",gap:6,fontSize:11,padding:"5px 12px",borderRadius:8,background:"rgba(18,209,142,0.1)",color:C.green,border:`1px solid ${C.greenBorder}`,fontFamily:"'JetBrains Mono',monospace",fontWeight:600,letterSpacing:"0.02em"}}>
+                <span style={{width:6,height:6,borderRadius:"50%",background:C.green,animation:"pulseGlow 2s infinite",display:"inline-block"}}/>
+                online
+              </div>
             </div>
           </div>
           {pages[page]}
