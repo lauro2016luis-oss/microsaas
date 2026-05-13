@@ -358,6 +358,7 @@ const Sidebar=({page,setPage,storeName,setStoreName,sb,user})=>{
     {id:"payments",label:"Payments",icon:"payment",color:"#f5334f",bg:"rgba(245,51,79,0.16)"},
     {id:"youtube",label:"Baixar Vídeo",icon:"download",color:"#f5a623",bg:"rgba(245,166,35,0.16)"},
     {id:"videohash",label:"Editor de Metadados",icon:"zap",color:"#5b5ef6",bg:"rgba(91,94,246,0.16)"},
+    {id:"integracoes",label:"Integrações",icon:"settings",color:"#12d18e",bg:"rgba(18,209,142,0.16)"},
   ];
   const save=()=>{if(inp.trim())setStoreName(inp.trim());setEditing(false);};
   const initial=(user?.email||"U")[0].toUpperCase();
@@ -1114,333 +1115,6 @@ function main() {
           <Icon name="plus" size={14}/> Registrar resultado
         </button>
       </div>
-
-      {/* INTEGRAÇÕES */}
-      <div style={{marginBottom:16}}>
-        <div style={{fontSize:10,color:C.textMuted,marginBottom:8,textTransform:"uppercase",letterSpacing:"0.1em",fontWeight:600}}>Integrações</div>
-        <div className="grid-integ">
-
-          {/* ── COLUNA SHOPIFY ── */}
-          <div style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:14,overflow:"hidden",boxShadow:"0 4px 24px rgba(0,0,0,0.25)"}}>
-            <div style={{padding:"13px 16px",display:"flex",alignItems:"center",gap:9,cursor:"pointer",userSelect:"none",borderBottom:"1px solid rgba(255,255,255,0.04)"}}
-              onClick={()=>setShopifyCollapsed(v=>!v)}>
-              <div style={{width:28,height:28,borderRadius:8,background:"rgba(18,209,142,0.12)",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M15.5 3.5C15.5 3.5 15 3 13.5 3C12 3 11 4.5 10.5 5.5L6 6.5L4 20H18L20 6.5L16.5 5.5C16.5 5.5 16.5 3.5 15.5 3.5Z" stroke={C.green} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/><path d="M10.5 5.5C10.5 5.5 11 9 14 9C17 9 16.5 5.5 16.5 5.5" stroke={C.green} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
-              </div>
-              <span style={{fontSize:13,fontWeight:600,color:C.text,letterSpacing:"-0.01em"}}>Shopify</span>
-              <span style={{fontSize:10,color:C.textMuted,padding:"2px 8px",borderRadius:20,background:C.surface2,border:`1px solid ${C.border}`}}>{shopifyConfigs.length} loja{shopifyConfigs.length!==1?"s":""}</span>
-              <svg style={{marginLeft:"auto",transition:"transform 0.2s",transform:shopifyCollapsed?"rotate(-90deg)":"rotate(0deg)"}} width="13" height="13" viewBox="0 0 24 24" fill="none" stroke={C.textMuted} strokeWidth="2"><polyline points="6 9 12 15 18 9"/></svg>
-            </div>
-
-            {!shopifyCollapsed&&shopifyConfigs.map(cfg=>(
-              <div key={cfg.id} style={{padding:"10px 16px",borderBottom:"1px solid rgba(255,255,255,0.03)",display:"flex",alignItems:"center",gap:10,transition:"background 0.15s"}} onMouseEnter={e=>e.currentTarget.style.background="rgba(255,255,255,0.02)"} onMouseLeave={e=>e.currentTarget.style.background="transparent"}>
-                <div style={{flex:1,minWidth:0}}>
-                  {editingStoreNameId===cfg.id?(
-                    <div style={{display:"flex",gap:6,alignItems:"center",marginBottom:2}}>
-                      <input
-                        autoFocus
-                        value={editingStoreNameVal}
-                        onChange={e=>setEditingStoreNameVal(e.target.value)}
-                        onKeyDown={e=>{if(e.key==="Enter")saveStoreNameInline(cfg.id,editingStoreNameVal);if(e.key==="Escape"){setEditingStoreNameId(null);setEditingStoreNameVal("");}}}
-                        style={{background:C.surface,border:`1px solid ${C.accentBorder}`,borderRadius:6,padding:"3px 8px",fontSize:12,color:C.text,fontFamily:"'Plus Jakarta Sans',sans-serif",outline:"none",width:"100%",maxWidth:140}}
-                        placeholder="Nome da loja"
-                      />
-                      <button onClick={()=>saveStoreNameInline(cfg.id,editingStoreNameVal)} style={{background:C.accent,border:"none",borderRadius:5,padding:"3px 8px",fontSize:11,color:"#000",cursor:"pointer",fontWeight:600}}>✓</button>
-                      <button onClick={()=>{setEditingStoreNameId(null);setEditingStoreNameVal("");}} style={{background:"transparent",border:"none",color:C.textMuted,cursor:"pointer",fontSize:13,padding:"2px 4px"}}>✕</button>
-                    </div>
-                  ):(
-                    <div style={{display:"flex",alignItems:"center",gap:5,marginBottom:1}}>
-                      <div style={{display:"flex",alignItems:"center",gap:6,overflow:"hidden"}}>
-                    <span style={{width:6,height:6,borderRadius:"50%",background:C.green,flexShrink:0,boxShadow:`0 0 6px ${C.green}80`}}/>
-                    <span style={{fontSize:12,fontWeight:600,color:C.text,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",...pv}}>{cfg.store_name||cfg.shop_domain}</span>
-                  </div>
-                      <button title="Editar nome" onClick={()=>{setEditingStoreNameId(cfg.id);setEditingStoreNameVal(cfg.store_name||"");}} style={{background:"transparent",border:"none",cursor:"pointer",padding:"1px 3px",color:C.textMuted,display:"flex",alignItems:"center",lineHeight:1,opacity:0.6}} onMouseEnter={e=>e.currentTarget.style.opacity=1} onMouseLeave={e=>e.currentTarget.style.opacity=0.6}>
-                        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-                      </button>
-                    </div>
-                  )}
-                  {cfg.store_name&&<div style={{fontSize:10,color:C.textMuted,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",...pv}}>{cfg.shop_domain}</div>}
-                  <div style={{fontSize:10,color:C.textMuted}}>sync: {cfg.last_sync_at?new Date(cfg.last_sync_at).toLocaleString("pt-BR",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"}):"nunca"}</div>
-                </div>
-                <Btn variant="outline" small onClick={()=>syncShopify(cfg.shop_domain)} loading={syncingId===cfg.shop_domain} icon="zap">Sync</Btn>
-                <Btn variant="ghost" small onClick={()=>disconnectShopify(cfg.id)} icon="x"/>
-              </div>
-            ))}
-
-            {/* Botão adicionar Shopify */}
-            {!shopifyCollapsed&&(
-              <button onClick={()=>{setManualDomain("");setShowShopifySettings(true);}}
-                style={{width:"100%",padding:"14px 16px",background:"transparent",border:"none",borderTop:shopifyConfigs.length>0?`0.5px solid ${C.border}`:"none",color:C.accent,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:8,fontSize:13,fontWeight:500,fontFamily:"'Plus Jakarta Sans',sans-serif",transition:"background 0.15s"}}
-                onMouseEnter={e=>e.currentTarget.style.background=C.accentDim}
-                onMouseLeave={e=>e.currentTarget.style.background="transparent"}>
-                <Icon name="plus" size={15}/>
-                {shopifyConfigs.length===0?"Conectar loja Shopify":"Adicionar outra loja"}
-              </button>
-            )}
-          </div>
-
-          {/* ── COLUNA GOOGLE ADS ── */}
-          <div style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:14,overflow:"hidden",boxShadow:"0 4px 24px rgba(0,0,0,0.25)"}}>
-            <div style={{padding:"13px 16px",borderBottom:"1px solid rgba(255,255,255,0.04)",display:"flex",alignItems:"center",gap:9}}>
-              <div style={{width:28,height:28,borderRadius:8,background:"rgba(79,142,247,0.15)",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
-                <span style={{fontSize:11,fontWeight:800,color:C.blue,fontFamily:"'Plus Jakarta Sans',sans-serif"}}>G</span>
-              </div>
-              <span style={{fontSize:13,fontWeight:600,color:C.text,letterSpacing:"-0.01em"}}>Google Ads</span>
-              <span style={{fontSize:10,color:C.textMuted,padding:"2px 8px",borderRadius:20,background:C.surface2,border:`1px solid ${C.border}`,marginLeft:"auto"}}>{googleAdsConfigs.length} conta{googleAdsConfigs.length!==1?"s":""}</span>
-            </div>
-
-            {googleAdsConfigs.map(cfg=>(
-              <div key={cfg.id} style={{padding:"10px 16px",borderBottom:"1px solid rgba(255,255,255,0.03)",display:"flex",alignItems:"center",gap:10,transition:"background 0.15s"}} onMouseEnter={e=>e.currentTarget.style.background="rgba(255,255,255,0.02)"} onMouseLeave={e=>e.currentTarget.style.background="transparent"}>
-                <div style={{flex:1,minWidth:0}}>
-                  <div style={{fontSize:12,fontWeight:500,color:C.blue,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>● {cfg.account_name||cfg.customer_id}</div>
-                  <div style={{fontSize:10,color:C.textMuted}}>sync: {cfg.last_sync_at?new Date(cfg.last_sync_at).toLocaleString("pt-BR",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"}):"nunca"}</div>
-                </div>
-                <Btn variant="outline" small onClick={syncGoogleAds} loading={gadsSyncing} icon="zap">Sync</Btn>
-                <Btn variant="ghost" small onClick={()=>disconnectGoogleAds(cfg.id)} icon="x"/>
-              </div>
-            ))}
-
-            {/* Botão principal — Script (conta normal) */}
-            <button onClick={()=>{if(!apiKey)generateApiKey();setShowScriptModal(true);}}
-              style={{width:"100%",padding:"14px 16px",background:C.blueDim,border:"none",borderTop:`1px solid rgba(59,130,246,0.2)`,color:C.blue,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:8,fontSize:13,fontWeight:600,fontFamily:"'Plus Jakarta Sans',sans-serif",transition:"opacity 0.15s"}}
-              onMouseEnter={e=>e.currentTarget.style.opacity="0.8"}
-              onMouseLeave={e=>e.currentTarget.style.opacity="1"}>
-              <Icon name="zap" size={16}/>
-              Configurar via Script (conta normal)
-            </button>
-          </div>
-
-        </div>
-
-        {/* ── CONFIGURACOES DO SISTEMA ── */}
-        <div style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:12,overflow:"hidden",gridColumn:"1/-1"}}>
-          <div style={{padding:"12px 16px",borderBottom:"1px solid rgba(255,255,255,0.04)",display:"flex",alignItems:"center",gap:8}}>
-            <Icon name="settings" size={13} color={C.textMuted}/>
-            <span style={{fontSize:13,fontWeight:500,color:C.text}}>Configuracoes do Sistema</span>
-          </div>
-          <button onClick={()=>{loadSysSettings();setShowSysSettings(true);}}
-            style={{width:"100%",padding:"13px 16px",background:"transparent",border:"none",color:C.textMuted,cursor:"pointer",display:"flex",alignItems:"center",gap:8,fontSize:12,fontFamily:"'Plus Jakarta Sans',sans-serif",transition:"background 0.15s",textAlign:"left"}}
-            onMouseEnter={e=>e.currentTarget.style.background=C.hover}
-            onMouseLeave={e=>e.currentTarget.style.background="transparent"}>
-            <Icon name="zap" size={13}/>
-            Atualizar credenciais Shopify Partners (Client ID + Secret)
-          </button>
-        </div>
-
-      </div>
-
-      {/* MODAL SHOPIFY */}
-      {showShopifySettings&&(()=>{
-        const CALLBACK_URL="https://vvdhnwknluxsaxcqvlyh.supabase.co/functions/v1/shopify-callback";
-        const copy=(txt)=>{navigator.clipboard.writeText(txt).then(()=>show("Copiado! ✅"));};
-        const CopyRow=({label,value})=>(
-          <div style={{display:"flex",alignItems:"center",gap:6,background:C.surface2,border:`1px solid ${C.border}`,borderRadius:8,padding:"7px 10px"}}>
-            <code style={{flex:1,fontSize:11,color:C.accent,fontFamily:"'JetBrains Mono',monospace",wordBreak:"break-all",lineHeight:"1.5"}}>{value}</code>
-            <button onClick={()=>copy(value)} title="Copiar" style={{background:"transparent",border:"none",cursor:"pointer",color:C.textMuted,padding:"2px 4px",borderRadius:4,flexShrink:0,display:"flex",alignItems:"center"}} onMouseEnter={e=>e.currentTarget.style.color=C.text} onMouseLeave={e=>e.currentTarget.style.color=C.textMuted}>
-              <Icon name="copy" size={13}/>
-            </button>
-          </div>
-        );
-        const Step=({n,children})=>(
-          <div style={{display:"flex",gap:10,marginBottom:10}}>
-            <div style={{width:20,height:20,borderRadius:"50%",background:C.accentDim,border:`1px solid ${C.accentBorder}`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:10,fontWeight:700,color:C.accent,flexShrink:0,marginTop:1}}>{n}</div>
-            <div style={{fontSize:12,color:C.textMuted,lineHeight:"1.65",flex:1}}>{children}</div>
-          </div>
-        );
-        return(
-        <Modal title="Adicionar Loja Shopify" onClose={()=>setShowShopifySettings(false)}>
-          <div style={{display:"flex",flexDirection:"column",gap:16}}>
-
-            {/* TUTORIAL */}
-            <div style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:12,overflow:"hidden"}}>
-              <div style={{padding:"10px 14px",borderBottom:"1px solid rgba(255,255,255,0.04)",display:"flex",alignItems:"center",gap:8}}>
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke={C.amber} strokeWidth="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-                <span style={{fontSize:12,fontWeight:600,color:C.text}}>Primeira vez? Siga o tutorial abaixo</span>
-                <span style={{fontSize:10,color:C.textMuted,marginLeft:"auto"}}>Shopify Partners</span>
-              </div>
-              <div style={{padding:"14px 14px 10px"}}>
-                <Step n="1">Acesse <strong style={{color:C.text}}>partners.shopify.com</strong> e faça login (ou crie uma conta grátis).</Step>
-                <Step n="2">No menu lateral clique em <strong style={{color:C.text}}>Apps</strong> → <strong style={{color:C.text}}>Criar app</strong> → <strong style={{color:C.text}}>Criar app manualmente</strong>.</Step>
-                <Step n="3">Dê um nome ao app (ex: <em style={{color:C.text}}>Workspace</em>) e confirme.</Step>
-                <Step n="4">
-                  Na aba <strong style={{color:C.text}}>Configuração do app</strong>, preencha os <strong style={{color:C.red}}>dois campos obrigatórios</strong> com a mesma URL abaixo:
-                  <div style={{marginTop:8,display:"flex",flexDirection:"column",gap:6}}>
-                    <div style={{fontSize:11,color:C.textMuted}}>① <strong style={{color:C.text}}>App URL</strong> — cole aqui:</div>
-                    <CopyRow value={CALLBACK_URL}/>
-                    <div style={{fontSize:11,color:C.textMuted}}>② <strong style={{color:C.text}}>URL de redirecionamento</strong> — cole a mesma aqui:</div>
-                    <CopyRow value={CALLBACK_URL}/>
-                    <div style={{fontSize:11,color:C.red,background:"rgba(239,68,68,0.08)",border:"1px solid rgba(239,68,68,0.25)",borderRadius:6,padding:"6px 8px"}}>
-                      ⚠️ Os dois campos <strong>devem ter o mesmo host</strong>, caso contrário o Shopify retorna erro.
-                    </div>
-                  </div>
-                </Step>
-                <Step n="5">
-                  Ainda na configuração, vá em <strong style={{color:C.text}}>Escopos da API</strong> e adicione exatamente estes:
-                  <div style={{display:"flex",flexWrap:"wrap",gap:5,marginTop:8}}>
-                    {["read_orders","write_orders","read_products","write_products"].map(s=>(
-                      <span key={s} style={{fontSize:10,padding:"3px 8px",borderRadius:5,background:C.accentDim,color:C.accent,border:`1px solid ${C.accentBorder}`,fontFamily:"'JetBrains Mono',monospace"}}>{s}</span>
-                    ))}
-                  </div>
-                </Step>
-                <Step n="6">Salve. Copie o <strong style={{color:C.text}}>Client ID</strong> e o <strong style={{color:C.text}}>Client Secret</strong> e cole em <strong style={{color:C.green}}>Configurações do Sistema</strong> (botão abaixo das integrações).</Step>
-                <Step n="7">Preencha os campos abaixo e clique em <strong style={{color:C.text}}>Conectar com Shopify</strong>. Você será redirecionado para a loja — clique em <strong style={{color:C.text}}>Instalar</strong>.</Step>
-                <div style={{display:"flex",gap:8,padding:"10px 12px",background:"rgba(245,158,11,0.08)",border:"1px solid rgba(245,158,11,0.25)",borderRadius:8,marginBottom:4}}>
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={C.amber} strokeWidth="2" strokeLinecap="round" style={{flexShrink:0,marginTop:1}}><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
-                  <span style={{fontSize:11,color:C.amber,lineHeight:"1.6"}}>Para o <strong>Sync funcionar</strong>, você precisa estar <strong>logado no painel admin da loja</strong> (admin.shopify.com) no mesmo navegador na hora de sincronizar.</span>
-                </div>
-              </div>
-            </div>
-
-            {/* CAMPOS */}
-            <div>
-              <label style={{fontSize:12,color:C.textMuted,display:"block",marginBottom:6}}>Nome da loja <span style={{color:C.textMuted,fontStyle:"italic"}}>(opcional)</span></label>
-              <Input value={manualStoreName} onChange={setManualStoreName} placeholder="Ex: Loja Principal, Loja 2..."/>
-            </div>
-            <div>
-              <label style={{fontSize:12,color:C.textMuted,display:"block",marginBottom:6}}>Domínio da loja Shopify <span style={{color:C.red}}>*</span></label>
-              <Input value={manualDomain} onChange={setManualDomain} placeholder="minha-loja.myshopify.com"/>
-              <div style={{fontSize:11,color:C.textMuted,marginTop:5,lineHeight:1.6}}>
-                ⚠️ <strong style={{color:C.text}}>Use apenas o domínio Shopify</strong> — termina sempre em <span style={{color:C.accent,fontFamily:"monospace"}}>.myshopify.com</span><br/>
-                ✅ Correto: <span style={{color:C.green,fontFamily:"monospace"}}>minha-loja.myshopify.com</span><br/>
-                ❌ Errado: <span style={{color:C.red,fontFamily:"monospace"}}>microsaas-qy8v.vercel.app</span> ou <span style={{color:C.red,fontFamily:"monospace"}}>https://...</span>
-              </div>
-            </div>
-            <div style={{display:"flex",gap:8,justifyContent:"flex-end"}}>
-              <Btn variant="outline" onClick={()=>{setShowShopifySettings(false);setManualDomain("");setManualStoreName("");}}>Cancelar</Btn>
-              <Btn variant="primary" onClick={()=>{
-                if(!manualDomain.trim()){show("Digite o dominio da loja","error");return;}
-                let d=manualDomain.trim().replace(/^https?:\/\//,"").replace(/\/$/,"").toLowerCase();
-                if(!d.includes("."))d=d+".myshopify.com";
-                if(!d.endsWith(".myshopify.com")){show("Domínio inválido. Use o formato: minha-loja.myshopify.com","error");return;}
-                const n=manualStoreName.trim();
-                connectShopifyOAuth(d,n);
-                setShowShopifySettings(false);setManualDomain("");setManualStoreName("");
-              }} icon="zap">Conectar com Shopify</Btn>
-            </div>
-          </div>
-        </Modal>
-        );
-      })()}
-
-      {/* MODAL GOOGLE ADS */}
-      {showGadsSettings&&(
-        <Modal title="Conectar Google Ads" onClose={()=>setShowGadsSettings(false)}>
-          <div style={{display:"flex",flexDirection:"column",gap:14}}>
-            <div style={{padding:"10px 14px",background:"rgba(59,130,246,0.08)",borderRadius:9,border:"1px solid rgba(59,130,246,0.3)",fontSize:12,color:C.textMuted,lineHeight:"1.7"}}>
-              <strong style={{color:C.text}}>O que você precisa:</strong><br/>
-              1. <strong style={{color:C.blue}}>Customer ID</strong> — número da sua conta Google Ads (ex: 123-456-7890)<br/>
-              2. <strong style={{color:C.blue}}>Client ID + Secret</strong> — crie em <strong>console.cloud.google.com</strong> → APIs → Credenciais → OAuth<br/>
-              3. <strong style={{color:C.blue}}>Developer Token</strong> — no Google Ads: Ferramentas → API Google Ads → Centro de API<br/>
-              4. Após preencher, clique Conectar e autorize no Google.
-            </div>
-            {[
-              {label:"Customer ID",key:"customerId",ph:"123-456-7890"},
-              {label:"Nome da conta (opcional)",key:"accountName",ph:"Minha Loja Ads"},
-              {label:"Client ID (Google Cloud)",key:"clientId",ph:"xxxxxx.apps.googleusercontent.com"},
-              {label:"Client Secret",key:"clientSecret",ph:"GOCSPX-xxxxxxx",type:"password"},
-              {label:"Developer Token",key:"developerToken",ph:"xxxxxxxxxxxxxxxx",type:"password"},
-            ].map(f=>(
-              <div key={f.key}>
-                <label style={{fontSize:12,color:C.textMuted,display:"block",marginBottom:5}}>{f.label}{!f.label.includes("opcional")&&<span style={{color:C.red}}> *</span>}</label>
-                <Input value={gadsForm[f.key]} onChange={v=>setGadsForm(p=>({...p,[f.key]:v}))} placeholder={f.ph} type={f.type||"text"}/>
-              </div>
-            ))}
-            <div style={{display:"flex",gap:8,justifyContent:"flex-end",marginTop:4}}>
-              <Btn variant="outline" onClick={()=>setShowGadsSettings(false)}>Cancelar</Btn>
-              <Btn variant="primary" onClick={connectGoogleAds} loading={gadsSaving} icon="zap">Conectar com Google</Btn>
-            </div>
-          </div>
-        </Modal>
-      )}
-
-      {/* MODAL SYSTEM SETTINGS */}
-      {showSysSettings&&(
-        <Modal title="Credenciais Shopify Partners" onClose={()=>setShowSysSettings(false)}>
-          <div style={{display:"flex",flexDirection:"column",gap:16}}>
-            <div style={{padding:"12px 14px",background:"rgba(124,107,255,0.07)",borderRadius:10,border:`1px solid ${C.accentBorder}`,fontSize:12,color:C.textMuted,lineHeight:"1.6"}}>
-              Estas credenciais ficam salvas no banco de dados e sao usadas automaticamente para conectar qualquer loja Shopify. Voce so precisa atualizar quando criar um novo app no Shopify Partners.
-            </div>
-            <div>
-              <label style={{fontSize:12,color:C.textMuted,display:"block",marginBottom:6}}>Client ID <span style={{color:C.red}}>*</span></label>
-              <Input value={sysForm.shopify_client_id} onChange={v=>setSysForm(p=>({...p,shopify_client_id:v}))} placeholder="832a5784e398b5f742406692a715105a"/>
-            </div>
-            <div>
-              <label style={{fontSize:12,color:C.textMuted,display:"block",marginBottom:6}}>Client Secret <span style={{color:C.red}}>*</span></label>
-              <Input value={sysForm.shopify_client_secret} onChange={v=>setSysForm(p=>({...p,shopify_client_secret:v}))} placeholder="shpss_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx" type="password"/>
-            </div>
-            <div style={{display:"flex",gap:8,justifyContent:"flex-end"}}>
-              <Btn variant="outline" onClick={()=>setShowSysSettings(false)}>Cancelar</Btn>
-              <Btn variant="primary" onClick={saveSysSettings} loading={sysSaving} icon="zap">Salvar</Btn>
-            </div>
-          </div>
-        </Modal>
-      )}
-
-      {/* MODAL SCRIPT GOOGLE ADS */}
-      {showScriptModal&&(
-        <Modal title="Google Ads Script — Configurar" onClose={()=>setShowScriptModal(false)}>
-          <div style={{display:"flex",flexDirection:"column",gap:16}}>
-
-            {/* Passo 1 — Chave */}
-            <div style={{background:C.surface2,borderRadius:10,padding:16,border:`1px solid ${C.border}`}}>
-              <div style={{fontSize:12,fontWeight:600,color:C.text,marginBottom:10}}>PASSO 1 — Sua chave de API</div>
-              {apiKey?(
-                <div style={{display:"flex",gap:8,alignItems:"center"}}>
-                  <code style={{flex:1,fontSize:11,fontFamily:"'JetBrains Mono',monospace",color:C.green,background:C.surface,padding:"8px 12px",borderRadius:7,border:`1px solid ${C.border}`,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{apiKey}</code>
-                  <button onClick={()=>copyText(apiKey,setKeyCopied)} style={{padding:"7px 14px",borderRadius:7,background:keyCopied?C.greenDim:C.accentDim,border:`1px solid ${keyCopied?"rgba(34,197,94,0.3)":C.accentBorder}`,color:keyCopied?C.green:C.accent,cursor:"pointer",fontSize:12,fontFamily:"'Plus Jakarta Sans',sans-serif",whiteSpace:"nowrap"}}>
-                    {keyCopied?"Copiado!":"Copiar"}
-                  </button>
-                </div>
-              ):(
-                <button onClick={generateApiKey} disabled={generatingKey} style={{padding:"9px 16px",borderRadius:8,background:C.accentDim,border:`1px solid ${C.accentBorder}`,color:C.accent,cursor:"pointer",fontSize:13,fontFamily:"'Plus Jakarta Sans',sans-serif",display:"flex",alignItems:"center",gap:6}}>
-                  {generatingKey?<Spinner size={13}/>:<Icon name="zap" size={14}/>}
-                  Gerar minha chave
-                </button>
-              )}
-            </div>
-
-            {/* Passo 2 — Script */}
-            {apiKey&&(
-              <div style={{background:C.surface2,borderRadius:10,padding:16,border:`1px solid ${C.border}`}}>
-                <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
-                  <div style={{fontSize:12,fontWeight:600,color:C.text}}>PASSO 2 — Script para colar no Google Ads</div>
-                  <button onClick={()=>copyText(getGadsScript(apiKey),setScriptCopied)} style={{padding:"5px 12px",borderRadius:7,background:scriptCopied?C.greenDim:C.accentDim,border:`1px solid ${scriptCopied?"rgba(34,197,94,0.3)":C.accentBorder}`,color:scriptCopied?C.green:C.accent,cursor:"pointer",fontSize:11,fontFamily:"'Plus Jakarta Sans',sans-serif",whiteSpace:"nowrap"}}>
-                    {scriptCopied?"Copiado!":"Copiar script"}
-                  </button>
-                </div>
-                <pre style={{fontSize:10,fontFamily:"'JetBrains Mono',monospace",color:"#888",background:C.bg,padding:12,borderRadius:8,overflowX:"auto",maxHeight:180,overflowY:"auto",border:`1px solid ${C.border}`,margin:0,lineHeight:"1.6"}}>
-                  {getGadsScript(apiKey).slice(0,400)+"..."}
-                </pre>
-              </div>
-            )}
-
-            {/* Passo 3 — Instruções */}
-            {apiKey&&(
-              <div style={{background:"rgba(59,130,246,0.06)",borderRadius:10,padding:14,border:"1px solid rgba(59,130,246,0.2)"}}>
-                <div style={{fontSize:12,fontWeight:600,color:C.blue,marginBottom:10}}>PASSO 3 — Colar no Google Ads</div>
-                {[
-                  "Abra ads.google.com e faça login",
-                  "Clique em Ferramentas (chave inglesa no topo)",
-                  "Vá em Scripts em massa → Scripts",
-                  "Clique em + (botão azul) para criar novo script",
-                  "Apague o conteudo que aparecer e cole o script copiado",
-                  "Clique em Salvar → depois em Executar para testar",
-                  "Se der OK nos logs, clique em Programar → Todo dia as 06:00",
-                ].map((step,i)=>(
-                  <div key={i} style={{display:"flex",gap:10,marginBottom:7,alignItems:"flex-start"}}>
-                    <span style={{width:20,height:20,borderRadius:"50%",background:"rgba(59,130,246,0.15)",color:C.blue,fontSize:10,fontWeight:700,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,marginTop:1}}>{i+1}</span>
-                    <span style={{fontSize:12,color:C.textMuted,lineHeight:"1.5"}}>{step}</span>
-                  </div>
-                ))}
-              </div>
-            )}
-
-            <div style={{display:"flex",justifyContent:"flex-end"}}>
-              <Btn variant="outline" onClick={()=>setShowScriptModal(false)}>Fechar</Btn>
-            </div>
-          </div>
-        </Modal>
-      )}
 
       {/* FILTROS MODERNOS */}
       {(()=>{const moedaFlags={"BRL":"🇧🇷","USD":"🇺🇸","EUR":"🇪🇺","GBP":"🇬🇧"};return(<div style={{display:"flex",gap:8,marginBottom:14,alignItems:"center",flexWrap:"wrap",padding:"7px 10px",background:C.surface,borderRadius:16,border:`1px solid ${C.border}`,boxShadow:"0 2px 12px rgba(0,0,0,0.2)"}}>
@@ -3982,6 +3656,505 @@ const LojasPage=({sb,user})=>{
   );
 };
 
+// ─── INTEGRAÇÕES ──────────────────────────────────────────────────────────────
+const IntegracoesPage=({sb,user})=>{
+  const {show,El}=useToast();
+  const [shopifyConfigs,setShopifyConfigs]=useState([]);
+  const [syncingId,setSyncingId]=useState(null);
+  const [showShopifySettings,setShowShopifySettings]=useState(false);
+  const [shopifyCollapsed,setShopifyCollapsed]=useState(false);
+  const [manualDomain,setManualDomain]=useState("");
+  const [manualStoreName,setManualStoreName]=useState("");
+  const [manualToken,setManualToken]=useState("");
+  const [manualSaving,setManualSaving]=useState(false);
+  const [editingStoreNameId,setEditingStoreNameId]=useState(null);
+  const [editingStoreNameVal,setEditingStoreNameVal]=useState("");
+  const [googleAdsConfigs,setGoogleAdsConfigs]=useState([]);
+  const [showGadsSettings,setShowGadsSettings]=useState(false);
+  const [gadsSaving,setGadsSaving]=useState(false);
+  const [gadsSyncing,setGadsSyncing]=useState(false);
+  const [gadsForm,setGadsForm]=useState({clientId:"",clientSecret:"",developerToken:"",customerId:"",accountName:""});
+  const [apiKey,setApiKey]=useState(null);
+  const [showScriptModal,setShowScriptModal]=useState(false);
+  const [generatingKey,setGeneratingKey]=useState(false);
+  const [keyCopied,setKeyCopied]=useState(false);
+  const [scriptCopied,setScriptCopied]=useState(false);
+  const [showSysSettings,setShowSysSettings]=useState(false);
+  const [sysForm,setSysForm]=useState({shopify_client_id:"",shopify_client_secret:""});
+  const [sysSaving,setSysSaving]=useState(false);
+
+  useEffect(()=>{
+    loadShopifyConfigs();loadGoogleAdsConfigs();loadApiKey();
+    const params=new URLSearchParams(window.location.search);
+    if(params.get("shopify_connected")==="1"){
+      show("Shopify conectado! Sincronizando... 🎉");
+      window.history.replaceState({},"",window.location.pathname);
+      loadShopifyConfigs();setTimeout(()=>syncShopify(null),1500);
+    }
+    if(params.get("shopify_error")){show("Erro Shopify: "+params.get("shopify_error"),"error");window.history.replaceState({},"",window.location.pathname);}
+    if(params.get("gads_connected")==="1"){
+      show("Google Ads conectado! Sincronizando... 🎉");
+      window.history.replaceState({},"",window.location.pathname);
+      loadGoogleAdsConfigs();setTimeout(()=>syncGoogleAds(),1500);
+    }
+    if(params.get("gads_error")){show("Erro Google Ads: "+params.get("gads_error"),"error");window.history.replaceState({},"",window.location.pathname);}
+  },[]);
+
+  const loadShopifyConfigs=async()=>{const{data}=await sb.from("shopify_configs").select("*").eq("user_id",user.id).order("connected_at");setShopifyConfigs(data||[]);};
+  const loadGoogleAdsConfigs=async()=>{const{data}=await sb.from("google_ads_configs").select("*").eq("user_id",user.id).order("connected_at");setGoogleAdsConfigs(data||[]);};
+
+  const syncShopify=async(shopDomain)=>{
+    setSyncingId(shopDomain||"all");
+    try{
+      const{data:{session}}=await sb.auth.getSession();
+      const body=shopDomain?JSON.stringify({shop_domain:shopDomain}):"{}";
+      const res=await fetch(`${SUPA_FUNCTIONS_URL}/shopify-sync`,{method:"POST",headers:{Authorization:`Bearer ${session.access_token}`,"Content-Type":"application/json"},body});
+      const data=await res.json();
+      if(data.error){show("Erro: "+data.error,"error");}
+      else{show(data.orders_synced+" pedidos importados · "+data.days_synced+" dias");await loadShopifyConfigs();}
+    }catch(e){show("Erro de rede: "+String(e),"error");}
+    setSyncingId(null);
+  };
+
+  const syncGoogleAds=async()=>{
+    setGadsSyncing(true);
+    try{
+      const{data:{session}}=await sb.auth.getSession();
+      const res=await fetch(`${SUPA_FUNCTIONS_URL}/google-ads-sync`,{method:"POST",headers:{Authorization:`Bearer ${session.access_token}`}});
+      const data=await res.json();
+      if(data.error){show("Erro Google Ads: "+data.error,"error");}
+      else{show("Google Ads: "+data.days_synced+" dias sincronizados");await loadGoogleAdsConfigs();}
+    }catch(e){show("Erro: "+String(e),"error");}
+    setGadsSyncing(false);
+  };
+
+  const connectShopifyOAuth=async(domain,storeName)=>{
+    try{
+      const{data:{session}}=await sb.auth.getSession();
+      const res=await fetch(`${SUPA_FUNCTIONS_URL}/shopify-auth`,{method:"POST",headers:{Authorization:`Bearer ${session.access_token}`,"Content-Type":"application/json"},body:JSON.stringify({shop_domain:domain||"",store_name:storeName||""})});
+      const data=await res.json();
+      if(data.url){window.location.href=data.url;}
+      else{show("Erro ao iniciar OAuth: "+(data.error||"desconhecido"),"error");}
+    }catch(e){show("Erro: "+String(e),"error");}
+  };
+
+  const saveStoreNameInline=async(id,newName)=>{
+    const{error}=await sb.from("shopify_configs").update({store_name:newName.trim()||null}).eq("id",id).eq("user_id",user.id);
+    if(error){show("Erro ao salvar: "+error.message,"error");}
+    else{setShopifyConfigs(prev=>prev.map(c=>c.id===id?{...c,store_name:newName.trim()||null}:c));show("Nome atualizado ✅");}
+    setEditingStoreNameId(null);setEditingStoreNameVal("");
+  };
+
+  const loadSysSettings=async()=>{
+    const{data}=await sb.from("system_settings").select("key,value").in("key",["shopify_client_id","shopify_client_secret"]);
+    if(data){const obj={shopify_client_id:"",shopify_client_secret:""};data.forEach(r=>{obj[r.key]=r.value;});setSysForm(obj);}
+  };
+
+  const saveSysSettings=async()=>{
+    if(!sysForm.shopify_client_id.trim()||!sysForm.shopify_client_secret.trim()){show("Preencha Client ID e Client Secret","error");return;}
+    setSysSaving(true);
+    try{
+      await sb.from("system_settings").upsert([
+        {key:"shopify_client_id",value:sysForm.shopify_client_id.trim(),updated_at:new Date().toISOString()},
+        {key:"shopify_client_secret",value:sysForm.shopify_client_secret.trim(),updated_at:new Date().toISOString()},
+      ],{onConflict:"key"});
+      show("Credenciais salvas com sucesso!");setShowSysSettings(false);
+    }catch(e){show("Erro: "+String(e),"error");}
+    setSysSaving(false);
+  };
+
+  const disconnectShopify=async(id)=>{
+    if(!window.confirm("Remover esta loja? Os dados importados serão mantidos."))return;
+    await sb.from("shopify_configs").delete().eq("id",id);
+    setShopifyConfigs(p=>p.filter(c=>c.id!==id));show("Loja removida");
+  };
+
+  const connectGoogleAds=async()=>{
+    if(!gadsForm.clientId||!gadsForm.clientSecret||!gadsForm.developerToken||!gadsForm.customerId){show("Preencha todos os campos obrigatórios","error");return;}
+    setGadsSaving(true);
+    const{data:{session}}=await sb.auth.getSession();
+    const res=await fetch(`${SUPA_FUNCTIONS_URL}/google-ads-oauth`,{method:"POST",headers:{Authorization:`Bearer ${session.access_token}`,"Content-Type":"application/json"},body:JSON.stringify(gadsForm)});
+    const{url,error}=await res.json();
+    if(error){show("Erro: "+error,"error");setGadsSaving(false);return;}
+    window.location.href=url;
+  };
+
+  const disconnectGoogleAds=async(id)=>{
+    if(!window.confirm("Remover esta conta Google Ads? Dados importados serão mantidos."))return;
+    await sb.from("google_ads_configs").delete().eq("id",id);
+    setGoogleAdsConfigs(p=>p.filter(c=>c.id!==id));show("Conta removida");
+  };
+
+  const loadApiKey=async()=>{
+    const{data}=await sb.from("user_api_keys").select("key").eq("user_id",user.id).single();
+    setApiKey(data?.key||null);
+  };
+
+  const generateApiKey=async()=>{
+    setGeneratingKey(true);
+    const arr=new Uint8Array(32);crypto.getRandomValues(arr);
+    const key=Array.from(arr).map(b=>b.toString(16).padStart(2,"0")).join("");
+    const{error}=await sb.from("user_api_keys").upsert({user_id:user.id,key},{onConflict:"user_id"});
+    if(error){show("Erro ao gerar chave: "+error.message,"error");}else{setApiKey(key);}
+    setGeneratingKey(false);
+  };
+
+  const copyText=async(text,setCopied)=>{await navigator.clipboard.writeText(text);setCopied(true);setTimeout(()=>setCopied(false),2000);};
+
+  const getGadsScript=(key)=>`// ============================================================
+// WORKSPACE - Google Ads Script
+// Cole em: Google Ads -> Ferramentas -> Scripts em massa -> Scripts
+// Agende para rodar: Todo dia as 06:00
+// ============================================================
+
+var CONFIG = {
+  API_KEY: '${key}',
+  ENDPOINT: 'https://vvdhnwknluxsaxcqvlyh.supabase.co/functions/v1/gads-script-sync',
+  ACCOUNT_NAME: 'Google Ads',
+  CURRENCY: 'BRL',
+  DAYS: 180
+};
+
+function main() {
+  var tz = AdsApp.currentAccount().getTimeZone();
+  var endDate = new Date();
+  var startDate = new Date();
+  startDate.setDate(startDate.getDate() - CONFIG.DAYS);
+  var start = Utilities.formatDate(startDate, tz, 'yyyyMMdd');
+  var end   = Utilities.formatDate(endDate,   tz, 'yyyyMMdd');
+  var report = AdsApp.report('SELECT Date, Cost FROM ACCOUNT_PERFORMANCE_REPORT WHERE Date BETWEEN ' + start + ' AND ' + end);
+  var data = [];
+  var rows = report.rows();
+  while (rows.hasNext()) {
+    var row = rows.next();
+    var cost = parseFloat(String(row['Cost']).replace(',', '.')) || 0;
+    if (cost > 0) {
+      var d = String(row['Date']);
+      data.push({date: d.length===8?d.substr(0,4)+'-'+d.substr(4,2)+'-'+d.substr(6,2):d,cost:cost,currency:CONFIG.CURRENCY});
+    }
+  }
+  if (data.length === 0) { Logger.log('Sem dados com custo > 0.'); return; }
+  var resp = UrlFetchApp.fetch(CONFIG.ENDPOINT, {method:'post',contentType:'application/json',payload:JSON.stringify({api_key:CONFIG.API_KEY,account_name:CONFIG.ACCOUNT_NAME,data:data}),muteHttpExceptions:true});
+  var result = JSON.parse(resp.getContentText());
+  Logger.log(result.success ? 'OK! ' + result.days_synced + ' dias sincronizados.' : 'ERRO: ' + result.error);
+}`;
+
+  return (
+    <div style={{flex:1,overflowY:"auto",padding:"28px 32px",display:"flex",flexDirection:"column",gap:20}}>
+      {El}
+      {/* Page Header */}
+      <div style={{display:"flex",alignItems:"flex-start",justifyContent:"space-between",marginBottom:4}}>
+        <div>
+          <h1 style={{fontSize:22,fontWeight:700,color:C.text,margin:0,letterSpacing:"-0.04em",lineHeight:1.1}}>Integrações</h1>
+          <p style={{fontSize:13,color:C.textMuted,margin:"6px 0 0",fontWeight:400}}>Gerencie suas conexões com Shopify e Google Ads</p>
+        </div>
+        <Btn variant="primary" icon="zap" onClick={()=>show("Configure cada integração abaixo")}>Sincronizar tudo</Btn>
+      </div>
+
+      {/* Grid de integrações */}
+      <div className="grid-integ">
+
+        {/* ── SHOPIFY ── */}
+        <div style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:14,overflow:"hidden",boxShadow:"0 4px 24px rgba(0,0,0,0.25)",borderTop:`2px solid ${C.green}`}}>
+          <div style={{padding:"14px 16px",display:"flex",alignItems:"center",gap:10,cursor:"pointer",userSelect:"none",borderBottom:"1px solid rgba(255,255,255,0.04)"}}
+            onClick={()=>setShopifyCollapsed(v=>!v)}>
+            <div style={{width:32,height:32,borderRadius:10,background:"rgba(18,209,142,0.12)",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,border:`1px solid rgba(18,209,142,0.2)`}}>
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M15.5 3.5C15.5 3.5 15 3 13.5 3C12 3 11 4.5 10.5 5.5L6 6.5L4 20H18L20 6.5L16.5 5.5C16.5 5.5 16.5 3.5 15.5 3.5Z" stroke={C.green} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/><path d="M10.5 5.5C10.5 5.5 11 9 14 9C17 9 16.5 5.5 16.5 5.5" stroke={C.green} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+            </div>
+            <div style={{flex:1}}>
+              <div style={{fontSize:13,fontWeight:600,color:C.text,letterSpacing:"-0.01em"}}>Shopify</div>
+              <div style={{fontSize:10,color:C.textMuted,marginTop:1}}>Sincronização de pedidos e produtos</div>
+            </div>
+            <span style={{fontSize:10,color:C.green,padding:"2px 9px",borderRadius:20,background:"rgba(18,209,142,0.1)",border:`1px solid rgba(18,209,142,0.25)`}}>{shopifyConfigs.length} loja{shopifyConfigs.length!==1?"s":""}</span>
+            <svg style={{flexShrink:0,transition:"transform 0.2s",transform:shopifyCollapsed?"rotate(-90deg)":"rotate(0deg)"}} width="13" height="13" viewBox="0 0 24 24" fill="none" stroke={C.textMuted} strokeWidth="2"><polyline points="6 9 12 15 18 9"/></svg>
+          </div>
+
+          {!shopifyCollapsed&&shopifyConfigs.map(cfg=>(
+            <div key={cfg.id} style={{padding:"11px 16px",borderBottom:"1px solid rgba(255,255,255,0.03)",display:"flex",alignItems:"center",gap:10,transition:"background 0.15s"}} onMouseEnter={e=>e.currentTarget.style.background="rgba(255,255,255,0.02)"} onMouseLeave={e=>e.currentTarget.style.background="transparent"}>
+              <div style={{flex:1,minWidth:0}}>
+                {editingStoreNameId===cfg.id?(
+                  <div style={{display:"flex",gap:6,alignItems:"center",marginBottom:2}}>
+                    <input autoFocus value={editingStoreNameVal} onChange={e=>setEditingStoreNameVal(e.target.value)}
+                      onKeyDown={e=>{if(e.key==="Enter")saveStoreNameInline(cfg.id,editingStoreNameVal);if(e.key==="Escape"){setEditingStoreNameId(null);setEditingStoreNameVal("");}}}
+                      style={{background:C.surface2,border:`1px solid ${C.accentBorder}`,borderRadius:6,padding:"3px 8px",fontSize:12,color:C.text,fontFamily:"'Plus Jakarta Sans',sans-serif",outline:"none",width:"100%",maxWidth:140}}/>
+                    <button onClick={()=>saveStoreNameInline(cfg.id,editingStoreNameVal)} style={{background:C.accent,border:"none",borderRadius:5,padding:"3px 8px",fontSize:11,color:"#000",cursor:"pointer",fontWeight:600}}>✓</button>
+                    <button onClick={()=>{setEditingStoreNameId(null);setEditingStoreNameVal("");}} style={{background:"transparent",border:"none",color:C.textMuted,cursor:"pointer",fontSize:13,padding:"2px 4px"}}>✕</button>
+                  </div>
+                ):(
+                  <div style={{display:"flex",alignItems:"center",gap:6,marginBottom:2}}>
+                    <span style={{width:6,height:6,borderRadius:"50%",background:C.green,flexShrink:0,boxShadow:`0 0 6px ${C.green}80`}}/>
+                    <span style={{fontSize:12,fontWeight:600,color:C.text,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{cfg.store_name||cfg.shop_domain}</span>
+                    <button title="Editar nome" onClick={()=>{setEditingStoreNameId(cfg.id);setEditingStoreNameVal(cfg.store_name||"");}} style={{background:"transparent",border:"none",cursor:"pointer",padding:"1px 3px",color:C.textMuted,display:"flex",alignItems:"center",lineHeight:1,opacity:0.6}} onMouseEnter={e=>e.currentTarget.style.opacity=1} onMouseLeave={e=>e.currentTarget.style.opacity=0.6}>
+                      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                    </button>
+                  </div>
+                )}
+                {cfg.store_name&&<div style={{fontSize:10,color:C.textMuted,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{cfg.shop_domain}</div>}
+                <div style={{fontSize:10,color:C.textMuted,marginTop:1}}>sync: {cfg.last_sync_at?new Date(cfg.last_sync_at).toLocaleString("pt-BR",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"}):"nunca"}</div>
+              </div>
+              <Btn variant="outline" small onClick={()=>syncShopify(cfg.shop_domain)} loading={syncingId===cfg.shop_domain} icon="zap">Sync</Btn>
+              <Btn variant="ghost" small onClick={()=>disconnectShopify(cfg.id)} icon="x"/>
+            </div>
+          ))}
+
+          {!shopifyCollapsed&&(
+            <button onClick={()=>{setManualDomain("");setManualStoreName("");setShowShopifySettings(true);}}
+              style={{width:"100%",padding:"14px 16px",background:"transparent",border:"none",borderTop:shopifyConfigs.length>0?`1px solid rgba(255,255,255,0.04)`:"none",color:C.green,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:8,fontSize:13,fontWeight:500,fontFamily:"'Plus Jakarta Sans',sans-serif",transition:"background 0.15s"}}
+              onMouseEnter={e=>e.currentTarget.style.background="rgba(18,209,142,0.05)"}
+              onMouseLeave={e=>e.currentTarget.style.background="transparent"}>
+              <Icon name="plus" size={15}/>{shopifyConfigs.length===0?"Conectar loja Shopify":"Adicionar outra loja"}
+            </button>
+          )}
+        </div>
+
+        {/* ── GOOGLE ADS ── */}
+        <div style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:14,overflow:"hidden",boxShadow:"0 4px 24px rgba(0,0,0,0.25)",borderTop:`2px solid ${C.blue}`}}>
+          <div style={{padding:"14px 16px",borderBottom:"1px solid rgba(255,255,255,0.04)",display:"flex",alignItems:"center",gap:10}}>
+            <div style={{width:32,height:32,borderRadius:10,background:"rgba(79,142,247,0.12)",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,border:`1px solid rgba(79,142,247,0.2)`}}>
+              <span style={{fontSize:14,fontWeight:800,color:C.blue,fontFamily:"'Plus Jakarta Sans',sans-serif",lineHeight:1}}>G</span>
+            </div>
+            <div style={{flex:1}}>
+              <div style={{fontSize:13,fontWeight:600,color:C.text,letterSpacing:"-0.01em"}}>Google Ads</div>
+              <div style={{fontSize:10,color:C.textMuted,marginTop:1}}>Sincronização de custos de campanhas</div>
+            </div>
+            <span style={{fontSize:10,color:C.blue,padding:"2px 9px",borderRadius:20,background:"rgba(79,142,247,0.1)",border:`1px solid rgba(79,142,247,0.25)`}}>{googleAdsConfigs.length} conta{googleAdsConfigs.length!==1?"s":""}</span>
+          </div>
+
+          {googleAdsConfigs.map(cfg=>(
+            <div key={cfg.id} style={{padding:"11px 16px",borderBottom:"1px solid rgba(255,255,255,0.03)",display:"flex",alignItems:"center",gap:10,transition:"background 0.15s"}} onMouseEnter={e=>e.currentTarget.style.background="rgba(255,255,255,0.02)"} onMouseLeave={e=>e.currentTarget.style.background="transparent"}>
+              <div style={{flex:1,minWidth:0}}>
+                <div style={{fontSize:12,fontWeight:500,color:C.blue,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>● {cfg.account_name||cfg.customer_id}</div>
+                <div style={{fontSize:10,color:C.textMuted,marginTop:2}}>sync: {cfg.last_sync_at?new Date(cfg.last_sync_at).toLocaleString("pt-BR",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"}):"nunca"}</div>
+              </div>
+              <Btn variant="outline" small onClick={syncGoogleAds} loading={gadsSyncing} icon="zap">Sync</Btn>
+              <Btn variant="ghost" small onClick={()=>disconnectGoogleAds(cfg.id)} icon="x"/>
+            </div>
+          ))}
+
+          <button onClick={()=>{if(!apiKey)generateApiKey();setShowScriptModal(true);}}
+            style={{width:"100%",padding:"13px 16px",background:"rgba(79,142,247,0.06)",border:"none",borderTop:`1px solid rgba(79,142,247,0.15)`,color:C.blue,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:8,fontSize:13,fontWeight:600,fontFamily:"'Plus Jakarta Sans',sans-serif",transition:"opacity 0.15s"}}
+            onMouseEnter={e=>e.currentTarget.style.opacity="0.8"}
+            onMouseLeave={e=>e.currentTarget.style.opacity="1"}>
+            <Icon name="zap" size={15}/>Configurar via Script (conta normal)
+          </button>
+
+          <button onClick={()=>setShowGadsSettings(true)}
+            style={{width:"100%",padding:"13px 16px",background:"transparent",border:"none",borderTop:`1px solid rgba(255,255,255,0.04)`,color:C.textMuted,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:8,fontSize:12,fontFamily:"'Plus Jakarta Sans',sans-serif",transition:"background 0.15s"}}
+            onMouseEnter={e=>e.currentTarget.style.background="rgba(255,255,255,0.02)"}
+            onMouseLeave={e=>e.currentTarget.style.background="transparent"}>
+            <Icon name="plus" size={13}/>Conectar conta Google Ads (OAuth)
+          </button>
+        </div>
+
+      </div>
+
+      {/* ── CONFIGURAÇÕES DO SISTEMA ── */}
+      <div style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:14,overflow:"hidden",boxShadow:"0 4px 24px rgba(0,0,0,0.25)"}}>
+        <div style={{padding:"14px 18px",borderBottom:"1px solid rgba(255,255,255,0.04)",display:"flex",alignItems:"center",gap:10}}>
+          <div style={{width:32,height:32,borderRadius:10,background:"rgba(91,94,246,0.12)",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,border:`1px solid rgba(91,94,246,0.2)`}}>
+            <Icon name="settings" size={14} color={C.accent}/>
+          </div>
+          <div>
+            <div style={{fontSize:13,fontWeight:600,color:C.text,letterSpacing:"-0.01em"}}>Configurações do Sistema</div>
+            <div style={{fontSize:10,color:C.textMuted,marginTop:1}}>Credenciais globais usadas pelas integrações</div>
+          </div>
+        </div>
+        <button onClick={()=>{loadSysSettings();setShowSysSettings(true);}}
+          style={{width:"100%",padding:"14px 18px",background:"transparent",border:"none",color:C.textMuted,cursor:"pointer",display:"flex",alignItems:"center",gap:10,fontSize:12,fontFamily:"'Plus Jakarta Sans',sans-serif",transition:"background 0.15s",textAlign:"left"}}
+          onMouseEnter={e=>e.currentTarget.style.background="rgba(255,255,255,0.02)"}
+          onMouseLeave={e=>e.currentTarget.style.background="transparent"}>
+          <Icon name="zap" size={13} color={C.accent}/>
+          <div>
+            <div style={{fontWeight:500,color:C.text,fontSize:12}}>Credenciais Shopify Partners</div>
+            <div style={{fontSize:11,color:C.textMuted,marginTop:2}}>Atualizar Client ID + Client Secret do app Shopify</div>
+          </div>
+          <svg style={{marginLeft:"auto"}} width="13" height="13" viewBox="0 0 24 24" fill="none" stroke={C.textMuted} strokeWidth="2"><polyline points="9 18 15 12 9 6"/></svg>
+        </button>
+      </div>
+
+      {/* MODAL SHOPIFY */}
+      {showShopifySettings&&(()=>{
+        const CALLBACK_URL="https://vvdhnwknluxsaxcqvlyh.supabase.co/functions/v1/shopify-callback";
+        const copy=(txt)=>{navigator.clipboard.writeText(txt).then(()=>show("Copiado! ✅"));};
+        const CopyRow=({label,value})=>(
+          <div style={{display:"flex",alignItems:"center",gap:6,background:C.surface2,border:`1px solid ${C.border}`,borderRadius:8,padding:"7px 10px"}}>
+            <code style={{flex:1,fontSize:11,color:C.accent,fontFamily:"'JetBrains Mono',monospace",wordBreak:"break-all",lineHeight:"1.5"}}>{value}</code>
+            <button onClick={()=>copy(value)} title="Copiar" style={{background:"transparent",border:"none",cursor:"pointer",color:C.textMuted,padding:"2px 4px",borderRadius:4,flexShrink:0,display:"flex",alignItems:"center"}} onMouseEnter={e=>e.currentTarget.style.color=C.text} onMouseLeave={e=>e.currentTarget.style.color=C.textMuted}>
+              <Icon name="copy" size={13}/>
+            </button>
+          </div>
+        );
+        const Step=({n,children})=>(
+          <div style={{display:"flex",gap:10,marginBottom:10}}>
+            <div style={{width:20,height:20,borderRadius:"50%",background:C.accentDim,border:`1px solid ${C.accentBorder}`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:10,fontWeight:700,color:C.accent,flexShrink:0,marginTop:1}}>{n}</div>
+            <div style={{fontSize:12,color:C.textMuted,lineHeight:"1.65",flex:1}}>{children}</div>
+          </div>
+        );
+        return(
+          <Modal title="Adicionar Loja Shopify" onClose={()=>setShowShopifySettings(false)}>
+            <div style={{display:"flex",flexDirection:"column",gap:16}}>
+              <div style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:12,overflow:"hidden"}}>
+                <div style={{padding:"10px 14px",borderBottom:"1px solid rgba(255,255,255,0.04)",display:"flex",alignItems:"center",gap:8}}>
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke={C.amber} strokeWidth="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                  <span style={{fontSize:12,fontWeight:600,color:C.text}}>Primeira vez? Siga o tutorial abaixo</span>
+                  <span style={{fontSize:10,color:C.textMuted,marginLeft:"auto"}}>Shopify Partners</span>
+                </div>
+                <div style={{padding:"14px 14px 10px"}}>
+                  <Step n="1">Acesse <strong style={{color:C.text}}>partners.shopify.com</strong> e faça login (ou crie uma conta grátis).</Step>
+                  <Step n="2">No menu lateral clique em <strong style={{color:C.text}}>Apps</strong> → <strong style={{color:C.text}}>Criar app</strong> → <strong style={{color:C.text}}>Criar app manualmente</strong>.</Step>
+                  <Step n="3">Dê um nome ao app (ex: <em style={{color:C.text}}>Workspace</em>) e confirme.</Step>
+                  <Step n="4">Na aba <strong style={{color:C.text}}>Configuração do app</strong>, preencha os <strong style={{color:C.red}}>dois campos obrigatórios</strong> com a mesma URL abaixo:
+                    <div style={{marginTop:8,display:"flex",flexDirection:"column",gap:6}}>
+                      <div style={{fontSize:11,color:C.textMuted}}>① <strong style={{color:C.text}}>App URL</strong> — cole aqui:</div>
+                      <CopyRow value={CALLBACK_URL}/>
+                      <div style={{fontSize:11,color:C.textMuted}}>② <strong style={{color:C.text}}>URL de redirecionamento</strong> — cole a mesma aqui:</div>
+                      <CopyRow value={CALLBACK_URL}/>
+                      <div style={{fontSize:11,color:C.red,background:"rgba(239,68,68,0.08)",border:"1px solid rgba(239,68,68,0.25)",borderRadius:6,padding:"6px 8px"}}>⚠️ Os dois campos <strong>devem ter o mesmo host</strong>.</div>
+                    </div>
+                  </Step>
+                  <Step n="5">Em <strong style={{color:C.text}}>Escopos da API</strong> adicione:
+                    <div style={{display:"flex",flexWrap:"wrap",gap:5,marginTop:8}}>
+                      {["read_orders","write_orders","read_products","write_products"].map(s=>(
+                        <span key={s} style={{fontSize:10,padding:"3px 8px",borderRadius:5,background:C.accentDim,color:C.accent,border:`1px solid ${C.accentBorder}`,fontFamily:"'JetBrains Mono',monospace"}}>{s}</span>
+                      ))}
+                    </div>
+                  </Step>
+                  <Step n="6">Salve. Copie o <strong style={{color:C.text}}>Client ID</strong> e o <strong style={{color:C.text}}>Client Secret</strong> e cole em <strong style={{color:C.green}}>Configurações do Sistema</strong>.</Step>
+                  <Step n="7">Preencha os campos abaixo e clique em <strong style={{color:C.text}}>Conectar com Shopify</strong>.</Step>
+                </div>
+              </div>
+              <div>
+                <label style={{fontSize:12,color:C.textMuted,display:"block",marginBottom:6}}>Nome da loja <span style={{color:C.textMuted,fontStyle:"italic"}}>(opcional)</span></label>
+                <Input value={manualStoreName} onChange={setManualStoreName} placeholder="Ex: Loja Principal, Loja 2..."/>
+              </div>
+              <div>
+                <label style={{fontSize:12,color:C.textMuted,display:"block",marginBottom:6}}>Domínio da loja Shopify <span style={{color:C.red}}>*</span></label>
+                <Input value={manualDomain} onChange={setManualDomain} placeholder="minha-loja.myshopify.com"/>
+                <div style={{fontSize:11,color:C.textMuted,marginTop:5,lineHeight:1.6}}>
+                  ✅ Correto: <span style={{color:C.green,fontFamily:"monospace"}}>minha-loja.myshopify.com</span>{"  "}
+                  ❌ Errado: <span style={{color:C.red,fontFamily:"monospace"}}>https://...</span>
+                </div>
+              </div>
+              <div style={{display:"flex",gap:8,justifyContent:"flex-end"}}>
+                <Btn variant="outline" onClick={()=>{setShowShopifySettings(false);setManualDomain("");setManualStoreName("");}}>Cancelar</Btn>
+                <Btn variant="primary" onClick={()=>{
+                  if(!manualDomain.trim()){show("Digite o dominio da loja","error");return;}
+                  let d=manualDomain.trim().replace(/^https?:\/\//,"").replace(/\/$/,"").toLowerCase();
+                  if(!d.includes("."))d=d+".myshopify.com";
+                  if(!d.endsWith(".myshopify.com")){show("Domínio inválido. Use o formato: minha-loja.myshopify.com","error");return;}
+                  connectShopifyOAuth(d,manualStoreName.trim());
+                  setShowShopifySettings(false);setManualDomain("");setManualStoreName("");
+                }} icon="zap">Conectar com Shopify</Btn>
+              </div>
+            </div>
+          </Modal>
+        );
+      })()}
+
+      {/* MODAL GOOGLE ADS */}
+      {showGadsSettings&&(
+        <Modal title="Conectar Google Ads" onClose={()=>setShowGadsSettings(false)}>
+          <div style={{display:"flex",flexDirection:"column",gap:14}}>
+            <div style={{padding:"10px 14px",background:"rgba(79,142,247,0.07)",borderRadius:9,border:"1px solid rgba(79,142,247,0.25)",fontSize:12,color:C.textMuted,lineHeight:"1.7"}}>
+              <strong style={{color:C.text}}>O que você precisa:</strong><br/>
+              1. <strong style={{color:C.blue}}>Customer ID</strong> — número da sua conta Google Ads<br/>
+              2. <strong style={{color:C.blue}}>Client ID + Secret</strong> — console.cloud.google.com → Credenciais → OAuth<br/>
+              3. <strong style={{color:C.blue}}>Developer Token</strong> — Google Ads: Ferramentas → API Google Ads
+            </div>
+            {[
+              {label:"Customer ID",key:"customerId",ph:"123-456-7890"},
+              {label:"Nome da conta (opcional)",key:"accountName",ph:"Minha Loja Ads"},
+              {label:"Client ID (Google Cloud)",key:"clientId",ph:"xxxxxx.apps.googleusercontent.com"},
+              {label:"Client Secret",key:"clientSecret",ph:"GOCSPX-xxxxxxx",type:"password"},
+              {label:"Developer Token",key:"developerToken",ph:"xxxxxxxxxxxxxxxx",type:"password"},
+            ].map(f=>(
+              <div key={f.key}>
+                <label style={{fontSize:12,color:C.textMuted,display:"block",marginBottom:5}}>{f.label}{!f.label.includes("opcional")&&<span style={{color:C.red}}> *</span>}</label>
+                <Input value={gadsForm[f.key]} onChange={v=>setGadsForm(p=>({...p,[f.key]:v}))} placeholder={f.ph} type={f.type||"text"}/>
+              </div>
+            ))}
+            <div style={{display:"flex",gap:8,justifyContent:"flex-end",marginTop:4}}>
+              <Btn variant="outline" onClick={()=>setShowGadsSettings(false)}>Cancelar</Btn>
+              <Btn variant="primary" onClick={connectGoogleAds} loading={gadsSaving} icon="zap">Conectar com Google</Btn>
+            </div>
+          </div>
+        </Modal>
+      )}
+
+      {/* MODAL SYSTEM SETTINGS */}
+      {showSysSettings&&(
+        <Modal title="Credenciais Shopify Partners" onClose={()=>setShowSysSettings(false)}>
+          <div style={{display:"flex",flexDirection:"column",gap:16}}>
+            <div style={{padding:"12px 14px",background:"rgba(91,94,246,0.07)",borderRadius:10,border:`1px solid ${C.accentBorder}`,fontSize:12,color:C.textMuted,lineHeight:"1.6"}}>
+              Estas credenciais ficam salvas no banco e são usadas para conectar qualquer loja Shopify. Atualize apenas ao criar um novo app no Shopify Partners.
+            </div>
+            <div>
+              <label style={{fontSize:12,color:C.textMuted,display:"block",marginBottom:6}}>Client ID <span style={{color:C.red}}>*</span></label>
+              <Input value={sysForm.shopify_client_id} onChange={v=>setSysForm(p=>({...p,shopify_client_id:v}))} placeholder="832a5784e398b5f742406692a715105a"/>
+            </div>
+            <div>
+              <label style={{fontSize:12,color:C.textMuted,display:"block",marginBottom:6}}>Client Secret <span style={{color:C.red}}>*</span></label>
+              <Input value={sysForm.shopify_client_secret} onChange={v=>setSysForm(p=>({...p,shopify_client_secret:v}))} placeholder="shpss_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx" type="password"/>
+            </div>
+            <div style={{display:"flex",gap:8,justifyContent:"flex-end"}}>
+              <Btn variant="outline" onClick={()=>setShowSysSettings(false)}>Cancelar</Btn>
+              <Btn variant="primary" onClick={saveSysSettings} loading={sysSaving} icon="zap">Salvar</Btn>
+            </div>
+          </div>
+        </Modal>
+      )}
+
+      {/* MODAL SCRIPT GOOGLE ADS */}
+      {showScriptModal&&(
+        <Modal title="Google Ads Script — Configurar" onClose={()=>setShowScriptModal(false)}>
+          <div style={{display:"flex",flexDirection:"column",gap:16}}>
+            <div style={{background:C.surface2,borderRadius:10,padding:16,border:`1px solid ${C.border}`}}>
+              <div style={{fontSize:12,fontWeight:600,color:C.text,marginBottom:10}}>PASSO 1 — Sua chave de API</div>
+              {apiKey?(
+                <div style={{display:"flex",gap:8,alignItems:"center"}}>
+                  <code style={{flex:1,fontSize:11,fontFamily:"'JetBrains Mono',monospace",color:C.green,background:C.surface,padding:"8px 12px",borderRadius:7,border:`1px solid ${C.border}`,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{apiKey}</code>
+                  <button onClick={()=>copyText(apiKey,setKeyCopied)} style={{padding:"7px 14px",borderRadius:7,background:keyCopied?C.greenDim:C.accentDim,border:`1px solid ${keyCopied?"rgba(34,197,94,0.3)":C.accentBorder}`,color:keyCopied?C.green:C.accent,cursor:"pointer",fontSize:12,fontFamily:"'Plus Jakarta Sans',sans-serif",whiteSpace:"nowrap"}}>
+                    {keyCopied?"Copiado!":"Copiar"}
+                  </button>
+                </div>
+              ):(
+                <button onClick={generateApiKey} disabled={generatingKey} style={{padding:"9px 16px",borderRadius:8,background:C.accentDim,border:`1px solid ${C.accentBorder}`,color:C.accent,cursor:"pointer",fontSize:13,fontFamily:"'Plus Jakarta Sans',sans-serif",display:"flex",alignItems:"center",gap:6}}>
+                  {generatingKey?<Spinner size={13}/>:<Icon name="zap" size={14}/>}Gerar minha chave
+                </button>
+              )}
+            </div>
+            {apiKey&&(
+              <div style={{background:C.surface2,borderRadius:10,padding:16,border:`1px solid ${C.border}`}}>
+                <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
+                  <div style={{fontSize:12,fontWeight:600,color:C.text}}>PASSO 2 — Script para colar no Google Ads</div>
+                  <button onClick={()=>copyText(getGadsScript(apiKey),setScriptCopied)} style={{padding:"5px 12px",borderRadius:7,background:scriptCopied?C.greenDim:C.accentDim,border:`1px solid ${scriptCopied?"rgba(34,197,94,0.3)":C.accentBorder}`,color:scriptCopied?C.green:C.accent,cursor:"pointer",fontSize:11,fontFamily:"'Plus Jakarta Sans',sans-serif",whiteSpace:"nowrap"}}>
+                    {scriptCopied?"Copiado!":"Copiar script"}
+                  </button>
+                </div>
+                <pre style={{fontSize:10,fontFamily:"'JetBrains Mono',monospace",color:"#888",background:C.bg,padding:12,borderRadius:8,overflowX:"auto",maxHeight:180,overflowY:"auto",border:`1px solid ${C.border}`,margin:0,lineHeight:"1.6"}}>{getGadsScript(apiKey).slice(0,400)+"..."}</pre>
+              </div>
+            )}
+            {apiKey&&(
+              <div style={{background:"rgba(79,142,247,0.06)",borderRadius:10,padding:14,border:"1px solid rgba(79,142,247,0.2)"}}>
+                <div style={{fontSize:12,fontWeight:600,color:C.blue,marginBottom:10}}>PASSO 3 — Colar no Google Ads</div>
+                {["Abra ads.google.com e faça login","Clique em Ferramentas (chave inglesa no topo)","Vá em Scripts em massa → Scripts","Clique em + (botão azul) para criar novo script","Apague o conteudo e cole o script copiado","Clique em Salvar → depois em Executar para testar","Se der OK nos logs, clique em Programar → Todo dia as 06:00"].map((step,i)=>(
+                  <div key={i} style={{display:"flex",gap:10,marginBottom:7,alignItems:"flex-start"}}>
+                    <span style={{width:20,height:20,borderRadius:"50%",background:"rgba(79,142,247,0.15)",color:C.blue,fontSize:10,fontWeight:700,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,marginTop:1}}>{i+1}</span>
+                    <span style={{fontSize:12,color:C.textMuted,lineHeight:"1.5"}}>{step}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+            <div style={{display:"flex",justifyContent:"flex-end"}}>
+              <Btn variant="outline" onClick={()=>setShowScriptModal(false)}>Fechar</Btn>
+            </div>
+          </div>
+        </Modal>
+      )}
+    </div>
+  );
+};
+
 // ─── APP ──────────────────────────────────────────────────────────────────────
 export default function App() {
   const sb=supabaseClient;
@@ -4020,6 +4193,7 @@ export default function App() {
     custos:<CustosProdutosPage sb={sb} user={user}/>,
     youtube:<YoutubePage sb={sb} user={user}/>,
     videohash:<VideoHashPage/>,
+    integracoes:<IntegracoesPage sb={sb} user={user}/>,
   };
 
   return (
@@ -4031,7 +4205,7 @@ export default function App() {
         </div>
         <main style={{flex:1,display:"flex",flexDirection:"column",overflow:"hidden"}}>
           <div className="main-topbar" style={{borderBottom:"1px solid rgba(255,255,255,0.04)",padding:"10px 28px",display:"flex",alignItems:"center",justifyContent:"space-between",background:C.surface,flexShrink:0,gap:8,boxShadow:"0 1px 0 rgba(255,255,255,0.02)"}}>
-            <div className="topbar-date" style={{fontSize:11,color:C.textMuted,fontFamily:"'JetBrains Mono',monospace",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",letterSpacing:"0.01em"}}>{new Date().toLocaleDateString("pt-BR",{weekday:"long",year:"numeric",month:"long",day:"numeric"})}</div>
+            <div className="topbar-date" style={{fontSize:12,color:C.textMuted,fontFamily:"'Plus Jakarta Sans',sans-serif",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",fontWeight:400,letterSpacing:"-0.01em",textTransform:"capitalize"}}>{new Date().toLocaleDateString("pt-BR",{weekday:"long",day:"numeric",month:"long"})}</div>
             <div style={{display:"flex",alignItems:"center",gap:8,flexShrink:0}}>
               <button title={privacyMode?"Mostrar informações":"Ocultar informações"} onClick={()=>setPrivacyMode(p=>!p)}
                 style={{display:"flex",alignItems:"center",gap:6,padding:"5px 12px",borderRadius:8,background:privacyMode?"rgba(91,94,246,0.15)":"transparent",border:`1px solid ${privacyMode?C.accentBorder:C.border}`,color:privacyMode?C.accent:C.textMuted,cursor:"pointer",fontSize:11,fontFamily:"'Plus Jakarta Sans',sans-serif",transition:"all 0.15s"}}>
