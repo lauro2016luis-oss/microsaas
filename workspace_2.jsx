@@ -1121,17 +1121,19 @@ function main() {
         <div className="grid-integ">
 
           {/* ── COLUNA SHOPIFY ── */}
-          <div style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:13,overflow:"hidden",boxShadow:"0 2px 16px rgba(0,0,0,0.2)"}}>
-            <div style={{padding:"12px 16px",borderBottom:shopifyCollapsed?`0.5px solid ${C.border}`:`0.5px solid ${C.border}`,display:"flex",alignItems:"center",gap:8,cursor:"pointer",userSelect:"none"}}
+          <div style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:14,overflow:"hidden",boxShadow:"0 4px 24px rgba(0,0,0,0.25)"}}>
+            <div style={{padding:"13px 16px",display:"flex",alignItems:"center",gap:9,cursor:"pointer",userSelect:"none",borderBottom:"1px solid rgba(255,255,255,0.04)"}}
               onClick={()=>setShopifyCollapsed(v=>!v)}>
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M15.5 3.5C15.5 3.5 15 3 13.5 3C12 3 11 4.5 10.5 5.5L6 6.5L4 20H18L20 6.5L16.5 5.5C16.5 5.5 16.5 3.5 15.5 3.5Z" stroke={C.green} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/><path d="M10.5 5.5C10.5 5.5 11 9 14 9C17 9 16.5 5.5 16.5 5.5" stroke={C.green} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
-              <span style={{fontSize:13,fontWeight:500,color:C.text}}>Shopify</span>
-              <span style={{fontSize:11,color:C.textMuted}}>{shopifyConfigs.length} loja{shopifyConfigs.length!==1?"s":""}</span>
+              <div style={{width:28,height:28,borderRadius:8,background:"rgba(18,209,142,0.12)",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M15.5 3.5C15.5 3.5 15 3 13.5 3C12 3 11 4.5 10.5 5.5L6 6.5L4 20H18L20 6.5L16.5 5.5C16.5 5.5 16.5 3.5 15.5 3.5Z" stroke={C.green} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/><path d="M10.5 5.5C10.5 5.5 11 9 14 9C17 9 16.5 5.5 16.5 5.5" stroke={C.green} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+              </div>
+              <span style={{fontSize:13,fontWeight:600,color:C.text,letterSpacing:"-0.01em"}}>Shopify</span>
+              <span style={{fontSize:10,color:C.textMuted,padding:"2px 8px",borderRadius:20,background:C.surface2,border:`1px solid ${C.border}`}}>{shopifyConfigs.length} loja{shopifyConfigs.length!==1?"s":""}</span>
               <svg style={{marginLeft:"auto",transition:"transform 0.2s",transform:shopifyCollapsed?"rotate(-90deg)":"rotate(0deg)"}} width="13" height="13" viewBox="0 0 24 24" fill="none" stroke={C.textMuted} strokeWidth="2"><polyline points="6 9 12 15 18 9"/></svg>
             </div>
 
             {!shopifyCollapsed&&shopifyConfigs.map(cfg=>(
-              <div key={cfg.id} style={{padding:"10px 16px",borderBottom:`1px solid ${C.border}`,display:"flex",alignItems:"center",gap:8}}>
+              <div key={cfg.id} style={{padding:"10px 16px",borderBottom:"1px solid rgba(255,255,255,0.03)",display:"flex",alignItems:"center",gap:10,transition:"background 0.15s"}} onMouseEnter={e=>e.currentTarget.style.background="rgba(255,255,255,0.02)"} onMouseLeave={e=>e.currentTarget.style.background="transparent"}>
                 <div style={{flex:1,minWidth:0}}>
                   {editingStoreNameId===cfg.id?(
                     <div style={{display:"flex",gap:6,alignItems:"center",marginBottom:2}}>
@@ -1148,7 +1150,10 @@ function main() {
                     </div>
                   ):(
                     <div style={{display:"flex",alignItems:"center",gap:5,marginBottom:1}}>
-                      <div style={{fontSize:12,fontWeight:600,color:C.green,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",...pv}}>● {cfg.store_name||cfg.shop_domain}</div>
+                      <div style={{display:"flex",alignItems:"center",gap:6,overflow:"hidden"}}>
+                    <span style={{width:6,height:6,borderRadius:"50%",background:C.green,flexShrink:0,boxShadow:`0 0 6px ${C.green}80`}}/>
+                    <span style={{fontSize:12,fontWeight:600,color:C.text,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",...pv}}>{cfg.store_name||cfg.shop_domain}</span>
+                  </div>
                       <button title="Editar nome" onClick={()=>{setEditingStoreNameId(cfg.id);setEditingStoreNameVal(cfg.store_name||"");}} style={{background:"transparent",border:"none",cursor:"pointer",padding:"1px 3px",color:C.textMuted,display:"flex",alignItems:"center",lineHeight:1,opacity:0.6}} onMouseEnter={e=>e.currentTarget.style.opacity=1} onMouseLeave={e=>e.currentTarget.style.opacity=0.6}>
                         <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
                       </button>
@@ -1175,15 +1180,17 @@ function main() {
           </div>
 
           {/* ── COLUNA GOOGLE ADS ── */}
-          <div style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:12,overflow:"hidden"}}>
-            <div style={{padding:"12px 16px",borderBottom:`1px solid ${C.border}`,display:"flex",alignItems:"center",gap:8}}>
-              <span style={{width:14,height:14,borderRadius:"50%",background:C.blue,display:"inline-flex",alignItems:"center",justifyContent:"center",fontSize:9,fontWeight:700,color:"#fff",flexShrink:0}}>G</span>
-              <span style={{fontSize:13,fontWeight:500,color:C.text}}>Google Ads</span>
-              <span style={{fontSize:11,color:C.textMuted,marginLeft:"auto"}}>{googleAdsConfigs.length} conta{googleAdsConfigs.length!==1?"s":""}</span>
+          <div style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:14,overflow:"hidden",boxShadow:"0 4px 24px rgba(0,0,0,0.25)"}}>
+            <div style={{padding:"13px 16px",borderBottom:"1px solid rgba(255,255,255,0.04)",display:"flex",alignItems:"center",gap:9}}>
+              <div style={{width:28,height:28,borderRadius:8,background:"rgba(79,142,247,0.15)",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+                <span style={{fontSize:11,fontWeight:800,color:C.blue,fontFamily:"'DM Sans',sans-serif"}}>G</span>
+              </div>
+              <span style={{fontSize:13,fontWeight:600,color:C.text,letterSpacing:"-0.01em"}}>Google Ads</span>
+              <span style={{fontSize:10,color:C.textMuted,padding:"2px 8px",borderRadius:20,background:C.surface2,border:`1px solid ${C.border}`,marginLeft:"auto"}}>{googleAdsConfigs.length} conta{googleAdsConfigs.length!==1?"s":""}</span>
             </div>
 
             {googleAdsConfigs.map(cfg=>(
-              <div key={cfg.id} style={{padding:"10px 16px",borderBottom:`1px solid ${C.border}`,display:"flex",alignItems:"center",gap:8}}>
+              <div key={cfg.id} style={{padding:"10px 16px",borderBottom:"1px solid rgba(255,255,255,0.03)",display:"flex",alignItems:"center",gap:10,transition:"background 0.15s"}} onMouseEnter={e=>e.currentTarget.style.background="rgba(255,255,255,0.02)"} onMouseLeave={e=>e.currentTarget.style.background="transparent"}>
                 <div style={{flex:1,minWidth:0}}>
                   <div style={{fontSize:12,fontWeight:500,color:C.blue,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>● {cfg.account_name||cfg.customer_id}</div>
                   <div style={{fontSize:10,color:C.textMuted}}>sync: {cfg.last_sync_at?new Date(cfg.last_sync_at).toLocaleString("pt-BR",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"}):"nunca"}</div>
@@ -1207,7 +1214,7 @@ function main() {
 
         {/* ── CONFIGURACOES DO SISTEMA ── */}
         <div style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:12,overflow:"hidden",gridColumn:"1/-1"}}>
-          <div style={{padding:"12px 16px",borderBottom:`1px solid ${C.border}`,display:"flex",alignItems:"center",gap:8}}>
+          <div style={{padding:"12px 16px",borderBottom:"1px solid rgba(255,255,255,0.04)",display:"flex",alignItems:"center",gap:8}}>
             <Icon name="settings" size={13} color={C.textMuted}/>
             <span style={{fontSize:13,fontWeight:500,color:C.text}}>Configuracoes do Sistema</span>
           </div>
@@ -1246,7 +1253,7 @@ function main() {
 
             {/* TUTORIAL */}
             <div style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:12,overflow:"hidden"}}>
-              <div style={{padding:"10px 14px",borderBottom:`1px solid ${C.border}`,display:"flex",alignItems:"center",gap:8}}>
+              <div style={{padding:"10px 14px",borderBottom:"1px solid rgba(255,255,255,0.04)",display:"flex",alignItems:"center",gap:8}}>
                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke={C.amber} strokeWidth="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
                 <span style={{fontSize:12,fontWeight:600,color:C.text}}>Primeira vez? Siga o tutorial abaixo</span>
                 <span style={{fontSize:10,color:C.textMuted,marginLeft:"auto"}}>Shopify Partners</span>
@@ -1592,7 +1599,7 @@ function main() {
             {lucroPorLoja.length===0
               ?<div style={{fontSize:12,color:C.textMuted,padding:"12px 0",textAlign:"center"}}>Nenhum dado ainda</div>
               :lucroPorLoja.map(({loja,lucro},i)=>(
-                <div key={loja} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"8px 0",borderBottom:`1px solid ${C.border}`}}>
+                <div key={loja} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"8px 0",borderBottom:"1px solid rgba(255,255,255,0.04)"}}>
                   <div style={{display:"flex",alignItems:"center",gap:8}}>
                     <div style={{width:24,height:24,borderRadius:6,background:lucro>=0?"rgba(18,209,142,0.15)":"rgba(245,51,79,0.15)",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
                       <div style={{width:6,height:6,borderRadius:"50%",background:lucro>=0?C.green:C.red,boxShadow:`0 0 8px ${lucro>=0?"rgba(18,209,142,0.6)":"rgba(245,51,79,0.6)"}`}}/>
@@ -1612,7 +1619,7 @@ function main() {
               {l:"Payments",v:payments.length,c:C.green,bg:"rgba(18,209,142,0.15)",dot:C.green},
               {l:"Links",v:links.length,c:C.blue,bg:"rgba(79,142,247,0.15)",dot:C.blue},
             ].map(s=>(
-              <div key={s.l} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"7px 0",borderBottom:`1px solid ${C.border}`}}>
+              <div key={s.l} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"7px 0",borderBottom:"1px solid rgba(255,255,255,0.04)"}}>
                 <div style={{display:"flex",alignItems:"center",gap:7}}>
                   <div style={{width:6,height:6,borderRadius:"50%",background:s.dot,flexShrink:0,boxShadow:s.dot!==C.textDim?`0 0 6px ${s.dot}80`:undefined}}/>
                   <span style={{fontSize:11,color:C.textMuted}}>{s.l}</span>
@@ -1640,23 +1647,23 @@ function main() {
         ):(
           <div className="table-wrap"><table style={{width:"100%",borderCollapse:"collapse",fontSize:12,minWidth:520}}>
             <thead>
-              <tr style={{borderBottom:`1px solid ${C.border}`}}>
+              <tr style={{background:C.surface2}}>
                 {["Data","Loja","Moeda","Faturamento","Ads","Lucro",""].map((h,i)=>(
-                  <th key={i} style={{textAlign:"left",padding:"6px 10px",color:C.textMuted,fontWeight:500,fontSize:10,textTransform:"uppercase",letterSpacing:"0.07em"}}>{h}</th>
+                  <th key={i} style={{textAlign:"left",padding:"8px 12px",color:C.textMuted,fontWeight:700,fontSize:9,textTransform:"uppercase",letterSpacing:"0.12em"}}>{h}</th>
                 ))}
               </tr>
             </thead>
             <tbody>
               {recentes.map(r=>(
-                <tr key={r.id} style={{borderBottom:`1px solid ${C.border}`,transition:"background 0.12s",cursor:"default"}}
-                  onMouseEnter={e=>e.currentTarget.style.background=C.surface2}
+                <tr key={r.id} style={{borderBottom:"1px solid rgba(255,255,255,0.03)",transition:"background 0.12s",cursor:"default"}}
+                  onMouseEnter={e=>e.currentTarget.style.background="rgba(255,255,255,0.025)"}
                   onMouseLeave={e=>e.currentTarget.style.background="transparent"}>
-                  <td style={{padding:"10px 10px",color:C.textMuted,fontFamily:"'JetBrains Mono',monospace",fontSize:11}}>{r.date?.slice(0,10)}</td>
-                  <td style={{padding:"10px 10px",color:C.text,fontWeight:600,fontSize:12,...pv}}>{r.store_name}</td>
-                  <td style={{padding:"10px 10px"}}><Badge label={r.currency}/></td>
-                  <td style={{padding:"10px 10px",color:C.textMuted,fontFamily:"'JetBrains Mono',monospace",fontSize:11,...pv}}>{(r.revenue||0).toLocaleString("pt-BR",{minimumFractionDigits:2})}</td>
-                  <td style={{padding:"10px 10px",color:C.red,fontFamily:"'JetBrains Mono',monospace",fontSize:11,...pv}}>{(r.ad_spend||0).toLocaleString("pt-BR",{minimumFractionDigits:2})}</td>
-                  <td style={{padding:"10px 10px",fontWeight:700,fontFamily:"'JetBrains Mono',monospace",fontSize:12,...pv,color:(r.profit||0)>=0?C.green:C.red}}>{fmtVal(converter(r.profit,r.currency))}</td>
+                  <td style={{padding:"10px 12px",color:C.textMuted,fontFamily:"'JetBrains Mono',monospace",fontSize:11}}>{r.date?.slice(0,10)}</td>
+                  <td style={{padding:"10px 12px",color:C.text,fontWeight:600,fontSize:12,...pv}}>{r.store_name}</td>
+                  <td style={{padding:"10px 12px"}}><Badge label={r.currency}/></td>
+                  <td style={{padding:"10px 12px",color:C.textMuted,fontFamily:"'JetBrains Mono',monospace",fontSize:11,...pv}}>{(r.revenue||0).toLocaleString("pt-BR",{minimumFractionDigits:2})}</td>
+                  <td style={{padding:"10px 12px",color:C.red,fontFamily:"'JetBrains Mono',monospace",fontSize:11,...pv}}>{(r.ad_spend||0).toLocaleString("pt-BR",{minimumFractionDigits:2})}</td>
+                  <td style={{padding:"10px 12px",fontWeight:700,fontFamily:"'JetBrains Mono',monospace",fontSize:12,...pv,color:(r.profit||0)>=0?C.green:C.red}}>{fmtVal(converter(r.profit,r.currency))}</td>
                   <td style={{padding:"10px 10px"}}>
                     <div style={{display:"flex",gap:2,justifyContent:"flex-end"}}>
                       <button onClick={()=>openEditProfit(r)} title="Editar"
@@ -2008,7 +2015,7 @@ const MineracaoKanban=({sb,user})=>{
                       style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:10,overflow:"hidden",cursor:"grab",userSelect:"none",transition:"border-color 0.15s"}}
                       onMouseEnter={e=>e.currentTarget.style.borderColor=col.color+"66"}
                       onMouseLeave={e=>e.currentTarget.style.borderColor=C.border}>
-                      {t.image_url&&<div style={{height:100,overflow:"hidden",borderBottom:`1px solid ${C.border}`}}>
+                      {t.image_url&&<div style={{height:100,overflow:"hidden",borderBottom:"1px solid rgba(255,255,255,0.04)"}}>
                         <img src={t.image_url} alt={t.name} style={{width:"100%",height:"100%",objectFit:"cover"}} onError={e=>e.target.style.display="none"}/>
                       </div>}
                       <div style={{padding:"10px 12px"}}>
@@ -3140,7 +3147,7 @@ const PrecificacaoPage=()=>{
             <div style={{overflowX:"auto"}}>
               <table style={{width:"100%",borderCollapse:"collapse",fontSize:13}}>
                 <thead>
-                  <tr style={{borderBottom:`1px solid ${C.border}`}}>
+                  <tr style={{borderBottom:"1px solid rgba(255,255,255,0.04)"}}>
                     <th style={{...thStyle,textAlign:"left"}}>Markup</th>
                     <th style={thStyle}>Preço final</th>
                     <th style={thStyle}>Custo fixo</th>
@@ -3154,7 +3161,7 @@ const PrecificacaoPage=()=>{
                   {parseFloat(precoCustom)>0&&(()=>{
                     const r=calcFromPrice(parseFloat(precoCustom));
                     return(
-                      <tr style={{borderBottom:`1px solid ${C.border}`,background:"rgba(124,107,255,0.08)",borderLeft:`3px solid ${C.accent}`}}>
+                      <tr style={{borderBottom:"1px solid rgba(255,255,255,0.04)",background:"rgba(124,107,255,0.08)",borderLeft:`3px solid ${C.accent}`}}>
                         <td style={{...tdStyle,textAlign:"left"}}>
                           <div style={{display:"flex",alignItems:"center",gap:6}}>
                             <span style={{color:C.accent,fontWeight:700}}>{r.markup.toFixed(2)}x</span>
@@ -3178,7 +3185,7 @@ const PrecificacaoPage=()=>{
                     const isCustom=parseFloat(markupCustom)>0&&mk===parseFloat(markupCustom);
                     const lucroPos=r.lucro>0;
                     return(
-                      <tr key={mk} style={{borderBottom:`1px solid ${C.border}`,background:isRec?"rgba(34,197,94,0.04)":isCustom?C.accentDim:"transparent",transition:"background 0.1s"}}
+                      <tr key={mk} style={{borderBottom:"1px solid rgba(255,255,255,0.04)",background:isRec?"rgba(34,197,94,0.04)":isCustom?C.accentDim:"transparent",transition:"background 0.1s"}}
                         onMouseEnter={e=>{if(!isRec&&!isCustom)e.currentTarget.style.background=C.surfaceHover;}}
                         onMouseLeave={e=>{if(!isRec&&!isCustom)e.currentTarget.style.background="transparent";}}>
                         <td style={{...tdStyle,textAlign:"left"}}>
@@ -3215,7 +3222,7 @@ const PrecificacaoPage=()=>{
             <div style={{overflowX:"auto"}}>
               <table style={{width:"100%",borderCollapse:"collapse",fontSize:13}}>
                 <thead>
-                  <tr style={{borderBottom:`1px solid ${C.border}`}}>
+                  <tr style={{borderBottom:"1px solid rgba(255,255,255,0.04)"}}>
                     <th style={{...thStyle,textAlign:"left"}}>Markup</th>
                     <th style={thStyle}>Preço final</th>
                     <th style={thStyle}>Máx. CPA</th>
@@ -3228,7 +3235,7 @@ const PrecificacaoPage=()=>{
                   {parseFloat(precoCustom)>0&&(()=>{
                     const r=calcFromPrice(parseFloat(precoCustom));
                     return(
-                      <tr style={{borderBottom:`1px solid ${C.border}`,background:"rgba(124,107,255,0.08)",borderLeft:`3px solid ${C.accent}`}}>
+                      <tr style={{borderBottom:"1px solid rgba(255,255,255,0.04)",background:"rgba(124,107,255,0.08)",borderLeft:`3px solid ${C.accent}`}}>
                         <td style={{...tdStyle,textAlign:"left"}}>
                           <div style={{display:"flex",alignItems:"center",gap:6}}>
                             <span style={{color:C.accent,fontWeight:700}}>{r.markup.toFixed(2)}x</span>
@@ -3247,7 +3254,7 @@ const PrecificacaoPage=()=>{
                     const r=calc(mk);
                     const isRec=mk===RECOMMENDED_MARKUP;
                     return(
-                      <tr key={mk} style={{borderBottom:`1px solid ${C.border}`,background:isRec?"rgba(34,197,94,0.04)":"transparent",transition:"background 0.1s"}}
+                      <tr key={mk} style={{borderBottom:"1px solid rgba(255,255,255,0.04)",background:isRec?"rgba(34,197,94,0.04)":"transparent",transition:"background 0.1s"}}
                         onMouseEnter={e=>{if(!isRec)e.currentTarget.style.background=C.surfaceHover;}}
                         onMouseLeave={e=>{if(!isRec)e.currentTarget.style.background=isRec?"rgba(34,197,94,0.04)":"transparent";}}>
                         <td style={{...tdStyle,textAlign:"left",color:isRec?C.green:C.textMuted,fontWeight:isRec?600:400}}>{mk.toFixed(2)}x</td>
@@ -3358,7 +3365,7 @@ const VideoHashPage=()=>{
   const labelStyle={fontSize:11,color:C.textMuted,display:"block",marginBottom:6,textTransform:"uppercase",letterSpacing:"0.05em"};
   const inputStyle={width:"100%",background:C.surface,border:`1px solid ${C.border}`,color:C.text,fontSize:13,padding:"9px 12px",borderRadius:8,outline:"none",fontFamily:"'DM Sans',sans-serif",boxSizing:"border-box"};
   const Toggle=({label,desc,val,onChange})=>(
-    <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"11px 0",borderBottom:`1px solid ${C.border}`}}>
+    <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"11px 0",borderBottom:"1px solid rgba(255,255,255,0.04)"}}>
       <div>
         <div style={{fontSize:13,color:C.text,fontWeight:500}}>{label}</div>
         {desc&&<div style={{fontSize:11,color:C.textDim,marginTop:2}}>{desc}</div>}
@@ -3503,7 +3510,7 @@ const VideoHashPage=()=>{
                 {icon:"🔑",title:"Identificador único",desc:"Adiciona um bloco 'free' com bytes aleatórios — cada exportação gera um arquivo diferente."},
                 {icon:"🔒",title:"100% privado",desc:"Tudo acontece no seu navegador. Nenhum dado é enviado para servidores."},
               ].map(({icon,title,desc})=>(
-                <div key={title} style={{display:"flex",gap:12,padding:"12px 0",borderBottom:`1px solid ${C.border}`}}>
+                <div key={title} style={{display:"flex",gap:12,padding:"12px 0",borderBottom:"1px solid rgba(255,255,255,0.04)"}}>
                   <span style={{fontSize:20,flexShrink:0}}>{icon}</span>
                   <div>
                     <div style={{fontSize:13,fontWeight:500,color:C.text}}>{title}</div>
@@ -3690,7 +3697,7 @@ const CustosProdutosPage=({sb,user})=>{
             <div className="table-wrap" style={{border:`1px solid ${C.border}`,borderRadius:12,overflow:"hidden"}}>
               <table style={{width:"100%",borderCollapse:"collapse",fontSize:13}}>
                 <thead>
-                  <tr style={{background:C.surface2,borderBottom:`1px solid ${C.border}`}}>
+                  <tr style={{background:C.surface2,borderBottom:"1px solid rgba(255,255,255,0.04)"}}>
                     <th style={{padding:"10px 16px",textAlign:"left",color:C.textMuted,fontWeight:500,fontSize:11,textTransform:"uppercase",letterSpacing:"0.05em"}}>#</th>
                     <th style={{padding:"10px 16px",textAlign:"left",color:C.textMuted,fontWeight:500,fontSize:11,textTransform:"uppercase",letterSpacing:"0.05em"}}>Produto</th>
                     <th style={{padding:"10px 16px",textAlign:"center",color:C.textMuted,fontWeight:500,fontSize:11,textTransform:"uppercase",letterSpacing:"0.05em"}} className="hide-mobile">Variantes</th>
@@ -3709,7 +3716,7 @@ const CustosProdutosPage=({sb,user})=>{
                     const c=costs[p.product_id];
                     const hasCost=c&&(c.custo>0||c.frete>0);
                     return(
-                      <tr key={p.product_id} style={{borderBottom:`1px solid ${C.border}`,transition:"background 0.1s"}} onMouseEnter={e=>e.currentTarget.style.background=C.surfaceHover} onMouseLeave={e=>e.currentTarget.style.background="transparent"}>
+                      <tr key={p.product_id} style={{borderBottom:"1px solid rgba(255,255,255,0.04)",transition:"background 0.1s"}} onMouseEnter={e=>e.currentTarget.style.background=C.surfaceHover} onMouseLeave={e=>e.currentTarget.style.background="transparent"}>
                         <td style={{padding:"12px 16px",color:C.textDim,fontSize:11,fontFamily:"'JetBrains Mono',monospace"}}>#{i+1}</td>
                         <td style={{padding:"12px 16px"}}>
                           <div style={{display:"flex",alignItems:"center",gap:10}}>
@@ -4023,7 +4030,7 @@ export default function App() {
           <Sidebar page={page} setPage={setPage} storeName={storeName} setStoreName={setStoreName} sb={sb} user={user}/>
         </div>
         <main style={{flex:1,display:"flex",flexDirection:"column",overflow:"hidden"}}>
-          <div className="main-topbar" style={{borderBottom:`1px solid ${C.border}`,padding:"10px 28px",display:"flex",alignItems:"center",justifyContent:"space-between",background:C.surface,flexShrink:0,gap:8,boxShadow:"0 1px 0 rgba(255,255,255,0.02)"}}>
+          <div className="main-topbar" style={{borderBottom:"1px solid rgba(255,255,255,0.04)",padding:"10px 28px",display:"flex",alignItems:"center",justifyContent:"space-between",background:C.surface,flexShrink:0,gap:8,boxShadow:"0 1px 0 rgba(255,255,255,0.02)"}}>
             <div className="topbar-date" style={{fontSize:11,color:C.textMuted,fontFamily:"'JetBrains Mono',monospace",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",letterSpacing:"0.01em"}}>{new Date().toLocaleDateString("pt-BR",{weekday:"long",year:"numeric",month:"long",day:"numeric"})}</div>
             <div style={{display:"flex",alignItems:"center",gap:8,flexShrink:0}}>
               <button title={privacyMode?"Mostrar informações":"Ocultar informações"} onClick={()=>setPrivacyMode(p=>!p)}
