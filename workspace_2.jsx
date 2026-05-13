@@ -47,7 +47,7 @@ input[type=date]::-webkit-calendar-picker-indicator{filter:invert(0.4);}
 .sidebar{display:flex;}
 .bottom-nav{display:none;}
 .page-pad{padding:26px 30px;}
-.grid-kpi-4{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px;}
+.grid-kpi-4{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:16px;}
 .grid-pay-4{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:24px;}
 .grid-chart{display:grid;grid-template-columns:1fr 280px;gap:12px;margin-bottom:16px;}
 .grid-tasks-4{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;align-items:start;}
@@ -1496,65 +1496,77 @@ function main() {
           </div>
         );
       })()}
-      {/* KPI CARDS */}
-      <div className="grid-kpi-4" style={{marginBottom:16}}>
-        {[
-          {label:"Lucro",sub:periodoLabel,v:kpiLucro,
-            mainColor:kpiLucro>=0?C.green:C.red,
-            cardBg:kpiLucro>=0?"linear-gradient(145deg,rgba(18,209,142,0.13) 0%,rgba(18,209,142,0.04) 60%,transparent 100%)":"linear-gradient(145deg,rgba(245,51,79,0.13) 0%,rgba(245,51,79,0.04) 60%,transparent 100%)",
-            cardBorder:kpiLucro>=0?C.greenBorder:C.redBorder,
-            icoBg:kpiLucro>=0?"rgba(18,209,142,0.18)":"rgba(245,51,79,0.18)",
-            icoGlow:kpiLucro>=0?"0 0 20px rgba(18,209,142,0.4)":"0 0 20px rgba(245,51,79,0.4)",
-            featured:true,changeDir:kpiLucro>=0,
-            icon:<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>},
-          {label:"Faturamento",sub:periodoLabel,v:kpiFat,
-            mainColor:"#5b5ef6",cardBg:C.surface,cardBorder:C.border,
-            icoBg:"rgba(91,94,246,0.18)",icoGlow:"0 0 16px rgba(91,94,246,0.35)",changeDir:true,
-            icon:<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>},
-          {label:"Gasto em Ads",sub:periodoLabel,v:kpiAds,
-            mainColor:C.orange,cardBg:C.surface,cardBorder:C.border,
-            icoBg:"rgba(255,107,53,0.18)",icoGlow:"0 0 16px rgba(255,107,53,0.35)",changeDir:false,
-            icon:<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>},
-          {label:"Lucro Total",sub:"acumulado",v:lucroTotal,
-            mainColor:lucroTotal>=0?C.teal:C.red,cardBg:C.surface,cardBorder:C.border,
-            icoBg:"rgba(20,214,194,0.18)",icoGlow:"0 0 16px rgba(20,214,194,0.35)",changeDir:lucroTotal>=0,
-            icon:<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>},
-        ].map((s,i)=>(
-          <div key={i} className="kpi-card" style={{
-            background:s.cardBg||C.surface,
-            border:`1px solid ${s.cardBorder}`,
-            borderRadius:14,padding:"16px 18px",
-            position:"relative",overflow:"hidden",
-            boxShadow:s.featured
-              ?`0 6px 32px rgba(0,0,0,0.4),0 0 0 1px rgba(255,255,255,0.03)`
-              :"0 2px 16px rgba(0,0,0,0.25),0 0 0 1px rgba(255,255,255,0.02)"}}>
-            {/* Top gradient shine line */}
-            <div style={{position:"absolute",top:0,left:0,right:0,height:"1px",background:`linear-gradient(90deg,transparent,${s.mainColor}55,transparent)`,pointerEvents:"none"}}/>
-            {/* Subtle corner glow */}
-            {s.featured&&<div style={{position:"absolute",top:-30,right:-30,width:100,height:100,borderRadius:"50%",background:`radial-gradient(circle,${s.mainColor}20 0%,transparent 70%)`,pointerEvents:"none"}}/>}
+      {/* KPI CARDS — estilo BK */}
+      {(()=>{
+        const isPos=v=>v>=0;
+        const pctBadge=(up,label)=>(
+          <span style={{display:"inline-flex",alignItems:"center",gap:3,fontSize:10,fontWeight:700,
+            color:up?C.green:C.red,fontFamily:"'JetBrains Mono',monospace"}}>
+            <svg width="8" height="8" viewBox="0 0 10 10" fill={up?C.green:C.red}>
+              {up?<path d="M5 1l4 5H1z"/>:<path d="M5 9L1 4h8z"/>}
+            </svg>
+            {label}
+          </span>
+        );
+        const cards=[
+          {label:"Lucro",v:kpiLucro,featured:true,up:isPos(kpiLucro),
+            pct:periodoLabel,
+            bg:isPos(kpiLucro)?"linear-gradient(135deg,#0fa968 0%,#0d9c5f 100%)":"linear-gradient(135deg,#c4183c 0%,#a31232 100%)",
+            icoBg:"rgba(255,255,255,0.25)",icoColor:"#fff",textColor:"#fff",
+            icon:<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>},
+          {label:"Faturamento",v:kpiFat,up:true,pct:periodoLabel,
+            bg:C.surface,icoBg:"rgba(91,94,246,0.22)",icoColor:"#7c7ff5",textColor:C.text,
+            icon:<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>},
+          {label:"Gasto em Ads",v:kpiAds,up:false,pct:periodoLabel,
+            bg:C.surface,icoBg:"rgba(255,107,53,0.2)",icoColor:C.orange,textColor:C.text,
+            icon:<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>},
+          {label:"Lucro Total",v:lucroTotal,up:isPos(lucroTotal),pct:"acumulado",
+            bg:C.surface,icoBg:"rgba(20,214,194,0.2)",icoColor:C.teal,textColor:C.text,
+            icon:<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>},
+        ];
+        return (
+          <div className="grid-kpi-4" style={{marginBottom:16}}>
+            {cards.map((s,i)=>(
+              <div key={i} className="kpi-card" style={{
+                background:s.bg,
+                border:s.featured?"none":`1px solid ${C.border}`,
+                borderRadius:14,padding:"18px 20px",
+                position:"relative",overflow:"hidden",
+                boxShadow:s.featured
+                  ?"0 8px 32px rgba(13,156,95,0.35),0 2px 8px rgba(0,0,0,0.3)"
+                  :"0 2px 16px rgba(0,0,0,0.25),0 0 0 1px rgba(255,255,255,0.02)"}}>
+                {/* Corner glow for featured */}
+                {s.featured&&<div style={{position:"absolute",top:-40,right:-40,width:120,height:120,borderRadius:"50%",background:"rgba(255,255,255,0.08)",pointerEvents:"none"}}/>}
+                {!s.featured&&<div style={{position:"absolute",top:0,left:0,right:0,height:"1px",background:`linear-gradient(90deg,transparent,${s.icoColor}44,transparent)`,pointerEvents:"none"}}/>}
 
-            <div style={{display:"flex",alignItems:"flex-start",justifyContent:"space-between",marginBottom:14}}>
-              <div>
-                <div style={{fontSize:11,color:C.textMuted,fontWeight:500,letterSpacing:"0.04em",marginBottom:4}}>{s.label}</div>
-                <div style={{display:"inline-flex",alignItems:"center",gap:4,padding:"2px 7px",borderRadius:5,
-                  background:s.changeDir?"rgba(18,209,142,0.12)":"rgba(245,51,79,0.12)",
-                  border:`1px solid ${s.changeDir?"rgba(18,209,142,0.25)":"rgba(245,51,79,0.25)"}`}}>
-                  <svg width="8" height="8" viewBox="0 0 10 10" fill={s.changeDir?C.green:C.red}>
-                    {s.changeDir?<path d="M5 1l4 5H1z"/>:<path d="M5 9L1 4h8z"/>}
-                  </svg>
-                  <span style={{fontSize:9,fontWeight:700,color:s.changeDir?C.green:C.red,fontFamily:"'JetBrains Mono',monospace",letterSpacing:"0.02em"}}>{s.sub}</span>
+                {/* Icon circle */}
+                <div style={{width:44,height:44,borderRadius:"50%",background:s.icoBg,
+                  display:"flex",alignItems:"center",justifyContent:"center",
+                  color:s.icoColor,marginBottom:14,
+                  boxShadow:s.featured?`0 0 0 2px rgba(255,255,255,0.2)`:`0 0 16px ${s.icoBg}`}}>
+                  {s.icon}
+                </div>
+
+                {/* Label */}
+                <div style={{fontSize:11,fontWeight:500,letterSpacing:"0.04em",marginBottom:6,
+                  color:s.featured?"rgba(255,255,255,0.75)":C.textMuted}}>
+                  {s.label}
+                </div>
+
+                {/* Value + badge inline */}
+                <div style={{display:"flex",alignItems:"baseline",gap:8,flexWrap:"wrap"}}>
+                  <div style={{fontSize:"clamp(18px,2.2vw,24px)",fontWeight:700,
+                    color:s.featured?"#fff":s.textColor,
+                    letterSpacing:"-0.04em",fontFamily:"'JetBrains Mono',monospace",...pv}}>
+                    {fmtVal(s.v)}
+                  </div>
+                  {pctBadge(s.up, s.pct)}
                 </div>
               </div>
-              <div style={{width:40,height:40,borderRadius:11,background:s.icoBg,display:"flex",alignItems:"center",justifyContent:"center",color:s.mainColor,flexShrink:0,boxShadow:s.icoGlow}}>
-                {s.icon}
-              </div>
-            </div>
-            <div style={{fontSize:"clamp(18px,2.4vw,26px)",fontWeight:700,color:s.mainColor,letterSpacing:"-0.04em",fontFamily:"'JetBrains Mono',monospace",wordBreak:"break-all",...pv}}>
-              {fmtVal(s.v)}
-            </div>
+            ))}
           </div>
-        ))}
-      </div>
+        );
+      })()}
 
       {/* GRÁFICO + LUCRO POR LOJA */}
       <div className="grid-chart">
