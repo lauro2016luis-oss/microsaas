@@ -4161,7 +4161,7 @@ export default function App() {
   const [user,setUser]=useState(undefined);
   const [page,setPage]=useState("dashboard");
   const [storeName,setStoreName]=useState("Minha Loja");
-  const [privacyMode,setPrivacyMode]=useState(false);
+  const [privacyMode,setPrivacyMode]=useState(()=>localStorage.getItem("privacyMode")==="1");
 
   useEffect(()=>{
     sb.auth.getSession().then(({data:{session}})=>setUser(session?.user??null));
@@ -4207,7 +4207,7 @@ export default function App() {
           <div className="main-topbar" style={{borderBottom:"1px solid rgba(255,255,255,0.04)",padding:"10px 28px",display:"flex",alignItems:"center",justifyContent:"space-between",background:C.surface,flexShrink:0,gap:8,boxShadow:"0 1px 0 rgba(255,255,255,0.02)"}}>
             <div className="topbar-date" style={{fontSize:12,color:C.textMuted,fontFamily:"'Plus Jakarta Sans',sans-serif",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",fontWeight:400,letterSpacing:"-0.01em",textTransform:"capitalize"}}>{new Date().toLocaleDateString("pt-BR",{weekday:"long",day:"numeric",month:"long"})}</div>
             <div style={{display:"flex",alignItems:"center",gap:8,flexShrink:0}}>
-              <button title={privacyMode?"Mostrar informações":"Ocultar informações"} onClick={()=>setPrivacyMode(p=>!p)}
+              <button title={privacyMode?"Mostrar informações":"Ocultar informações"} onClick={()=>setPrivacyMode(p=>{const next=!p;localStorage.setItem("privacyMode",next?"1":"0");return next;})}
                 style={{display:"flex",alignItems:"center",gap:6,padding:"5px 12px",borderRadius:8,background:privacyMode?"rgba(91,94,246,0.15)":"transparent",border:`1px solid ${privacyMode?C.accentBorder:C.border}`,color:privacyMode?C.accent:C.textMuted,cursor:"pointer",fontSize:11,fontFamily:"'Plus Jakarta Sans',sans-serif",transition:"all 0.15s"}}>
                 <Icon name={privacyMode?"eyeOff":"eye"} size={12}/>
                 <span className="topbar-date">{privacyMode?"visível":"ocultar"}</span>
