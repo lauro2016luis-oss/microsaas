@@ -1800,8 +1800,8 @@ const LinksPage=({sb,user})=>{
   const onDrop=(e,cat,el)=>{e.preventDefault();el?.classList.remove("drag-over-col");if(dragging.current){moveCategoria(dragging.current.id,cat);dragging.current=null;}};
 
   const cols=[
-    {id:"Produtos",label:"Produtos",icon:"store",color:C.blue,colorDim:C.blueDim},
-    {id:"Vídeos",label:"Vídeos",icon:"video",color:C.accent,colorDim:C.accentDim},
+    {id:"Produtos",label:"Produtos",icon:"store",color:C.blue,colorDim:"rgba(79,142,247,0.14)"},
+    {id:"Vídeos",label:"Vídeos",icon:"video",color:C.purple,colorDim:"rgba(176,110,243,0.14)"},
   ];
 
   const filtered=links.filter(l=>(l.title||"").toLowerCase().includes(search.toLowerCase())||(l.url||"").toLowerCase().includes(search.toLowerCase()));
@@ -1811,7 +1811,7 @@ const LinksPage=({sb,user})=>{
     const col=cols.find(c=>c.id===l.categoria)||cols[0];
     return(
       <div data-card draggable onDragStart={e=>onDS(e,l)} onDragEnd={onDE}
-        style={{background:C.surface2,border:`1px solid ${hov?C.borderHover:C.border}`,borderRadius:12,padding:"14px",cursor:"grab",userSelect:"none",transition:"all 0.15s"}}
+        style={{background:C.surface,border:`1px solid ${hov?C.borderHover:C.border}`,borderRadius:13,padding:"14px 16px",cursor:"grab",userSelect:"none",transition:"all 0.15s",boxShadow:hov?"0 4px 20px rgba(0,0,0,0.3)":"0 2px 10px rgba(0,0,0,0.2)",transform:hov?"translateY(-1px)":"none"}}
         onMouseEnter={()=>setHov(true)} onMouseLeave={()=>setHov(false)}>
         {/* Ícone + título */}
         <div style={{display:"flex",alignItems:"flex-start",gap:10,marginBottom:10}}>
@@ -1849,7 +1849,7 @@ const LinksPage=({sb,user})=>{
       {/* HEADER */}
       <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:24}}>
         <div>
-          <h1 style={{fontSize:22,fontWeight:600,color:C.text,letterSpacing:"-0.03em"}}>Links</h1>
+          <h1 style={{fontSize:22,fontWeight:700,color:C.text,letterSpacing:"-0.04em"}}>Links</h1>
           <p style={{fontSize:13,color:C.textMuted,marginTop:2}}>Lojas concorrentes · {links.length} links salvos</p>
         </div>
         <Btn variant="primary" icon="plus" onClick={()=>setModal(true)}>Adicionar</Btn>
@@ -2104,7 +2104,7 @@ const TarefasPage=({sb,user})=>{
   const onDE=(e)=>{e.target.classList.remove("dragging-card");document.querySelectorAll(".drag-over-col").forEach(el=>el.classList.remove("drag-over-col"));};
   const onDO=(e,el)=>{e.preventDefault();document.querySelectorAll(".drag-over-col").forEach(x=>x.classList.remove("drag-over-col"));el.classList.add("drag-over-col");};
   const onDrop=(e,colId,el)=>{e.preventDefault();el.classList.remove("drag-over-col");if(dragging.current){move(dragging.current.id,colId);dragging.current=null;}};
-  const cols=[{id:"A fazer",label:"A fazer",color:C.textMuted},{id:"Hoje",label:"Hoje",color:C.accent},{id:"Atrasado",label:"Atrasado",color:C.red},{id:"Concluído",label:"Concluído",color:C.green}];
+  const cols=[{id:"A fazer",label:"A fazer",color:C.textMuted,bg:"rgba(90,98,130,0.12)"},{id:"Hoje",label:"Hoje",color:C.accent,bg:"rgba(91,94,246,0.12)"},{id:"Atrasado",label:"Atrasado",color:C.red,bg:"rgba(245,51,79,0.12)"},{id:"Concluído",label:"Concluído",color:C.green,bg:"rgba(18,209,142,0.12)"}];
   const fmt=d=>{if(!d)return null;const[y,m,dd]=d.slice(0,10).split("-");return`${dd}/${m}/${y}`;};
   const late=t=>t.due_date&&t.status!=="Concluído"&&new Date(t.due_date)<new Date(new Date().toDateString());
 
@@ -2119,7 +2119,7 @@ const TarefasPage=({sb,user})=>{
       {/* HEADER */}
       <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:20}}>
         <div>
-          <h1 style={{fontSize:22,fontWeight:600,color:C.text,letterSpacing:"-0.03em"}}>{tab==="tarefas"?"Tarefas":"Mineração de Produtos"}</h1>
+          <h1 style={{fontSize:22,fontWeight:700,color:C.text,letterSpacing:"-0.04em"}}>{tab==="tarefas"?"Tarefas":"Mineração de Produtos"}</h1>
           {tab==="tarefas"&&<p style={{fontSize:13,color:C.textMuted,marginTop:2}}>{tasks.filter(t=>t.status!=="Concluído").length} ativas · arraste para mover</p>}
           {tab==="mineracao"&&<p style={{fontSize:13,color:C.textMuted,marginTop:2}}>Gerencie seus produtos em teste no estilo Kanban</p>}
         </div>
@@ -2127,10 +2127,10 @@ const TarefasPage=({sb,user})=>{
       </div>
 
       {/* TABS */}
-      <div style={{display:"flex",gap:4,marginBottom:24,background:C.surface,padding:4,borderRadius:10,border:`1px solid ${C.border}`,width:"fit-content"}}>
+      <div style={{display:"flex",gap:3,marginBottom:22,background:C.surface,padding:4,borderRadius:11,border:`1px solid ${C.border}`,width:"fit-content",boxShadow:"0 2px 12px rgba(0,0,0,0.2)"}}>
         {TABS.map(t=>(
-          <button key={t.id} onClick={()=>setTab(t.id)} style={{display:"flex",alignItems:"center",gap:7,padding:"7px 14px",borderRadius:8,border:"none",background:tab===t.id?"#1e1e1e":"transparent",color:tab===t.id?C.text:C.textMuted,fontSize:13,fontWeight:tab===t.id?500:400,fontFamily:"'DM Sans',sans-serif",cursor:"pointer",transition:"all 0.15s",boxShadow:tab===t.id?`0 0 0 0.5px ${C.border}`:"none"}}>
-            <Icon name={t.icon} size={14}/>{t.label}
+          <button key={t.id} onClick={()=>setTab(t.id)} style={{display:"flex",alignItems:"center",gap:7,padding:"7px 16px",borderRadius:8,border:`1px solid ${tab===t.id?C.accentBorder:"transparent"}`,background:tab===t.id?"linear-gradient(135deg,rgba(91,94,246,0.18),rgba(91,94,246,0.08))":"transparent",color:tab===t.id?C.accent:C.textMuted,fontSize:12,fontWeight:tab===t.id?600:400,fontFamily:"'DM Sans',sans-serif",cursor:"pointer",transition:"all 0.15s",boxShadow:tab===t.id?"0 2px 8px rgba(0,0,0,0.2)":"none"}}>
+            <Icon name={t.icon} size={13}/>{t.label}
           </button>
         ))}
       </div>
@@ -2142,25 +2142,29 @@ const TarefasPage=({sb,user})=>{
             const ct=tasks.filter(t=>t.status===col.id);
             return (
               <div key={col.id}>
-                <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:10}}><div style={{width:6,height:6,borderRadius:"50%",background:col.color}}/><span style={{fontSize:12,fontWeight:500,color:col.color,textTransform:"uppercase",letterSpacing:"0.05em"}}>{col.label}</span><span style={{fontSize:11,color:C.textDim,marginLeft:"auto"}}>{ct.length}</span></div>
-                <div ref={el=>{if(el)colRefs.current[col.id]=el;}} onDragOver={e=>onDO(e,colRefs.current[col.id])} onDrop={e=>onDrop(e,col.id,colRefs.current[col.id])} style={{display:"flex",flexDirection:"column",gap:8,minHeight:80,borderRadius:10,padding:6,border:"1px solid transparent",transition:"all 0.15s"}}>
+                <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:10,padding:"8px 12px",borderRadius:10,background:col.bg,border:`1px solid ${col.color}30`}}>
+                  <div style={{width:7,height:7,borderRadius:"50%",background:col.color,boxShadow:`0 0 6px ${col.color}80`}}/>
+                  <span style={{fontSize:11,fontWeight:700,color:col.color,textTransform:"uppercase",letterSpacing:"0.1em"}}>{col.label}</span>
+                  <span style={{fontSize:11,color:col.color,opacity:0.6,marginLeft:"auto",fontFamily:"'JetBrains Mono',monospace",fontWeight:600}}>{ct.length}</span>
+                </div>
+                <div ref={el=>{if(el)colRefs.current[col.id]=el;}} onDragOver={e=>onDO(e,colRefs.current[col.id])} onDrop={e=>onDrop(e,col.id,colRefs.current[col.id])} style={{display:"flex",flexDirection:"column",gap:8,minHeight:80,borderRadius:11,padding:4,border:"1px solid transparent",transition:"all 0.15s"}}>
                   {ct.map(t=>(
-                    <div key={t.id} draggable onDragStart={e=>onDS(e,t)} onDragEnd={onDE} style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:10,padding:"12px",cursor:"grab",userSelect:"none",transition:"border-color 0.15s"}} onMouseEnter={e=>e.currentTarget.style.borderColor=C.borderHover} onMouseLeave={e=>e.currentTarget.style.borderColor=C.border}>
+                    <div key={t.id} draggable onDragStart={e=>onDS(e,t)} onDragEnd={onDE} style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:11,padding:"12px 14px",cursor:"grab",userSelect:"none",transition:"all 0.15s",boxShadow:"0 2px 10px rgba(0,0,0,0.2)"}} onMouseEnter={e=>{e.currentTarget.style.borderColor=C.borderHover;e.currentTarget.style.transform="translateY(-1px)";}} onMouseLeave={e=>{e.currentTarget.style.borderColor=C.border;e.currentTarget.style.transform="none";}}>
                       <div style={{display:"flex",justifyContent:"space-between",gap:6,marginBottom:6}}>
-                        <div style={{display:"flex",gap:6,flex:1}}><span style={{color:C.textDim,marginTop:2,flexShrink:0}}><Icon name="grip" size={12}/></span><span style={{fontSize:13,fontWeight:500,color:t.status==="Concluído"?C.textDim:C.text,textDecoration:t.status==="Concluído"?"line-through":"none",lineHeight:1.4}}>{t.title}</span></div>
-                        <button onClick={()=>toggle(t)} style={{background:t.status==="Concluído"?C.greenDim:"#1a1a1a",border:`1px solid ${t.status==="Concluído"?"rgba(34,197,94,0.3)":C.border}`,color:t.status==="Concluído"?C.green:C.textDim,borderRadius:5,width:20,height:20,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",flexShrink:0}}>{t.status==="Concluído"&&<Icon name="check" size={10}/>}</button>
+                        <div style={{display:"flex",gap:6,flex:1}}><span style={{color:C.textDim,marginTop:2,flexShrink:0}}><Icon name="grip" size={12}/></span><span style={{fontSize:12,fontWeight:500,color:t.status==="Concluído"?C.textDim:C.text,textDecoration:t.status==="Concluído"?"line-through":"none",lineHeight:1.4}}>{t.title}</span></div>
+                        <button onClick={()=>toggle(t)} style={{background:t.status==="Concluído"?C.greenDim:"rgba(255,255,255,0.04)",border:`1px solid ${t.status==="Concluído"?"rgba(18,209,142,0.3)":C.border}`,color:t.status==="Concluído"?C.green:C.textDim,borderRadius:6,width:20,height:20,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",flexShrink:0,transition:"all 0.15s"}}>{t.status==="Concluído"&&<Icon name="check" size={10}/>}</button>
                       </div>
                       {t.description&&<p style={{fontSize:11,color:C.textMuted,marginBottom:8,lineHeight:1.5,paddingLeft:18}}>{t.description}</p>}
                       <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",paddingLeft:18}}>
                         <Badge label={t.priority} color={priorityColor(t.priority)}/>
                         <div style={{display:"flex",alignItems:"center",gap:6}}>
-                          {t.due_date&&<span style={{display:"flex",alignItems:"center",gap:4,fontSize:10,color:late(t)?C.red:C.textDim,fontFamily:"'JetBrains Mono',monospace",background:late(t)?C.redDim:"transparent",padding:late(t)?"2px 5px":"0",borderRadius:4}}><Icon name="calendar" size={10}/>{fmt(t.due_date)}</span>}
-                          <button onClick={()=>del(t.id)} style={{background:"none",border:"none",color:C.textDim,cursor:"pointer",padding:2}}><Icon name="trash" size={12}/></button>
+                          {t.due_date&&<span style={{display:"flex",alignItems:"center",gap:4,fontSize:10,color:late(t)?C.red:C.textDim,fontFamily:"'JetBrains Mono',monospace",background:late(t)?C.redDim:"rgba(255,255,255,0.03)",padding:"2px 6px",borderRadius:4,border:`1px solid ${late(t)?"rgba(245,51,79,0.3)":C.border}`}}><Icon name="calendar" size={10}/>{fmt(t.due_date)}</span>}
+                          <button onClick={()=>del(t.id)} style={{background:"none",border:"none",color:C.textDim,cursor:"pointer",padding:2,transition:"color 0.15s"}} onMouseEnter={e=>e.currentTarget.style.color=C.red} onMouseLeave={e=>e.currentTarget.style.color=C.textDim}><Icon name="trash" size={12}/></button>
                         </div>
                       </div>
                     </div>
                   ))}
-                  {ct.length===0&&<div style={{padding:"18px 0",textAlign:"center",color:C.textDim,fontSize:12,border:`0.5px dashed ${C.border}`,borderRadius:10}}>Solte aqui</div>}
+                  {ct.length===0&&<div style={{padding:"20px 0",textAlign:"center",color:C.textDim,fontSize:11,border:`1px dashed rgba(255,255,255,0.06)`,borderRadius:10,background:"rgba(255,255,255,0.01)"}}>Arraste ou solte aqui</div>}
                 </div>
               </div>
             );
@@ -2211,7 +2215,7 @@ const VideosPage=({sb,user})=>{
     <div className="page-pad" style={{overflowY:"auto",flex:1}}>
       {El}
       <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:24}}>
-        <div><h1 style={{fontSize:22,fontWeight:600,color:C.text,letterSpacing:"-0.03em"}}>Vídeos</h1><p style={{fontSize:13,color:C.textMuted,marginTop:2}}>{videos.length} vídeos</p></div>
+        <div><h1 style={{fontSize:22,fontWeight:700,color:C.text,letterSpacing:"-0.04em"}}>Vídeos</h1><p style={{fontSize:13,color:C.textMuted,marginTop:2}}>{videos.length} vídeos</p></div>
         <Btn variant="primary" icon="plus" onClick={()=>setModal(true)}>Adicionar Vídeo</Btn>
       </div>
       {loading?<div style={{textAlign:"center",padding:40}}><Spinner size={24}/></div>:(
@@ -2283,7 +2287,7 @@ const ArquivosPage=({sb,user})=>{
       {El}
       <input ref={fileRef} type="file" multiple style={{display:"none"}} onChange={e=>upload(e.target.files)}/>
       <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:24}}>
-        <div><h1 style={{fontSize:22,fontWeight:600,color:C.text,letterSpacing:"-0.03em"}}>Arquivos</h1><p style={{fontSize:13,color:C.textMuted,marginTop:2}}>Seu drive privado</p></div>
+        <div><h1 style={{fontSize:22,fontWeight:700,color:C.text,letterSpacing:"-0.04em"}}>Arquivos</h1><p style={{fontSize:13,color:C.textMuted,marginTop:2}}>Seu drive privado</p></div>
         <div style={{display:"flex",gap:8}}><Btn variant="outline" icon="folder" onClick={()=>setNewP(true)}>Nova Pasta</Btn><Btn variant="primary" icon="upload" loading={uploading} onClick={()=>fileRef.current.click()}>{uploading?"Enviando...":"Enviar"}</Btn></div>
       </div>
       <div style={{display:"flex",gap:10,marginBottom:14}}><div style={{position:"relative",flex:1,maxWidth:340}}><span style={{position:"absolute",left:10,top:"50%",transform:"translateY(-50%)",color:C.textMuted}}><Icon name="search" size={14}/></span><input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Buscar..." style={{width:"100%",background:C.surface,border:`1px solid ${C.border}`,color:C.text,fontFamily:"'DM Sans',sans-serif",fontSize:13,padding:"8px 12px 8px 32px",borderRadius:8,outline:"none"}}/></div></div>
@@ -2422,17 +2426,23 @@ const PaymentsPage=({sb,user,privacyMode})=>{
     <div className="page-pad" style={{overflowY:"auto",flex:1}}>
       {El}
       <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:24}}>
-        <div><h1 style={{fontSize:22,fontWeight:600,color:C.text,letterSpacing:"-0.03em"}}>Payments</h1><p style={{fontSize:13,color:C.textMuted,marginTop:2}}>{payments.length} payments cadastradas</p></div>
+        <div><h1 style={{fontSize:22,fontWeight:700,color:C.text,letterSpacing:"-0.04em"}}>Payments</h1><p style={{fontSize:13,color:C.textMuted,marginTop:2}}>{payments.length} payments cadastradas</p></div>
         <Btn variant="primary" icon="plus" onClick={openNew}>Nova Payment</Btn>
       </div>
 
       <div className="grid-pay-4">
         {[
-          {l:"Total",v:payments.length,c:C.accent},
-          {l:"Aquecimento",v:payments.filter(p=>p.status==="Aquecimento").length,c:C.amber},
-          {l:"Prontas",v:payments.filter(p=>p.status==="Pronta").length,c:C.green},
-          {l:"Expirando em breve",v:payments.filter(p=>{const d=diasRestantes(p.data_saida);return d!==null&&d<=3&&d>=0;}).length,c:C.red},
-        ].map((s,i)=><div key={i} style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:12,padding:"16px 18px"}}><div style={{fontSize:11,color:C.textMuted,marginBottom:6,textTransform:"uppercase",letterSpacing:"0.05em"}}>{s.l}</div><div style={{fontSize:28,fontWeight:600,color:s.c,letterSpacing:"-0.02em"}}>{s.v}</div></div>)}
+          {l:"Total",v:payments.length,c:C.accent,b:"rgba(91,94,246,0.28)"},
+          {l:"Aquecimento",v:payments.filter(p=>p.status==="Aquecimento").length,c:C.amber,b:"rgba(245,166,35,0.28)"},
+          {l:"Prontas",v:payments.filter(p=>p.status==="Pronta").length,c:C.green,b:"rgba(18,209,142,0.28)"},
+          {l:"Expirando",v:payments.filter(p=>{const d=diasRestantes(p.data_saida);return d!==null&&d<=3&&d>=0;}).length,c:C.red,b:"rgba(245,51,79,0.28)"},
+        ].map((s,i)=>(
+          <div key={i} style={{background:C.surface,border:`1px solid ${s.b}`,borderRadius:14,padding:"16px 18px",position:"relative",overflow:"hidden",boxShadow:"0 4px 20px rgba(0,0,0,0.25)"}}>
+            <div style={{position:"absolute",top:0,left:0,right:0,height:"1px",background:`linear-gradient(90deg,transparent,${s.c}55,transparent)`}}/>
+            <div style={{fontSize:9,color:C.textMuted,marginBottom:10,textTransform:"uppercase",letterSpacing:"0.12em",fontWeight:700}}>{s.l}</div>
+            <div style={{fontSize:30,fontWeight:700,color:s.c,letterSpacing:"-0.04em",fontFamily:"'JetBrains Mono',monospace"}}>{s.v}</div>
+          </div>
+        ))}
       </div>
 
       <div style={{display:"flex",gap:10,marginBottom:20,alignItems:"center",flexWrap:"wrap"}}>
@@ -2568,7 +2578,7 @@ const ProdutosPage=({sb,user})=>{
       {El}
       <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:28,flexWrap:"wrap",gap:12}}>
         <div>
-          <h1 style={{fontSize:24,fontWeight:600,color:C.text,letterSpacing:"-0.03em"}}>Importar Produtos</h1>
+          <h1 style={{fontSize:22,fontWeight:700,color:C.text,letterSpacing:"-0.04em"}}>Importar Produtos</h1>
           <p style={{fontSize:14,color:C.textMuted,marginTop:4}}>Cole a URL de qualquer produto Shopify e importe com tudo para a sua loja.</p>
         </div>
       </div>
@@ -2771,7 +2781,7 @@ const YoutubePage=({sb,user})=>{
       {El}
       {/* HEADER */}
       <div style={{marginBottom:20}}>
-        <h1 style={{fontSize:22,fontWeight:600,color:C.text,letterSpacing:"-0.03em",marginBottom:4}}>Downloader</h1>
+        <h1 style={{fontSize:22,fontWeight:700,color:C.text,letterSpacing:"-0.04em",marginBottom:4}}>Downloader</h1>
         <p style={{fontSize:13,color:C.textMuted}}>Baixe vídeos do YouTube e TikTok</p>
       </div>
 
@@ -2970,7 +2980,7 @@ const PrecificacaoPage=()=>{
   return(
     <div className="page-pad" style={{overflowY:"auto",flex:1}} onClick={()=>showCurrPicker&&setShowCurrPicker(null)}>
       <div style={{textAlign:"center",marginBottom:28}}>
-        <h1 style={{fontSize:22,fontWeight:600,color:C.text,letterSpacing:"-0.03em"}}>Calculadora de Precificação</h1>
+        <h1 style={{fontSize:22,fontWeight:700,color:C.text,letterSpacing:"-0.04em"}}>Calculadora de Precificação</h1>
         <p style={{fontSize:13,color:C.textMuted,marginTop:4}}>Calcule o preço de venda ideal para os seus produtos. Conheça seus custos e alcance o lucro desejado.</p>
       </div>
 
@@ -3351,7 +3361,7 @@ const VideoHashPage=()=>{
     <div className="page-pad" style={{overflowY:"auto",flex:1}}>
       {El}
       <div style={{textAlign:"center",marginBottom:28}}>
-        <h1 style={{fontSize:22,fontWeight:600,color:C.text,letterSpacing:"-0.03em"}}>Editor de Metadados</h1>
+        <h1 style={{fontSize:22,fontWeight:700,color:C.text,letterSpacing:"-0.04em"}}>Editor de Metadados</h1>
         <p style={{fontSize:13,color:C.textMuted,marginTop:4}}>Edite os metadados do vídeo — título, autor, data — sem alterar a qualidade</p>
         <div style={{display:"inline-flex",alignItems:"center",gap:7,marginTop:10,padding:"5px 14px",borderRadius:20,background:"rgba(34,197,94,0.08)",border:"1px solid rgba(34,197,94,0.3)"}}>
           <span style={{width:7,height:7,borderRadius:"50%",background:C.green}}/>
@@ -3599,7 +3609,7 @@ const CustosProdutosPage=({sb,user})=>{
       {/* HEADER */}
       <div className="page-header">
         <div>
-          <h1 style={{fontSize:22,fontWeight:600,color:C.text,letterSpacing:"-0.03em"}}>Custos de Produtos</h1>
+          <h1 style={{fontSize:22,fontWeight:700,color:C.text,letterSpacing:"-0.04em"}}>Custos de Produtos</h1>
           <p style={{fontSize:13,color:C.textMuted,marginTop:2}}>Defina o custo e frete de cada produto para calcular o lucro real</p>
         </div>
       </div>
@@ -3869,7 +3879,7 @@ const LojasPage=({sb,user})=>{
       {El}
       <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:28}}>
         <div>
-          <h1 style={{fontSize:22,fontWeight:600,color:C.text,letterSpacing:"-0.03em"}}>Lojas</h1>
+          <h1 style={{fontSize:22,fontWeight:700,color:C.text,letterSpacing:"-0.04em"}}>Lojas</h1>
           <p style={{fontSize:13,color:C.textMuted,marginTop:2}}>{lojas.length} lojas cadastradas · usado para registrar lucros</p>
         </div>
         <Btn variant="primary" icon="plus" onClick={openNew}>Nova Loja</Btn>
